@@ -1,0 +1,6 @@
+import {el,select,button,busy,toast} from './ui.js';
+export function applyWorkspacePreferences(data={},root=document.documentElement){root.dataset.textSize=data.textSize||'standard';root.dataset.controlDensity=data.controlDensity||'compact';root.dataset.handedness=data.handedness||'right';}
+export function workspacePreferences(ctx){
+ let record=ctx.records('settings').find(r=>r.id==='preferences');const data=record?.data??{},size=select('Text',[{value:'standard',label:'Standard'},{value:'large',label:'Larger'},{value:'largest',label:'Largest'}],data.textSize||'standard'),density=select('Controls',[{value:'compact',label:'Compact'},{value:'spacious',label:'Spacious'}],data.controlDensity||'compact'),hand=select('Writing hand',[{value:'right',label:'Right'},{value:'left',label:'Left'}],data.handedness||'right');
+ return el('div',{class:'form-stack'},size.node,density.node,hand.node,button('Save display preferences',e=>busy(e.currentTarget,async()=>{record=ctx.records('settings').find(r=>r.id==='preferences');const next={...record?.data,textSize:size.input.value,controlDensity:density.input.value,handedness:hand.input.value},result=await ctx.save('settings',record||{id:'preferences',version:0},next);if(result.item){record=result.item;applyWorkspacePreferences(record.data);toast('Display preferences saved.');}else toast(result.reason);}), 'quiet'));
+}

@@ -1,0 +1,14 @@
+import {readFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {Store} from './store.mjs';
+import {unprotect} from './secrets.mjs';
+import {createApp} from './app.mjs';
+const config=JSON.parse(await readFile(resolve(process.env.LIFEOS_CONFIG??'.lifeos/production/config.json'),'utf8'));
+config.gatewaySecret=(await unprotect(config.gatewaySecretFile)).secret;
+config.googleClientSecret=(await unprotect(config.googleClientFile)).web.client_secret;
+const store=new Store(resolve(config.dataDir,'lifeos.sqlite'));
+if(!store.get('settings','preferences'))store.transaction(()=>store.put('settings','preferences',{timezone:'America/Toronto',wakeTime:'06:30',lightsOut:'22:00',prayerWakeLock:false,quietStart:'22:00',quietEnd:'06:30'},0,{actor:'initial-setup'}));
+const {server}=createApp(store,config);
+server.listen(config.port,'127.0.0.1',()=>console.log(JSON.stringify({service:'lifeos-backend',environment:config.environment,port:config.port,version:config.version,status:'listening'})));
+const heart=setInterval(()=>store.heartbeat('backend',{version:config.version},true),30000);heart.unref();store.heartbeat('backend',{version:config.version},true);
+for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{clearInterval(heart);server.close(()=>{store.close();process.exit(0);});});

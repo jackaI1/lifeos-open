@@ -1,0 +1,9 @@
+{
+  "name": "perfect-freehand",
+  "version": "1.2.3",
+  "license": "MIT",
+  "source": "https://github.com/steveruizok/perfect-freehand",
+  "packageIntegrity": "sha512-bHZSfqDHGNlPpgH2yxXgPHlQSPpEbo+qg7li0M78J9vNAi2yjwLeA4x79BEQhX44lEWpCLSFCeRZwpw0niiXPA==",
+  "sha256": "fb6fdd351369e9baee2f58b51d3ca5f44bb915a41546eada428de718513a9a89",
+  "sourceMapOmitted": true
+}

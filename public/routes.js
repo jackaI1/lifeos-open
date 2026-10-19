@@ -1,0 +1,3 @@
+export const routes = [ ['today', 'Today'], ['devotional', 'Devotional'], ['prayer', 'Prayer'], ['school', 'Academics'], ['tickets', 'Tickets & projects'], ['exercise', 'Exercise'], ['reminders', 'Reminders'], ['finances', 'Finances'], ['notes', 'Notes'], ['friends', 'Friends'], ['journal', 'Journal'], ['photos', 'Daily photos'], ['support', 'LifeOS Support'], ['settings', 'Settings'] ];
+export const routesFor=environment=>environment==='beta'?[...routes.slice(0,7),['email','Email'],...routes.slice(7)]:routes;
+export function routeModule(route,environment){if(route==='meals')return 'reminders';if(!routesFor(environment).some(([id])=>id===route))return 'today';return route==='tickets'?'week':route;}

@@ -1,0 +1,274 @@
+{
+  "cooking": {
+    "file": "public/modules/cooking.js",
+    "exports": [
+      "mount"
+    ],
+    "apiPaths": [
+      "/api/records/meal/"
+    ],
+    "description": "Recipes, preparation/follow modes, step timers, grocery review and mock help",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "coop": {
+    "file": "public/modules/coop.js",
+    "exports": [
+      "mountCoop"
+    ],
+    "apiPaths": [
+      "/api/records/coop-role/${id}"
+    ],
+    "description": "Saved opportunities, tasks and mock application drafts",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "devices": {
+    "file": "public/modules/devices.js",
+    "exports": [
+      "mountDevices"
+    ],
+    "apiPaths": [
+      "/api/devices",
+      "/api/devices/revoke",
+      "/api/records/presence?limit=1000"
+    ],
+    "description": "Presence credential management and device list",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "devotional": {
+    "file": "public/modules/devotional.js",
+    "exports": [
+      "mount"
+    ],
+    "apiPaths": [
+      "/api/devotional-history/index?day=",
+      "/api/devotionals",
+      "/api/devotionals/",
+      "/api/records/devotional-import/"
+    ],
+    "description": "Seven responses, custom entries, completion, history and archival",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "email": {
+    "file": "public/modules/email.js",
+    "exports": [
+      "mount"
+    ],
+    "apiPaths": [],
+    "description": "Sample messages and offline local email drafts/export",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "exercise": {
+    "file": "public/modules/exercise.js",
+    "exports": [
+      "mount"
+    ],
+    "apiPaths": [],
+    "description": "Run logging, context, reference plan and pace comparison",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "finances": {
+    "file": "public/modules/finances.js",
+    "exports": [
+      "mount"
+    ],
+    "apiPaths": [
+      "/api/finances/category",
+      "/api/finances/rules",
+      "/api/finances/transaction",
+      "/api/finances/undo",
+      "/api/finances?period="
+    ],
+    "description": "Budget, transactions, reconciliation, categories, forecasts and advisor",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "friends": {
+    "file": "public/modules/friends.js",
+    "exports": [],
+    "apiPaths": [],
+    "description": "Contact schedules, memories, imports and prayer links",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "handoff": {
+    "file": "public/modules/handoff.js",
+    "exports": [
+      "openHandoff"
+    ],
+    "apiPaths": [
+      "/api/handoff/"
+    ],
+    "description": "Task context packets, preview and approved return edits",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "journal": {
+    "file": "public/modules/journal.js",
+    "exports": [
+      "mount"
+    ],
+    "apiPaths": [
+      "/api/private-journal/",
+      "/api/private-journal/entries?offset=",
+      "/api/private-journal/templates/",
+      "/api/private-journal/templates?offset="
+    ],
+    "description": "Daily journal, prompts/templates and revisions",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "lectures": {
+    "file": "public/modules/lectures.js",
+    "exports": [
+      "mountLectures"
+    ],
+    "apiPaths": [
+      "/api/files/",
+      "/api/lecture-lessons?course=",
+      "/api/lecture-permission/",
+      "/api/lecture-reviews?course=",
+      "/api/lectures",
+      "/api/lectures/",
+      "/api/lectures/${id}/sources/list",
+      "/api/lectures?course="
+    ],
+    "description": "Notebooks, timed ink/audio, recording/recovery, slides, tutor and study aids",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "notes": {
+    "file": "public/modules/notes.js",
+    "exports": [],
+    "apiPaths": [],
+    "description": "Private rich notes, folders, pinning, images and recovery",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "photos": {
+    "file": "public/modules/photos.js",
+    "exports": [
+      "mount"
+    ],
+    "apiPaths": [
+      "/api/daily-photos/",
+      "/api/daily-photos?offset="
+    ],
+    "description": "Daily photo import, captions, history and image storage",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "prayer": {
+    "file": "public/modules/prayer.js",
+    "exports": [
+      "mount"
+    ],
+    "apiPaths": [
+      "/api/operation-world?day=",
+      "/api/prayer-dates",
+      "/api/records/prayer-session?limit=100"
+    ],
+    "description": "Prayer list/tree, recording, journal, transcript review and generic daily prayer",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "quota": {
+    "file": "public/modules/quota.js",
+    "exports": [
+      "quotaPanel"
+    ],
+    "apiPaths": [
+      "/api/quota",
+      "/api/quota/policy",
+      "/api/quota/refresh"
+    ],
+    "description": "Usage/admission status and quota settings",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "reminders": {
+    "file": "public/modules/reminders.js",
+    "exports": [
+      "mount"
+    ],
+    "apiPaths": [],
+    "description": "Lists, recurrence, priorities, groceries, staples and undo",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "school": {
+    "file": "public/modules/school.js",
+    "exports": [
+      "mount"
+    ],
+    "apiPaths": [
+      "/api/jobs?taskId="
+    ],
+    "description": "Academics, assignment briefs, coursework, co-op and academic advisor",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "settings": {
+    "file": "public/modules/settings.js",
+    "exports": [
+      "mount"
+    ],
+    "apiPaths": [
+      "/api/actions/logout",
+      "/api/database-budget",
+      "/api/devotionals",
+      "/api/export",
+      "/api/health",
+      "/api/notifications/history",
+      "/api/push/config",
+      "/api/releases"
+    ],
+    "description": "Preferences, privacy, backup/export, revisions, deletion and service status",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "support": {
+    "file": "public/modules/support.js",
+    "exports": [
+      "mount"
+    ],
+    "apiPaths": [
+      "/api/audit",
+      "/api/records/support-message?limit=1000",
+      "/api/records/support-thread"
+    ],
+    "description": "App support conversations and mock maintenance reports",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "today": {
+    "file": "public/modules/today.js",
+    "exports": [
+      "mount"
+    ],
+    "apiPaths": [
+      "/api/replan",
+      "/api/schedule?day="
+    ],
+    "description": "Schedule, overlapping events, ranked work, presence, travel and timers",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  },
+  "week": {
+    "file": "public/modules/week.js",
+    "exports": [
+      "mount"
+    ],
+    "apiPaths": [
+      "/api/audit"
+    ],
+    "description": "Tickets, side projects, project help and preparation artifacts",
+    "status": "works with mock/local",
+    "realService": "Optional configured AI/Google/native worker adapters where applicable; live credentials not tested"
+  }
+}

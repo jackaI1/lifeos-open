@@ -1,0 +1,11 @@
+import {notebookLayout} from './lecture-layout.js';
+export class LectureLayoutJournal{
+ constructor({store,request,id}){Object.assign(this,{store,request,id});this.key='notebook-layout:'+id;this.url='/api/lectures/'+id+'/layout';this.queue=Promise.resolve();}
+ async open(known){this.state=await this.store.get(this.key)??{version:0,sequence:0,pending:false,data:notebookLayout(null,known)};try{const remote=await this.request(this.url);if(!this.state.pending)this.state={...this.state,version:remote.item?.version??0,data:notebookLayout(remote.item?.data,known)};else if(!this.state.flight&&(remote.item?.version??0)!==this.state.version)this.conflict=true;}catch(error){this.error=error;}return this.state.data;}
+ get data(){return this.state.data;}get pending(){return this.state?.pending;}
+ write(fn){const operation=this.queue.catch(()=>{}).then(fn);this.queue=operation;return operation;}
+ async update(fn){return this.write(async()=>{const next={...this.state,data:notebookLayout(fn(this.state.data)),pending:true,sequence:this.state.sequence+1};await this.store.put(this.key,next);this.state=next;return next.data;});}
+ set(data){return this.update(()=>data);}
+ async flush(){if(this.flushing)return this.flushing;this.flushing=this.flushOnce().finally(()=>this.flushing=null);return this.flushing;}
+ async flushOnce(){const flight=await this.write(async()=>{if(!this.state.pending)return null;if(this.conflict)throw Object.assign(Error('Page order changed on another device. Your device layout is preserved.'),{code:'layout-conflict'});const flight=this.state.flight??{sequence:this.state.sequence,body:{...this.state.data,version:this.state.version,mutationId:crypto.randomUUID()}};const next={...this.state,flight};await this.store.put(this.key,next);this.state=next;return flight;});if(!flight)return;let result;try{result=await this.request(this.url,{method:'PUT',body:flight.body});}catch(error){if(error.status===409){this.conflict=true;error.code='layout-conflict';}throw error;}if(!result.item)throw Error('Page order is not confirmed saved');await this.write(async()=>{const next={...this.state,version:result.item.version,pending:this.state.sequence!==flight.sequence};delete next.flight;await this.store.put(this.key,next);this.state=next;this.error=null;});}
+}

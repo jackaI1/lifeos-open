@@ -1,0 +1,8 @@
+import {probeSchoolRuntime,schoolIntakePrompt,schoolIntakeSchema} from '../integrations/school-runtime.mjs';import {portalPrompt,portalSchema} from '../integrations/portal-runtime.mjs';
+export async function invokeCloudCollector({input,config,grant,directory,signal}){
+ const provider=input.job.payload.provider;if(!['learn','outlook','careers'].includes(provider)||grant.model!=='demo-ai'||grant.effort!=='low')throw Error('The browser collector requires an admitted general model');
+ const prompt=provider==='learn'?schoolIntakePrompt({sourceUrls:input.job.payload.sourceUrls,maxPages:Math.min(5,Math.max(2,input.job.payload.maxPages??2)),sourceReadHints:input.job.payload.sourceReadHints??[],loginUsername:config.schoolLoginUsername??null,configuration:config}):portalPrompt(provider,config);
+ const response=await probeSchoolRuntime({directory,executable:config.aiExe,browserRuntime:config.schoolBrowserRuntime,model:grant.model,effort:grant.effort,timeoutMs:grant.maxJobMs,signal,promptOverride:prompt,schema:provider==='learn'?schoolIntakeSchema:portalSchema,metadataOnlyLogs:true,configuration:config});
+ const calls=response.events?.filter(e=>e.type==='item.completed'&&e.item?.type==='mcp_tool_call')??[],browserReadVerified=response.exitCode===0&&!response.timedOut&&calls.some(e=>e.item.server==='cua_repl'&&e.item.tool==='js'&&e.item.status==='completed'&&!e.item.error)&&!calls.some(e=>e.item.server!=='cua_repl'||e.item.tool!=='js')&&!response.events?.some(e=>e.type==='item.completed'&&e.item?.type==='command_execution');
+ if(!browserReadVerified)throw Error('The approved browser adapter did not complete a verified read');return {result:{browserReadVerified,raw:response.response}};
+}

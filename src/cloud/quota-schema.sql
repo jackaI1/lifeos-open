@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS records(kind TEXT NOT NULL,id TEXT NOT NULL,data TEXT NOT NULL CHECK(json_valid(data)),version INTEGER NOT NULL CHECK(version>0),created_at TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(kind,id));
+CREATE TABLE IF NOT EXISTS audit(id TEXT PRIMARY KEY,kind TEXT NOT NULL,record_id TEXT NOT NULL,before_json TEXT,after_json TEXT,created_at TEXT NOT NULL,actor TEXT NOT NULL,undo_of TEXT UNIQUE);
+CREATE TABLE IF NOT EXISTS mutations(id TEXT PRIMARY KEY,fingerprint TEXT NOT NULL,result TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS assertions(id TEXT PRIMARY KEY,ok INTEGER NOT NULL CHECK(ok=1));
+CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY,value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS ai_reservations(id TEXT PRIMARY KEY,category TEXT NOT NULL,model TEXT NOT NULL,created_at INTEGER NOT NULL,expires_at INTEGER NOT NULL,budget TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS ai_reservation_expiry ON ai_reservations(expires_at);
+CREATE TABLE IF NOT EXISTS ai_usage(id TEXT PRIMARY KEY,category TEXT NOT NULL,model TEXT NOT NULL,started_at INTEGER NOT NULL,ended_at INTEGER,before_json TEXT NOT NULL,after_json TEXT,result TEXT);
