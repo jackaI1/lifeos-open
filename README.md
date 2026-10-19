@@ -1,96 +1,181 @@
 # LifeOS Open
 
-LifeOS is a local personal workspace for planning a day, learning, reflecting and keeping everyday work together. This standalone edition retains the app's production screens and domain logic, with local SQLite persistence and an authored fictional workspace for **Alex Morgan**. No personal workspace or original git history is included.
+A standalone personal workspace for scheduling, coursework, lecture notebooks and everyday records, backed by local SQLite and seeded with fictional data.
 
 https://github.com/user-attachments/assets/82e27767-006d-4d87-b299-e10be3057acf
 
-![Fictional daily workspace](docs/screenshots/today.png)
+## Overview
 
-## Quick start
+Daily planning spans calendar commitments, deadlines, source material and records
+that need to stay useful after a reload. Lecture notes add another requirement:
+handwriting, audio and slides need a common timeline rather than separate files.
 
-Install **Node.js 24 or newer** with npm, then run from this directory:
+LifeOS Open runs the browser interface and domain rules against a local Node
+service. SQLite stores records and file bytes. The default workspace is authored
+for Alex Morgan, with fictional courses and contacts such as Maya Chen; it needs
+no external account. Optional assistant services use labelled demo replies until
+an operator configures a compatible provider.
+
+This personal project is the standalone open-source edition. It includes no
+personal workspace or original private history. The demo video, fixtures and included
+[screenshots](docs/screenshots/today.png) use fictional or synthetic content.
+See the [screen inventory](docs/features.md) and
+[route inventory](docs/api-routes.json) for the retained surface.
+
+## How it works
+
+1. **Serve a loopback workspace.** [`src/local/main.ts`](src/local/main.ts)
+   binds to `127.0.0.1`, checks the request host and delegates requests to
+   [`src/local/service.ts`](src/local/service.ts). The service supplies local
+   storage/file adapters to the existing [`src/cloud/app.mjs`](src/cloud/app.mjs)
+   routes. Local mutations are serialised so asynchronous read/plan/write steps
+   cannot interleave within this service instance.
+2. **Persist records and files.**
+   [`src/local/database.ts`](src/local/database.ts) adapts Node's SQLite API to
+   the D1-shaped interface used by the routes. Batches use `BEGIN IMMEDIATE`
+   with rollback on failure; the file database uses WAL and foreign keys.
+   [`src/local/objects.ts`](src/local/objects.ts) implements local file storage.
+   [`src/cloud/store.mjs`](src/cloud/store.mjs) manages versioned records,
+   mutation receipts and audit history. Version checks expose conflicting edits.
+3. **Seed a fictional workspace.**
+   [`src/local/workspace.ts`](src/local/workspace.ts) expands
+   [`demo/scenarios.mjs`](demo/scenarios.mjs) into schedules, coursework, notes,
+   finance and other records. Dates are positioned relative to first launch.
+   Existing databases are neither cleared nor silently reseeded.
+4. **Plan from saved commitments.** [`src/domain/today.mjs`](src/domain/today.mjs)
+   combines the day's state. [`src/domain/school.mjs`](src/domain/school.mjs)
+   ranks ready academic tasks using due-date urgency, capacity risk, review age
+   and difficulty, separating blocked tasks. These are deterministic rules, not
+   a learned priority model. [`src/domain/planning-insights.mjs`](src/domain/planning-insights.mjs)
+   derives capacity warnings and latest-start guidance from saved work windows.
+5. **Keep browser edits recoverable.** [`public/storage.js`](public/storage.js)
+   and [`public/lecture-storage.js`](public/lecture-storage.js) retain local
+   drafts and notebook state. [`public/lecture-edit-store.js`](public/lecture-edit-store.js)
+   and [`public/lecture-ink-journal.js`](public/lecture-ink-journal.js) support
+   durable notebook edits; [`public/recorder.js`](public/recorder.js) manages
+   recording. Timed ink/audio support replay; the bundled transcript is authored,
+   rather than recognised from arbitrary new speech.
+6. **Run local jobs or configured chat.**
+   [`src/local/services.ts`](src/local/services.ts) drains up to 20 eligible queued jobs
+   after successful writes, without a separate daemon. Default assistant replies
+   use saved fictional context. [`src/shared/llm.mjs`](src/shared/llm.mjs) implements
+   the optional compatible chat transport. Selected images and saved context can
+   leave the machine when real-provider mode is enabled.
+7. **Export and restore.** [`src/local/backup.ts`](src/local/backup.ts) creates
+   backups with file checksums and readback verification.
+   [`tools/restore.mjs`](tools/restore.mjs) restores to a new database and checks
+   structure, file bytes and equality. Sessions and worker credentials are omitted.
+
+## Design decisions and trade-offs
+
+- Reusing the route contracts retains validation and domain behaviour across the
+  standalone and hosted paths. It also leaves deployment-oriented modules that
+  need infrastructure beyond the local app.
+- SQLite makes records and file bytes inspectable in one local installation.
+  Synchronous database work and serial mutations limit concurrent throughput;
+  this service is intended for a personal workspace.
+- Device drafts and queues protect already-open work through disconnection.
+  They do not provide a complete offline app shell or offline cold startup.
+- Default demo services make the app usable without credentials. Their answers,
+  transcripts and refresh outcomes do not establish live-service quality.
+- Backups include private records and file bytes. Verification improves restore
+  confidence, but exports need the same care as the workspace itself.
+
+## Results and evaluation
+
+Reproducible here: `npm test` runs 50 unit/API regression tests against fictional
+fixtures, local persistence and controlled services. Run the command after
+`npm ci`; no credentials are required.
+
+The end-to-end command, `npm run test:e2e`, has 46 cases: the 21 workflows shown in the demo video,
+each at 1440 × 900 and 390 × 844, plus navigation and cold-start coverage at
+each size. The repository's release audit recorded all 46 passing, along with
+49/49 built-app smoke checks. These counts describe synthetic functional
+coverage, not a reliability rate or measured personal-productivity gain.
+The tests and commands are described below; live providers were not certified.
+
+Headline behaviours have direct regression coverage:
+
+| Behaviour | Evidence |
+| --- | --- |
+| Schedule changes, conflicts and priority order | [02-schedule](test/e2e/02-schedule.spec.mjs), [03-overlap](test/e2e/03-overlap.spec.mjs), [05-priority](test/e2e/05-priority.spec.mjs) |
+| Ink persistence, recording and timed replay | [07-notebook](test/e2e/07-notebook.spec.mjs), [08-recording](test/e2e/08-recording.spec.mjs), [09-timed-replay](test/e2e/09-timed-replay.spec.mjs) |
+| Saved context reaches assistant adapters | [provider regressions](test/provider-neutral.test.mjs), [11-tutor](test/e2e/11-tutor.spec.mjs), [12-advisor](test/e2e/12-advisor.spec.mjs) |
+| Queued edits survive a disconnect and reconnect | [18-offline](test/e2e/18-offline.spec.mjs) |
+| Photo replacement/history and journal revisions | [19-photo](test/e2e/19-photo.spec.mjs), [20-journal](test/e2e/20-journal.spec.mjs) |
+| Backup restore and local API persistence | [local tests](test/local.test.mjs), [review regressions](test/review-regressions.test.mjs) |
+
+## Getting started
+
+Install Node.js 24 or newer with npm. Fresh-copy verification used Node 24.19.0 and npm 12.2.0.
+Run these commands from the repository root:
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open **http://127.0.0.1:8787**. The first launch creates `.local/workspace.sqlite` and seeds fictional courses, overlapping commitments, coursework, definitions, a lecture with timed ink/audio/slides, recipes, a budget, projects, journal entries and contacts such as Maya Chen. It needs no accounts or API keys. The sidebar identifies the demo and its mock services. Stop the server with **Ctrl-C**.
+Open `http://127.0.0.1:8787`. The server prints `LifeOS standalone`, its loopback
+URL and PID. First launch creates `.local/workspace.sqlite` and seeds the
+fictional workspace, including an upcoming lab and a sample lecture with timed
+ink, spoken audio and slides. No `.env` or API key is needed. Stop with Ctrl-C.
 
-`npm install` followed by `npm run dev` also works without an `.env`. For a production build, run `npm run build` then `npm start`. A new workspace starts with a lab ten minutes away, a room, packing instructions, and a pre-lab deadline. For a reproducible morning demo, use the single optional flag `DEMO_CLOCK=2026-10-19T10:35:00Z npm run dev` with a new database. That clock advances while the server runs; it is not needed for normal use. To change the port, set `PORT` in an optional `.env` file copied from `.env.example`. Run all commands from the project root.
+The server accepts `PORT` and `LIFEOS_DATABASE` environment overrides. To use a
+repeatable advancing demo clock with a new fictional database:
 
-## Features
+```sh
+DEMO_CLOCK=2026-10-19T10:35:00Z LIFEOS_DATABASE=.local/clock-demo.sqlite npm run dev
+```
 
-- Today: a live remaining-time countdown, local calendar event creation/editing/deletion, overlapping commitments that clear when moved, editable schedule entries, priority-sorted academic work with editable deadlines and difficulty, travel estimates, presence, work timers and planning tools.
-- Academics: course and source references, assignment briefs, rich coursework, progress, co-op drafts, learning concepts and misconceptions, and an academic advisor.
-- Lecture notebooks: pen and mouse ink, optional finger writing in Paper options, highlighter/eraser/lasso/graphs, undo/redo and pages, image/PDF sources, slide ranges and viewing, recording with permission, local audio recovery, tap timed ink to replay with a following transcript, context-aware lecture tutor, glossary, bookmarks and recall-ranked study cards. Click the middle of a slide to place that slide in the notebook. Use the save-status control then **Save notes now** to upload ink immediately; device saves are immediate and background uploads coalesce over 30 seconds. A fictional spoken recording and two slide pages are included.
-- Notes: rich text, checklists, folders, pinning, attached images, revision conflict recovery and exports.
-- Personal life: recipes and cooking steps/timers, groceries and recurring reminders, budget and categorisation, side projects with persistent steps and time blocks, exercise plans/run logs, and keep-in-touch schedules with a **Log contact** action.
-- Reflection: daily photo upload/replacement and captions, journal templates with revision preview/restore, devotional responses and history, prayer lists, recording, transcript review and generic daily reflection placeholders.
-- Support/settings: mock app support, account/presence devices, quota and service status, audit/revision history, deleted-item recovery, complete exports and verified local backups.
-- Offline drafting: browser IndexedDB/localStorage retain unsent edits, ink, audio chunks and cooking/email work. SQLite persists server records across restarts. Network disconnection retains writing and queued schedule edits; reconnect to sync them. Journal and photo editors keep drafts on device; press Save to queue them before leaving. Reloading the entire app while offline is not supported; reconnect before reloading. API reads are not indiscriminately cached.
-- Email: fictional sample messages and local draft composition/export. The original feature is a preview; sending mail is not implemented.
+The clock advances while the process runs. The flag does not reset an existing
+database. For the bundled production entry point:
 
-See [the screen and service inventory](docs/features.md) and [the route inventory](docs/feature-inventory.json) for coverage and boundaries.
+```sh
+npm run build
+npm start
+```
 
-![Fictional notebook and slides](docs/screenshots/lecture-slides.png)
-![Fictional budget](docs/screenshots/finances.png)
-![Fictional notes](docs/screenshots/notes-detail.png)
-
-## Configuration
-
-`.env` is optional and ignored by git. `.env.example` contains placeholder names only.
-
-| Setting | Default | Effect |
-| --- | --- | --- |
-| `PORT` | `8787` | Loopback listener |
-| `AUTH_MODE` | `demo` | `demo`, token-protected `local`, or Google OAuth |
-| `DEMO_SEED` | `true` | Seed only a new database; use `false` for an empty workspace |
-| `LIFEOS_DATABASE` | `.local/workspace.sqlite` | Persistent local database |
-| `LOCAL_ACCESS_TOKEN` | unset | Required for local mode, at least 24 random characters |
-| `LLM_MODE` | `mock` | `real` enables the configured compatible chat API |
-| `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | unset | Required together for real AI; messages go to this endpoint |
-| `GOOGLE_MODE` | `local` | `real` opts into Google file operations |
-| `ALLOWED_EMAIL` | fictional demo identity | Configurable allowed OAuth/Drive owner |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` | unset | Operator-owned OAuth resources |
-| `APP_ORIGIN` | loopback and chosen port | Must match the origin opened in the browser |
-| `APP_CONFIG` | local resource map | JSON configuration for calendars, Drive folders and optional integration policy |
-| `SCHOOL_HOME_URL`, `SCHOOL_CAREERS_URL`, `SCHOOL_OUTLINE_URL` | fictional HTTPS URLs | Hosts used consistently by retained school validators, prompts and link construction |
-| `SCHOOL_ADDITIONAL_HOSTS` | unset | Comma-separated additional HTTPS source hostnames, with no credentials or paths |
-| `LIFEOS_CLOUD_ORIGIN` | worker config `origin` | HTTPS origin for native AI/transcription workers; credential origin/component scope must match |
-| `BETA_ORIGIN` | unset | Isolated beta destination for hosted production navigation and release links |
-
-To create an empty private workspace, use a **new** database path with `AUTH_MODE=local`, `DEMO_SEED=false` and your own access token. Existing databases are never silently cleared or reseeded. Keep the token outside git. Demo mode is intended for local exploration.
-
-AI answers, transcription, source refresh, contact extraction, cooking help, maintenance and release actions are explicitly **mocked** by default. Mock results are labelled scripted examples. The lecture tutor uses saved course notes, and the lab advisor uses saved schedule and coursework. They do not analyse recordings, handwriting or external course portals. Configured compatible chat requests include the same saved context. Recording bytes and handwritten timestamps save locally; the authored transcript belongs to the bundled sample recording. Real AI mode only changes assistant replies; it preserves the other local fallbacks. Files and records really save locally. Recording uses the browser's microphone APIs and needs browser permission. The demo recording was generated from authored fictional speech; its transcript is authored too. Local maintenance stores a report and never rewrites or deploys application code.
-
-Optional real compatible AI and Google file/OAuth adapters are implemented, but were not exercised with live credentials during release preparation. Institution portal collection and native background workers are retained in `src/integrations` and `src/runtime` for configured deployments; a personal portal/account is never built into the standalone startup. Hosting, push delivery, managed D1 bindings and desktop workers require an operator-owned deployment. A complete local export includes private records, lecture/finance/study records and file bytes. Create a verified backup in Settings, download it, and restore only into a new database with:
+This builds `build/server.mjs` and starts the same loopback workspace. Stop any
+development instance first if both use the same port. Settings can create and
+download a verified backup; to restore that downloaded file to a new path:
 
 ```sh
 npm run restore -- backup.json .local/restored.sqlite
 ```
 
-Restoration checks database structure, file checksums and readback equality; it never overwrites an existing database. Authentication sessions and worker credentials are intentionally omitted. Start with LIFEOS_DATABASE set to the restored path.
+The command refuses to overwrite an existing database. Set `LIFEOS_DATABASE` to
+the restored path before the next start. `backup.json` is an operator-created
+export, not a bundled fixture.
 
-For retained workers, export the same school settings in the worker process and deployment, or supply `schoolHomeUrl`, `schoolCareersUrl`, `schoolOutlineUrl` and `schoolAdditionalHosts` through its JSON configuration (`APP_CONFIG` for the hosted API). Invoke direct worker commands with Node’s `--env-file-if-exists=.env` option when using an env file. Maintenance uses two explicit `cloudConnections` mapped to its distinct `targets.beta` and `targets.production` origins. Those targets require separate credentials, databases, archive folders, job namespaces, deployment targets and data directories; configured alternate origins must also remain separate. No tenant hostname is built in. Worker recovery directories must be owned by the worker user and use canonical absolute paths without symlinks. Optional real deployment controllers require a reviewed base commit and operator-owned deployment configuration; the fresh public history intentionally has no commits.
+### Configuration
 
-The standalone workspace keeps cooking steps, timers and grocery reviews on this browser. Automatic school browsing and automatic code editing are unavailable with a chat-only provider; import materials and review code changes manually. Changing `ALLOWED_EMAIL` before first launch gives new fictional files that owner; changing an existing workspace identity requires an intentional data migration.
+The defaults are for local exploration. Configuration names and placeholders
+are documented in [`.env.example`](.env.example); `.env` is optional and ignored.
 
-External service links are hidden unless their origins are explicitly configured with `GOOGLE_MODE=real` and `EXTERNAL_LINK_ORIGINS` (or the relevant school URL settings). Local source documents remain available. Desktop chat sends with Enter; Shift+Enter adds a line. On phones, use Send.
+| Setting | Default | Effect |
+| --- | --- | --- |
+| `PORT` | `8787` | Loopback port |
+| `LIFEOS_DATABASE` | `.local/workspace.sqlite` | SQLite path |
+| `DEMO_SEED` | `true` | Seed only a new database |
+| `AUTH_MODE` | `demo` | Demo, token-protected `local`, or Google OAuth |
+| `LOCAL_ACCESS_TOKEN` | unset | Local mode requires at least 24 characters |
+| `LLM_MODE` | `mock` | `real` enables configured chat requests |
+| `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | unset | Compatible provider connection |
+| `LLM_MODELS` | unset | Additional comma-separated model choices |
+| `GOOGLE_MODE` | `local` | `real` opts into configured Google file operations |
 
-## Architecture
+For an empty workspace use a new database path, `DEMO_SEED=false`,
+`AUTH_MODE=local` and your own token. Existing data requires an intentional
+migration when changing ownership. Real Google/OAuth, school origins and retained
+workers need operator-owned resources; they are not required by the demo.
 
-`public/` contains the original browser ESM UI and vendored editor, math, PDF and ink libraries. `src/domain/` holds deterministic planning rules. `src/cloud/` implements bounded, validated routes, optimistic versions, mutation receipts and audit history. `src/shared/` shares contracts between the UI, server and workers.
+## Testing
 
-`src/local/` runs those routes on Node's SQLite API through a D1-shaped adapter. File operations use a local Drive-shaped transport stored in the same database; checksums and ownership checks remain active. Local jobs complete synchronously after a successful write, without background daemons. Real AI is an explicitly configured compatible chat endpoint shared by assistant and structured AI jobs. Set `LLM_MODEL` for the default and optionally `LLM_MODELS` for comma-separated extra choices. Demo mode offers only **Demo AI (offline)**. Compatible endpoints do not expose account quota, so usage UI stays hidden. `demo/scenarios.mjs` reuses authored portfolio fixtures; `src/local/workspace.ts` expands them and moves dates relative to first launch.
-
-The browser retains drafts in its own origin. Use a fresh browser profile when exploring exported workspaces. No running personal app, port, browser storage or external account is required. Source `.lifeos` directories are never part of this project.
-
-## Development and checks
+After installing dependencies:
 
 ```sh
-npm run build
 npm test
+npm run build
 npm run lint
 npm run typecheck
 npm run privacy
@@ -99,12 +184,63 @@ npm run test:smoke
 npm run test:e2e
 ```
 
-The end-to-end suite uses isolated fictional databases and Chromium with fake microphone input, covers each of the 21 film features at 1440×900 and 390×844, and rejects browser errors or failed same-origin requests. It also checks configured AI against a loopback compatible stub, offline edits, invalid photo replacement, and navigation. It never uses a browser profile or a live provider. Screenshots, diagnostics and process ownership records go under `.runtime/e2e/` (override with `PARITY_DIR`). The suite runs without `.env` and owns its disposable loopback servers; all close in `finally`. It has no test retries.
+- Unit/API tests: 50 cases in [`test/`](test/), covering local persistence,
+  authentication, revisions, backup/restore, provider context and configuration.
+- E2E: 46 cases in [`test/e2e/`](test/e2e/), using fictional databases, fake
+  microphone input and a loopback provider stub. Tests assert visible results
+  and persistence, and reject console/page errors or failed same-origin requests.
+- Smoke: 49 checks driven by [`tools/smoke.mjs`](tools/smoke.mjs) against the
+  built entry, including navigation and representative interactions.
+- [`tools/privacy.mjs`](tools/privacy.mjs) scans publishable source for private
+  identifiers and secrets, reporting locations without values. Vendor attribution
+  is reported separately. Operator-specific patterns may be supplied externally.
 
-TypeScript checks the new local adapters strictly; inherited JavaScript receives syntax/control-flow linting and functional tests. Browser smoke tests launch one isolated page and a disposable server on a free port, write evidence under ignored `.runtime/smoke/`, and close both in `finally`. They do not attach to a personal browser. Set `PLAYWRIGHT_BROWSERS_PATH` or `PLAYWRIGHT_EXECUTABLE_PATH` to reuse an installed test runtime.
+Browser suites own isolated Chromium contexts and disposable loopback servers,
+closing them in `finally`. They use no personal browser profile. To reuse an
+installed test runtime, set `PLAYWRIGHT_EXECUTABLE_PATH` or
+`PLAYWRIGHT_BROWSERS_PATH`. Evidence goes into ignored `.runtime/` directories.
+TypeScript checks the local adapters strictly; inherited JavaScript receives
+syntax/control-flow linting and functional tests.
 
-Run a dedicated secret scanner such as `gitleaks dir . --redact` before publishing. The built-in privacy scan reports locations and finding types without values. Supply owner-specific scan regexes through LIFEOS_PRIVACY_PATTERNS, pointing to an external JSON array of pattern/flags objects; keep that file outside this repository. No owner-specific identities or encoded identifiers are embedded in the published scanner. Third-party attribution emails in vendor code/notices are reported separately for review. Screenshots in this README show only the generated fictional workspace.
+## Project structure
+
+```text
+public/                      browser ESM interface, notebook and vendored libraries
+src/domain/                  deterministic planning and personal-workspace rules
+src/cloud/                   API routes, validation, versions and audit history
+src/local/                   Node service, SQLite/files, seed and backup adapters
+src/shared/                  shared contracts and compatible chat transport
+src/integrations/, src/runtime/  retained configured-deployment paths
+demo/                       authored fictional scenarios
+test/                       unit/API tests and end-to-end specs
+tools/                      build, privacy, restore and browser harnesses
+docs/                       screen/route inventories and fictional screenshots
+THIRD_PARTY_NOTICES.md        dependency and bundled-asset terms
+```
+
+## Limitations and known issues
+
+- Full startup or reload while offline is unsupported. Already-open editors and
+  durable queues retain work; reconnect to synchronise before reloading the app.
+- Demo transcription and handwriting interpretation are authored examples.
+  Recording bytes/timing save, but automatic recognition of arbitrary new audio
+  or ink needs additional services. No recognition-quality claim is made.
+- The default model picker offers Demo AI (offline). Compatible chat providers
+  receive configured context/images, but their live quality and account behaviour
+  were not tested. Compatible endpoints do not supply account quota data.
+- Live email sending is unimplemented; local draft composition/export is available.
+  School collection, push delivery, phone arrival automations and native workers
+  require additional configured infrastructure.
+- Local maintenance stores a report. Automatic code editing and deployment are
+  unavailable with the standalone chat-only setup.
+- External service links require configured origins. Local source documents stay
+  available. Browser microphone permission is required for new recordings.
+- Demo authentication is for loopback exploration. A hosted/multi-user deployment
+  requires its own configuration and operational validation.
+
 ## License
 
-MIT, see LICENSE. Third-party components are listed in THIRD_PARTY_NOTICES.md.
-
+MIT; see [`LICENSE`](LICENSE). Bundled libraries/assets and dependencies retain
+their own terms, including web-push's MPL-2.0 file-level obligations. They are
+listed in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md), with synthetic
+media provenance in [`ASSET_PROVENANCE.md`](ASSET_PROVENANCE.md).
