@@ -1,0 +1,29 @@
+import {notificationReason,deliveryDevice} from './notification-history.mjs';
+import webpush from 'web-push';import {hash} from '../shared/hash.mjs';import {AppError} from '../shared/errors.mjs';
+export function quietNow(now,preferences={}){const clock=new Intl.DateTimeFormat('en-GB',{timeZone:preferences.timezone??'America/Toronto',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(now)),start=preferences.quietStart??'22:00',end=preferences.quietEnd??'06:30';return start===end?false:start<end?clock>=start&&clock<end:clock>=start||clock<end;}
+export function notificationMessage(payload,type='notification'){
+ if(type==='notification-test')return {notice:'test',body:'LifeOS notifications are connected.'};
+ if(payload.reminderId)return {notice:'reminder-due',body:'A saved reminder is due.'};
+ if(payload.notice==='hourly-prayer')return {notice:'hourly-prayer',body:'Take a moment to pray.'};
+ if(payload.notice==='practice-due'&&['prayer','devotional'].includes(payload.practice))return {notice:'practice-due',body:payload.practice==='prayer'?'Prayer is still due today.':'Devotional is still due today.'};
+ if(payload.notice==='reply-ready')return {notice:'reply-ready',body:'Your LifeOS assistant has replied.'};
+ return null;
+}
+export async function cloudNotification({store,env,config,job}){
+ const route=['today','support','prayer','devotional','school','reminders'].includes(job.payload.route)?job.payload.route:'today',id=job.payload.id??job.id,preferences=(await store.get('settings','preferences'))?.data??{};
+ if(job.payload.reminderId){const reminder=await store.get('reminder',job.payload.reminderId),list=reminder&&await store.get('reminder-list',reminder.data.listId);if(!reminder||reminder.version!==job.payload.reminderVersion||reminder.data.completed||reminder.data.archived||!list||list.data.archived)return {status:'superseded',delivered:0};if(quietNow(Date.now(),preferences))return {complete:false,nextAttemptAt:Date.now()+15*60000,status:'quiet-hours',delivered:0};}
+ if(job.type!=='notification-test'&&job.payload.notice!=='hourly-prayer'&&quietNow(Date.now(),preferences))return {status:'quiet-hours',delivered:0};
+ const message=notificationMessage(job.payload,job.type);if(!message)return {status:'suppressed',delivered:0};
+ if(job.payload.expiresAt&&Date.now()>=job.payload.expiresAt)return {status:'expired',delivered:0};
+ const selected=deliveryDevice(await store.list('push-subscription',{limit:20}),preferences.notificationDeviceId),subscriptions=selected?[selected]:[];let delivered=0;
+ const now=new Date().toISOString(),claim=await store.sql("INSERT INTO notification_receipts VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING RETURNING id",id,message.notice,route,notificationReason(job),'prepared',now,now).first();if(!claim){const receipt=await store.sql('SELECT stage FROM notification_receipts WHERE id=?',id).first();return {status:receipt?.stage==='provider-accepted'?'already-delivered':'delivery-unconfirmed',delivered:0,deviceConfirmed:false};}
+ if(env.PUSH_PRIVATE_KEY&&config.pushPublicKey)for(const subscription of subscriptions){const key='push:'+hash(id+':'+subscription.data.endpoint);if(await store.meta(key))continue;const endpoint=new URL(subscription.data.endpoint);if(endpoint.protocol!=='https:'||!['web.push.apple.com','fcm.googleapis.com','updates.push.services.mozilla.com'].some(host=>endpoint.hostname===host||endpoint.hostname.endsWith('.'+host)))throw new AppError('Push destination denied',403);
+  const details=webpush.generateRequestDetails(subscription.data,JSON.stringify({id,route,notice:message.notice,body:message.body,expiresAt:job.payload.expiresAt??Date.now()+3600000}),{TTL:Math.max(1,Math.min(3600,Math.floor(((job.payload.expiresAt??Date.now()+3600000)-Date.now())/1000))),urgency:'normal',vapidDetails:{subject:config.origin??env.APP_ORIGIN,publicKey:config.pushPublicKey,privateKey:env.PUSH_PRIVATE_KEY}});const response=await fetch(details.endpoint,{method:'POST',headers:details.headers,body:details.body,redirect:'manual',signal:AbortSignal.timeout(10000)});
+  if([404,410].includes(response.status)){const now=new Date().toISOString(),after={...subscription,version:subscription.version+1,updatedAt:now,data:{...subscription.data,disabled:true,disabledAt:now}};await store.commit({id:'expired-push-'+subscription.id,fingerprint:{subscriptionId:subscription.id},changes:[{kind:subscription.kind,id:subscription.id,before:subscription,after,auditId:crypto.randomUUID(),actor:'expired-push-subscription'}],result:{disabled:true}});continue;}
+  if(!response.ok){await store.sql("UPDATE notification_receipts SET stage='provider-rejected',updated_at=? WHERE id=?",new Date().toISOString(),id).run();throw new AppError('Notification delivery was rejected; the reminder remains saved',503);}await store.sql('INSERT INTO meta VALUES(?,?) ON CONFLICT(key) DO NOTHING',key,JSON.stringify({at:new Date().toISOString()})).run();delivered++;
+ }
+ await store.sql('UPDATE notification_receipts SET stage=?,updated_at=? WHERE id=?',delivered?'provider-accepted':'no-device',new Date().toISOString(),id).run();
+ if(job.payload.notice==='hourly-prayer')return {status:delivered?'provider-accepted':'no-device',delivered,deviceConfirmed:false};
+ const before=await store.get('notification',id);if(!before){const now=new Date().toISOString();await store.commit({id:'notification-'+id,fingerprint:{id,route},changes:[{kind:'notification',id,before:null,after:{kind:'notification',id,version:1,createdAt:now,updatedAt:now,data:{id,route,createdAt:now,status:delivered?'provider-accepted':'unread',message:message.body,...(job.payload.reminderId?{url:(config.origin??env.APP_ORIGIN)+'/#reminders?reminder='+encodeURIComponent(job.payload.reminderId)}:{})}},auditId:crypto.randomUUID(),actor:'cloud-notification'}],result:{saved:true}});}
+ return {status:delivered?'provider-accepted':'stored-in-app',delivered,deviceConfirmed:false};
+}

@@ -1,0 +1,42 @@
+{
+  "name": "lifeos-open",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env src/local/main.ts",
+    "start": "node --env-file-if-exists=.env build/server.mjs",
+    "build": "node tools/build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "lint": "eslint src public demo tools test",
+    "typecheck": "tsc --noEmit",
+    "test:smoke": "node tools/smoke.mjs",
+    "privacy": "node tools/privacy.mjs",
+    "restore": "node tools/restore.mjs",
+    "test:e2e": "node tools/e2e.mjs"
+  },
+  "dependencies": {
+    "@tiptap/core": "3.31.3",
+    "@tiptap/extension-highlight": "3.31.3",
+    "@tiptap/extension-table": "3.31.3",
+    "@tiptap/extension-task-item": "3.31.3",
+    "@tiptap/extension-task-list": "3.31.3",
+    "@tiptap/extension-text-align": "3.31.3",
+    "@tiptap/extension-text-style": "3.31.3",
+    "@tiptap/starter-kit": "3.31.3",
+    "google-auth-library": "11.0.2",
+    "web-push": "3.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "esbuild": "0.28.1",
+    "eslint": "^9.39.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.46.0",
+    "playwright": "^1.56.0"
+  },
+  "license": "MIT"
+}

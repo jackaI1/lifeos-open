@@ -1,0 +1,222 @@
+[
+  {
+    "source": "src/cloud/app.mjs",
+    "paths": [
+      "/api/actions/cloud-sync",
+      "/api/actions/logout",
+      "/api/actions/personal-calendar",
+      "/api/actions/release",
+      "/api/actions/schedule-entry",
+      "/api/actions/upload-finalize",
+      "/api/actions/upload-reconcile",
+      "/api/assistant/",
+      "/api/audit",
+      "/api/bootstrap",
+      "/api/cooking-help",
+      "/api/cooking-help/",
+      "/api/daily-photos",
+      "/api/database-budget",
+      "/api/deleted",
+      "/api/devotional-step",
+      "/api/export",
+      "/api/finances",
+      "/api/health",
+      "/api/learning-notes",
+      "/api/lecture-reviews",
+      "/api/local/backups/{snapshotId}",
+      "/api/logout",
+      "/api/notifications/history",
+      "/api/operation-world",
+      "/api/prayer-answers",
+      "/api/prayer-dates",
+      "/api/presence",
+      "/api/private-friends",
+      "/api/private-journal/",
+      "/api/private-notes",
+      "/api/private-travel",
+      "/api/push/config",
+      "/api/quota",
+      "/api/quota/interactive",
+      "/api/quota/policy",
+      "/api/quota/refresh",
+      "/api/releases",
+      "/api/replan",
+      "/api/revisions/",
+      "/api/schedule",
+      "/api/session",
+      "/api/task-brief/",
+      "/api/task-tools/",
+      "/api/worker/"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/assistant.mjs",
+    "paths": [
+      "/api/assistant/",
+      "/api/assistant/preparations",
+      "/api/assistant/proposals/",
+      "/api/assistant/threads"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/cooking-help.mjs",
+    "paths": [
+      "/api/cooking-help",
+      "/api/worker/cooking-"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/deleted.mjs",
+    "paths": [
+      "/api/deleted",
+      "/api/deleted/candidates",
+      "/api/deleted/kinds"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/devices.mjs",
+    "paths": [
+      "/api/devices",
+      "/api/devices/revoke",
+      "/api/presence"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/files.mjs",
+    "paths": [
+      "/api/files/"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/finances.mjs",
+    "paths": [
+      "/api/finances",
+      "/api/finances/category",
+      "/api/finances/reconcile",
+      "/api/finances/rules",
+      "/api/finances/transaction",
+      "/api/finances/undo"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/handoff.mjs",
+    "paths": [
+      "/api/materials/"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/learning-notes.mjs",
+    "paths": [
+      "/api/learning-notes"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/lecture-study.mjs",
+    "paths": [
+      "/api/lectures/"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/lectures.mjs",
+    "paths": [
+      "/api/lecture-lessons",
+      "/api/lecture-permission/",
+      "/api/lectures"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/prayer-dates.mjs",
+    "paths": [
+      "/api/prayer-dates"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/project-artifacts.mjs",
+    "paths": [
+      "/api/assistant/preparations"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/records.mjs",
+    "paths": [
+      "/api/devotionals",
+      "/api/jobs"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/reminders.mjs",
+    "paths": [
+      "/api/actions/"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/replanning.mjs",
+    "paths": [
+      "/api/replan"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/spiritual-tools.mjs",
+    "paths": [
+      "/api/devotional-step",
+      "/api/prayer-answers"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/time-sessions.mjs",
+    "paths": [
+      "/api/time-sessions"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/cloud/worker-api.mjs",
+    "paths": [
+      "/api/worker/",
+      "/api/worker/admit",
+      "/api/worker/assistant-read",
+      "/api/worker/claim",
+      "/api/worker/cooking-",
+      "/api/worker/fail",
+      "/api/worker/file-chunk",
+      "/api/worker/file-manifest",
+      "/api/worker/friend-image",
+      "/api/worker/heartbeat",
+      "/api/worker/lease",
+      "/api/worker/progress",
+      "/api/worker/quota",
+      "/api/worker/release-backup",
+      "/api/worker/release-catalogue",
+      "/api/worker/release-check",
+      "/api/worker/result",
+      "/api/worker/usage",
+      "/api/worker/wait"
+    ],
+    "status": "retained; original validated route backed by local SQLite or mock service"
+  },
+  {
+    "source": "src/local/service.ts",
+    "paths": [
+      "/api/operation-world",
+      "/api/session",
+      "/auth/local"
+    ]
+  }
+]

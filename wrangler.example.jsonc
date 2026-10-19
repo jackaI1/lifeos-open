@@ -1,0 +1,10 @@
+{
+  // Optional managed deployment template. Supply your own resources; never commit populated config.
+  "name": "lifeos-open",
+  "main": "src/cloud/app.mjs",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {"directory": "./public", "binding": "ASSETS"},
+  "d1_databases": [{"binding": "DB", "database_name": "YOUR_DATABASE_NAME", "database_id": "YOUR_DATABASE_ID"}],
+  "vars": {"APP_ORIGIN": "YOUR_HTTPS_ORIGIN", "ENVIRONMENT": "beta", "ALLOWED_EMAIL": "YOUR_ALLOWED_EMAIL", "APP_CONFIG": "YOUR_JSON_CONFIGURATION"}
+}

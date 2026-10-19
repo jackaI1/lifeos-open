@@ -1,0 +1,8 @@
+import {assistantReplySchema} from './assistant-contract.mjs';import {AppError} from './errors.mjs';
+export const tutorReplySchema={...assistantReplySchema,properties:{...assistantReplySchema.properties,sources:{type:'array',items:{type:'object',additionalProperties:false,properties:{quote:{type:'string'},page:{type:'integer'}},required:['quote','page']}},assumptions:{type:'array',items:{type:'string'}}},required:[...assistantReplySchema.required,'sources','assumptions']};
+export function validateTutorEvidence(output,context,{omitUnverified=false}={}){
+ const sources=output.sources??[],assumptions=output.assumptions??[];if(!Array.isArray(sources)||sources.length>8||!Array.isArray(assumptions)||assumptions.length>10||assumptions.some(s=>typeof s!=='string'||s.length>2000))throw new AppError('Tutor evidence exceeds its limits');
+ const verified=sources.filter(s=>s&&typeof s.quote==='string'&&s.quote.trim().length>=3&&s.quote.length<=3000&&s.page===context.slide?.pageNumber&&context.slide?.text?.includes(s.quote)),unverifiedSourceCount=sources.length-verified.length;
+ if(unverifiedSourceCount&&!omitUnverified)throw new AppError('The tutor cited text that is not in the provided slide');
+ return {sources:verified,assumptions:[...assumptions,...(unverifiedSourceCount?['Some generated slide quotations could not be verified and were omitted. Check the explanation against your course source.']:[])],...(unverifiedSourceCount?{unverifiedSourceCount}:{}),sourceId:context.slide?.sourceId??null,sourcePage:context.slide?.pageNumber??null,sourceHash:context.slide?.sourceHash??null,lectureId:context.lecture.id,courseId:context.course.id,structured:output.sources!==undefined};
+}

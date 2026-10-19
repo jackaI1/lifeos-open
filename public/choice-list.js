@@ -1,0 +1,2 @@
+import {el,field} from './ui.js';
+export function choiceList(label,nodes){const list=el('div',{class:'choice-list',role:'group','aria-label':label},nodes);if(nodes.length<=12)return list;const query=field('Find '+label.toLowerCase(),{type:'search'});query.input.oninput=()=>{const value=query.input.value.trim().toLowerCase();for(const node of nodes)node.hidden=!node.textContent.toLowerCase().includes(value);};return el('div',{},query.node,list);}

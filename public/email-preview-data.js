@@ -1,0 +1,5 @@
+export const EMAIL_FIXTURE_VERSION='email-preview-v1';
+export const SAMPLE_MESSAGES=Object.freeze([
+ Object.freeze({id:'sample-lecture-room',threadId:'sample-thread-room',sender:'Course office (fictional)',address:'alex@example.invalid',subject:'Room change for the practice session',date:'2026-10-06T16:30:00Z',unread:true,body:'This is a fictional message for trying the Email layout.\n\nThe practice session has moved to Room 204. Bring your own notes and arrive a few minutes early.\n\nNo real school information was read.',attachments:[]}),
+ Object.freeze({id:'sample-project-check',threadId:'sample-thread-project',sender:'Project partner (fictional)',address:'alex@example.invalid',subject:'A quick check before the next small step',date:'2026-10-05T18:15:00Z',unread:false,body:'This is a fictional message, not a connected inbox.\n\nCould you check the available space before we choose materials?\n\n<img src="https://example.test/never-loaded"> is deliberately shown as plain text. No image or attachment is fetched.',attachments:[{name:'fictional-sketch.pdf',size:'18 KB'}]})
+]);
