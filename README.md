@@ -2,7 +2,7 @@
 
 A standalone personal workspace for scheduling, coursework, lecture notebooks and everyday records, backed by local SQLite and seeded with fictional data.
 
-https://github.com/user-attachments/assets/82e27767-006d-4d87-b299-e10be3057acf
+https://github.com/user-attachments/assets/507355df-52b6-4dfb-8c79-15ccb2f1134e
 
 ## Overview
 
