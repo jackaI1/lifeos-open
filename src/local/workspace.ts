@@ -1,6 +1,6 @@
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
-import type {LocalDatabase} from './database.ts';
+import type {WorkspaceDatabase} from './database.ts';
 import {LocalObjects} from './objects.ts';
 import {scenarioRecords,scenarioEvents,assignmentBundle,STORY_DAY} from '../../demo/scenarios.mjs';
 import {assignmentSources} from '../shared/assignment-brief.mjs';
@@ -9,8 +9,8 @@ const sha=(s:string|Uint8Array)=>createHash('sha256').update(s).digest('hex');
 export const DEMO_NAME='Alex Morgan';
 export const DEMO_EMAIL='alex@example.invalid';
 export function syntheticAudio(){const rate=8000,seconds=6,buffer=Buffer.alloc(44+rate*seconds*2);buffer.write('RIFF');buffer.writeUInt32LE(buffer.length-8,4);buffer.write('WAVEfmt ',8);buffer.writeUInt32LE(16,16);buffer.writeUInt16LE(1,20);buffer.writeUInt16LE(1,22);buffer.writeUInt32LE(rate,24);buffer.writeUInt32LE(rate*2,28);buffer.writeUInt16LE(2,32);buffer.writeUInt16LE(16,34);buffer.write('data',36);buffer.writeUInt32LE(buffer.length-44,40);for(let i=0;i<rate*seconds;i++)buffer.writeInt16LE(Math.round(Math.sin(i*2*Math.PI*220/rate)*800*Math.sin(i*Math.PI/(rate*seconds))),44+i*2);return buffer;}
-export async function makeWorkspace(db:LocalDatabase,{demo=true,now=new Date(),owner=DEMO_EMAIL}={}){
- db.exec(await readFile('src/cloud/schema.sql','utf8'));
+export async function makeWorkspace(db:WorkspaceDatabase,{demo=true,now=new Date(),owner=DEMO_EMAIL,readAsset:load=readFile}={}){
+ db.exec(await load('src/cloud/schema.sql','utf8'));
  if(await db.prepare("SELECT value FROM meta WHERE key='local-initialized'").first())return;
  const date=lifeosDay(now.getTime(),'America/Toronto'),stamp=now.toISOString(),objects=new LocalObjects(db,owner);
  const rec=async(kind:string,id:string,data:any)=>db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?)').bind(kind,id,JSON.stringify(data),1,stamp,stamp).run();
@@ -54,7 +54,7 @@ export async function makeWorkspace(db:LocalDatabase,{demo=true,now=new Date(),o
  const objectKey='lecture-page:'+lectureId+'-p-0001';const content=JSON.stringify(page);const pageFile='demo-page-file';await objects.put(pageFile,{name:'Fictional lecture page',parents:['local-uploads'],mimeType:'application/json'},Buffer.from(content));
  await db.prepare('INSERT INTO private_objects VALUES(?,?,?,?,?,?,1)').bind(objectKey,pageFile,sha(content),Buffer.byteLength(content),'application/json','local-uploads').run();
  await rec('lecture-page',lectureId+'-p-0001',{lectureId,pageId:'0001',objectKey,sha256:sha(content),strokes:page.strokes.length,lastOffsetMs:4500});
- const audio=await readFile('public/demo-lecture.wav'),audioId='demo-audio-file',clipId=lectureId+'-a-0000';await objects.put(audioId,{name:'Fictional spoken lecture',parents:['local-uploads'],mimeType:'audio/wav'},audio);
+ const audio=await load('public/demo-lecture.wav'),audioId='demo-audio-file',clipId=lectureId+'-a-0000';await objects.put(audioId,{name:'Fictional spoken lecture',parents:['local-uploads'],mimeType:'audio/wav'},audio);
  await db.prepare('INSERT INTO chunks VALUES(?,?,?,?,?,?)').bind(clipId,0,sha(audio),audioId,audio.length,'audio/wav').run();
  await rec('upload-manifest',clipId,{title:'Synthetic timing audio',cloudChunks:true,mimeType:'audio/wav',totalChunks:1,totalSize:audio.length,lectureId});
  await rec('lecture-clip',clipId,{lectureId,id:'0000',recordingId:clipId,startMs:0,endMs:6000,wallAt:start,epochId:'demo-epoch',mimeType:'audio/wav',status:'saved',mediaDurationMs:6000});
@@ -64,14 +64,14 @@ export async function makeWorkspace(db:LocalDatabase,{demo=true,now=new Date(),o
  
  for(const [id,parent,name] of [['fictional-term-folder','local-uploads','Fictional term'],['fictional-course-folder','fictional-term-folder','Systems design'],['fictional-slides-folder','fictional-course-folder','Slides']])await objects.put(id,{name,parents:[parent],mimeType:'application/vnd.google-apps.folder'},new Uint8Array());
  await rec('course-library','demo-course-design',{courseId:'demo-course-design',folderId:'fictional-course-folder',termFolderId:'fictional-term-folder',sections:{Slides:'fictional-slides-folder'},lastLearnCheck:stamp});
- const slides=await readFile('public/demo-slides.pdf'),slidesId='fictional-slide-file';const slidesMeta=await objects.put(slidesId,{name:'Feedback loops — fictional slides',parents:['fictional-slides-folder'],mimeType:'application/pdf',modifiedTime:stamp},slides);
+ const slides=await load('public/demo-slides.pdf'),slidesId='fictional-slide-file';const slidesMeta=await objects.put(slidesId,{name:'Feedback loops — fictional slides',parents:['fictional-slides-folder'],mimeType:'application/pdf',modifiedTime:stamp},slides);
  await rec('lecture-source',lectureId+'-s-slides',{lectureId,fileId:slidesId,title:'Feedback loops — fictional slides',mimeType:'application/pdf',size:slides.length,modifiedTime:stamp,md5:slidesMeta.md5Checksum,role:'slides',timing:'unmapped',durationMs:null});
  await rec('lecture-course-source','demo-course-design-slides',{courseId:'demo-course-design',fileId:slidesId,title:'Feedback loops — fictional slides',mimeType:'application/pdf',size:slides.length,modifiedTime:stamp,md5:slidesMeta.md5Checksum,role:'slides',timing:'unmapped',durationMs:null,fromDay:date,throughDay:date});
  await rec('course-lesson','demo-course-design-lesson-intro',{courseId:'demo-course-design',title:'Feedback loops',sourceIds:['demo-course-design-slides'],pageRange:{from:1,through:2}});
  await rec('training-source','fictional-plan',{program:'Beginner',source:{title:'Fictional gentle activity reference'},sourceWeeks:Array.from({length:13},(_,i)=>({week:i+1,days:[{dayOffset:0,kind:'easy',units:'km',totalDistanceKm:2,description:'Fictional easy walk or run',source:{location:'Fictional reference table',visuallyVerified:true}},{dayOffset:6,kind:'rest',description:'Rest',source:{location:'Fictional reference table',visuallyVerified:true}}]}))});
 
  // A drawn fictional landscape, generated locally; no real photograph is used.
- const image=await readFile('public/demo-landscape.jpg');const imageUrl='data:image/jpeg;base64,'+image.toString('base64'),photo=JSON.stringify({image:imageUrl,thumbnail:imageUrl,width:640,height:360});
+ const image=await load('public/demo-landscape.jpg');const imageUrl='data:image/jpeg;base64,'+image.toString('base64'),photo=JSON.stringify({image:imageUrl,thumbnail:imageUrl,width:640,height:360});
  for(const [key,value] of [['demo-photo',photo],['demo-photo-thumb',JSON.stringify({thumbnail:imageUrl})]]){
   await objects.put(key,{name:'Fictional landscape',parents:['local-uploads'],mimeType:'application/json'},Buffer.from(value));await db.prepare('INSERT INTO private_objects VALUES(?,?,?,?,?,?,1)').bind(key,key,sha(value),Buffer.byteLength(value),'application/json','local-uploads').run();
  }

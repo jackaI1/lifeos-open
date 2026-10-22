@@ -5,7 +5,7 @@ import {randomBytes,timingSafeEqual} from 'node:crypto';
 import {LocalDatabase} from './database.ts';
 import {LocalObjects} from './objects.ts';
 import {makeWorkspace,DEMO_EMAIL} from './workspace.ts';
-import {createBackup} from './backup.ts';
+import {createBackup,saveVerifiedBackup} from './backup.ts';
 import {drainJobs} from './services.ts';
 import cloud from '../cloud/app.mjs';
 export interface ServiceOptions {database?:string;origin?:string;authMode?:string;demo?:boolean;env?:Record<string,string|undefined>}
@@ -23,6 +23,7 @@ export async function createService(options:ServiceOptions={}){
  if(demoClock!==null)env.LOCAL_DEMO_NOW=()=>new Date(demoClock+Date.now()-clockStarted).toISOString();
  const mime:Record<string,string>={'.html':'text/html; charset=utf-8','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.woff2':'font/woff2','.woff':'font/woff','.ttf':'font/ttf','.json':'application/json','.webmanifest':'application/manifest+json','.pdf':'application/pdf'};
  env.LOCAL_EXPORT=()=>createBackup(db);
+ env.LOCAL_BACKUP_RUN=()=>saveVerifiedBackup(db);
  env.LOCAL_BACKUP=async(id:string)=>{const row=await db.prepare('SELECT content FROM local_snapshots WHERE id=?').bind(id).first();return row?JSON.parse(row.content):null;};
  env.ASSETS={fetch:async(req:Request)=>{const u=new URL(req.url);const name=decodeURIComponent(u.pathname)==='/'?'index.html':decodeURIComponent(u.pathname).slice(1);const root=resolve('public'),file=resolve(root,name);if(relative(root,file).startsWith('..')||name.includes('\\'))return new Response(null,{status:404});try{const canonical=await realpath(file);if(relative(root,canonical).startsWith('..')||!(await stat(canonical)).isFile())return new Response(null,{status:404});return new Response(req.method==='HEAD'?null:await readFile(canonical),{headers:{'content-type':mime[extname(file)]??'application/octet-stream'}});}catch{return new Response(null,{status:404});}}};
  // Serialize local mutations: CloudStore plans perform async reads before atomic batches.

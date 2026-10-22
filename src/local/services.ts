@@ -3,13 +3,12 @@ import {studySchema,studyPrompt,validateStudyResult} from '../shared/lecture-stu
 import {briefSchema,validateBrief} from '../shared/assignment-brief.mjs';
 import {savedProjectPreparation} from '../cloud/project-artifacts.mjs';
 import {projectPreparationContext} from '../cloud/project-preparation.mjs';
-import {saveVerifiedBackup} from './backup.ts';
-import type {LocalDatabase} from './database.ts';
+import type {WorkspaceDatabase} from './database.ts';
 import {createHash,randomUUID} from 'node:crypto';
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 import {chatCompletion} from '../shared/llm.mjs';
 export async function assistantReply(scope:string,message:string,env:Record<string,any>,context:string='',model?:string,images:string[]=[]){return chatCompletion({scope,message,env,context,model,images});}
-export async function drainJobs(db:LocalDatabase,env:Record<string,any>){
+export async function drainJobs(db:WorkspaceDatabase,env:Record<string,any>){
  const put=async(kind:string,id:string,data:any)=>{const old=await db.prepare('SELECT * FROM records WHERE kind=? AND id=?').bind(kind,id).first(),now=new Date().toISOString();await db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data,version=excluded.version,updated_at=excluded.updated_at').bind(kind,id,JSON.stringify(data),(old?.version??0)+1,old?.created_at??now,now).run();};
  const get=async(kind:string,id:string)=>{const row=await db.prepare('SELECT data FROM records WHERE kind=? AND id=?').bind(kind,id).first();return row?JSON.parse(row.data):null;};
  const jobs=(await db.prepare("SELECT * FROM jobs WHERE status='queued' AND available_at<=? ORDER BY priority,created_at LIMIT 20").bind(Date.now()).all()).results;
@@ -52,7 +51,7 @@ export async function drainJobs(db:LocalDatabase,env:Record<string,any>){
    else if(job.type==='friend-process'){
     const source=await get('private-friend-import',p.importId),friend=await get('private-friend',p.friendId);if(source&&friend){await put('private-friend',p.friendId,{...friend,memories:[...(friend.memories??[]),{id:randomUUID(),kind:'uncertain',text:'Ask about the community garden.',evidence:'Canned fictional response; review your imported text.',hidden:false}]});await put('private-friend-import',p.importId,{...source,status:'completed',pointCount:1,mock:true});}reply='Mock contact memory saved for review.';
    }else if(job.type==='school-collect'||job.type==='source-sync'){await put('integration','learn',{provider:'learn',title:'Fictional course sources',status:'preview-refreshed',lastCollectionAt:new Date().toISOString(),mock:true});reply='Mock refresh: fictional course sources are current. No school account was contacted.';}
-   else if(job.type==='backup'){const verified=await saveVerifiedBackup(db);reply='Verified local backup saved, including private records and file bytes. Download the complete backup from Settings.';await db.prepare("UPDATE jobs SET status='completed',result=?,progress=?,updated_at=? WHERE id=?").bind(JSON.stringify({message:reply,verified:true,downloadUrl:'/api/local/backups/'+verified.id}),reply,Date.now(),job.id).run();continue;}
+   else if(job.type==='backup'){const verified=await env.LOCAL_BACKUP_RUN();reply='Verified local backup saved, including private records and file bytes. Download the complete backup from Settings.';await db.prepare("UPDATE jobs SET status='completed',result=?,progress=?,updated_at=? WHERE id=?").bind(JSON.stringify({message:reply,verified:true,downloadUrl:'/api/local/backups/'+verified.id}),reply,Date.now(),job.id).run();continue;}
    else if(job.type==='devotional-archive'){const d=await get('devotional',p.date);if(d)await put('devotional',p.date,{...d,archiveStatus:'archived',archiveId:'local-'+p.date});reply='Devotional archived in local SQLite.';}
    else if(job.type==='personal-calendar-write'){
     const command=await get('calendar-command',p.recordId);if(command)await put('calendar-command',p.recordId,{...command,status:'provider-confirmed',provider:'local',providerEtag:'local-'+job.id});if(command?.projectedEventId){const projection=await get('calendar-event',command.projectedEventId);if(projection)await put('calendar-event',command.projectedEventId,{...projection,status:'confirmed',pendingProvider:false});}

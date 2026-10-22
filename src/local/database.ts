@@ -1,5 +1,8 @@
 import {DatabaseSync, type SQLInputValue} from 'node:sqlite';
 export type Row=Record<string,any>;
+export interface WorkspaceStatement {bind(...args:any[]):WorkspaceStatement;all():Promise<{results:Row[];[key:string]:any}>;first(column?:string):Promise<any>;run():Promise<any>;raw():Promise<any[]>}
+export interface WorkspaceDatabase {prepare(query:string):WorkspaceStatement;exec(sql:string):any;batch(statements:any[]):Promise<any[]>}
+
 export class LocalStatement {
  db:DatabaseSync; query:string; args:SQLInputValue[];
  constructor(db:DatabaseSync,query:string,args:SQLInputValue[]=[]){this.db=db;this.query=query;this.args=args;}
