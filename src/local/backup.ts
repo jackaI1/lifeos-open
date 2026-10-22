@@ -3,17 +3,13 @@ import {dirname} from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
 import {LocalDatabase} from './database.ts';
 import {LocalObjects} from './objects.ts';
-type Cell=string|number|null|{lifeosBlob:string};
-export interface WorkspaceBackup {format:'lifeos-local-backup-v1';createdAt:string;tables:Record<string,Record<string,Cell>[]>}
+import {createBackup,tableNames} from './backup-data.ts';
+import type {WorkspaceBackup} from './backup-data.ts';
+export {createBackup} from './backup-data.ts';
+export type {WorkspaceBackup} from './backup-data.ts';
 const excluded=new Set(['sessions','oauth_logins','worker_credentials','local_snapshots']);
 const identifier=(v:string)=>{if(!/^[a-z_][a-z_0-9]*$/.test(v))throw Error('Invalid backup table or column.');return '"'+v+'"';};
-const encode=(value:any):Cell=>value instanceof Uint8Array?{lifeosBlob:Buffer.from(value).toString('base64')}:typeof value==='bigint'?Number(value):value;
-const decode=(value:Cell)=>{if(value&&typeof value==='object'){if(Object.keys(value).length!==1||typeof value.lifeosBlob!=='string'||!/^[A-Za-z0-9+/]*={0,2}$/.test(value.lifeosBlob))throw Error('Invalid backup binary field.');return Buffer.from(value.lifeosBlob,'base64');}if(value!==null&&!['string','number'].includes(typeof value))throw Error('Invalid backup field.');return value;};
-async function tableNames(db:LocalDatabase){return (await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all()).results.map(r=>String(r.name)).filter(n=>!excluded.has(n));}
-export async function createBackup(db:LocalDatabase):Promise<WorkspaceBackup>{
- const tables:WorkspaceBackup['tables']={};for(const name of await tableNames(db)){const rows=(await db.prepare('SELECT * FROM '+identifier(name)).all()).results;tables[name]=rows.filter(row=>name!=='meta'||!['local-backup','local-backup-last'].includes(row.key)).map(row=>Object.fromEntries(Object.entries(row).map(([key,value])=>[key,encode(value)])));}
- return {format:'lifeos-local-backup-v1',createdAt:new Date().toISOString(),tables};
-}
+const decode=(value:any)=>{if(value&&typeof value==='object'){if(Object.keys(value).length!==1||typeof value.lifeosBlob!=='string'||!/^[A-Za-z0-9+/]*={0,2}$/.test(value.lifeosBlob))throw Error('Invalid backup binary field.');return Buffer.from(value.lifeosBlob,'base64');}if(value!==null&&!['string','number'].includes(typeof value))throw Error('Invalid backup field.');return value;};
 async function initialise(db:LocalDatabase){db.exec(await readFile('src/cloud/schema.sql','utf8'));new LocalObjects(db,'');}
 export async function restoreBackup(db:LocalDatabase,backup:WorkspaceBackup){
  if(backup?.format!=='lifeos-local-backup-v1'||!backup.tables||typeof backup.tables!=='object'||!Number.isFinite(Date.parse(backup.createdAt)))throw Error('Unsupported or incomplete LifeOS backup.');
