@@ -71,7 +71,7 @@ async function request(path, options = {}, control) {
     if (descriptor && (!Object.hasOwn(descriptor, 'value') || typeof descriptor.value !== 'boolean')) throw new TypeError('Request control refreshToday must be a boolean.');
     if (descriptor) refreshToday = descriptor.value;
   }
-  if(!navigator.onLine)throw new Error('Offline. Your edits are saved on this device.');
+  if(!navigator.onLine&&!window.__LIFEOS_BROWSER_DEMO__)throw new Error('Offline. Your edits are saved on this device.');
   const headers = new Headers(options.headers || {});
   if (options.body && !(options.body instanceof Blob)) headers.set('Content-Type', 'application/json');
   if (options.method && options.method !== 'GET') headers.set('X-LifeOS-CSRF', state.session?.csrf || '');
@@ -94,8 +94,8 @@ async function request(path, options = {}, control) {
   setConnection(true); return data;
 }
 function setConnection(online) {
-  state.online = online; $('#connection-label').textContent = online ? 'Connected to LifeOS' : 'LifeOS unavailable'; $('#connection-dot').className = `connection-dot ${online ? 'online' : 'offline'}`;
-  if (!online) notice('LifeOS is unavailable. New changes are not yet saved to the server.');
+  state.online = online; $('#connection-label').textContent = window.__LIFEOS_BROWSER_DEMO__ ? (online?'Saved on this device':'Local workspace unavailable') : online ? 'Connected to LifeOS' : 'LifeOS unavailable'; $('#connection-dot').className = `connection-dot ${online ? 'online' : 'offline'}`;
+  if (!online) notice(window.__LIFEOS_BROWSER_DEMO__?'Local storage is unavailable. Keep this page open to preserve your writing.':'LifeOS is unavailable. New changes are not yet saved to the server.');
 }
 function notice(message) { state.notice=message||null;const node=$('#global-notice');node.hidden=true;node.textContent='';renderWorkspaceStatus(); }
 function sessionExpired() {
@@ -239,8 +239,8 @@ window.addEventListener('hashchange', () => { void navigate(); });
 observePage(presentation);
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'&&!e.altKey){e.preventDefault();if(state.session)openActionFinder(context,routesFor(state.session?.environment));}});
 window.addEventListener('online', () => {void context.timers?.refresh(true); void refresh().catch(() => {}); });
-window.addEventListener('offline', () => setConnection(false));
+window.addEventListener('offline', () => setConnection(window.__LIFEOS_BROWSER_DEMO__===true));
 window.addEventListener('beforeunload', event => { if (active?.dirty?.()) { event.preventDefault(); event.returnValue = ''; } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && state.session) void refresh().catch(() => {}); });
-try { await refresh();context.timers=createTaskTimers(context);void context.timers.refresh(); restoreLiveNoteDock(context); await navigate(); if ('serviceWorker' in navigator) await navigator.serviceWorker.register('/sw.js', { scope: '/' }); }
+try { await refresh();context.timers=createTaskTimers(context);void context.timers.refresh(); restoreLiveNoteDock(context); await navigate(); if ('serviceWorker' in navigator&&!window.__LIFEOS_BROWSER_DEMO__) await navigator.serviceWorker.register('/sw.js', { scope: '/' }); }
 catch (error) { $('#main').replaceChildren(heading('Your workspace is unavailable', 'Your saved local drafts remain on this device.'), errorNotice(error), el('div', { class: 'actions' }, el('a', { href: '/login' }, 'Sign in'), button('Try again', () => location.reload()), button('Download local drafts', async () => download('lifeos-local-recovery.json', JSON.stringify(await store.list('draft:'), null, 2), 'application/json'), 'quiet'))); }

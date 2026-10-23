@@ -30,8 +30,12 @@ export function elapsedSave(at,now=Date.now()){
  const seconds=Math.max(0,Math.floor((now-Date.parse(at))/1000));if(!Number.isFinite(seconds))return 'No confirmed save yet';
  if(seconds<60)return `Updated ${seconds} seconds ago`;const minutes=Math.floor(seconds/60);if(minutes<60)return `Updated ${minutes} ${minutes===1?'minute':'minutes'} ago`;const hours=Math.floor(minutes/60);return `Updated ${hours} ${hours===1?'hour':'hours'} ago`;
 }
+export function syncPresentation(state,presentation={},browserOnly=globalThis.__LIFEOS_BROWSER_DEMO__===true){
+ if(browserOnly&&state.mode==='cloud')return {icon:'device',label:'Saved on this device',detail:'Saved in this browser. Nothing is uploaded.'};
+ return {icon:presentation.icons?.[state.mode]??state.mode,label:state.label||presentation.labels?.[state.mode]||(state.mode==='cloud'?'Saved to cloud':state.mode==='alert'?'Save needs attention':'Saved on this device'),detail:presentation.details?.[state.mode]??((typeof state.detail==='function'?state.detail():state.detail)||elapsedSave(state.updatedAt))};
+}
 export function syncControl(onRetry,presentation={}){
  let state={mode:'device',updatedAt:null,detail:'Not yet saved to the cloud',retry:false},retrying=false;
- const disclosure=compactDisclosure({label:'Save status',icon:'device',content:()=>el('div',{},el('span',{},presentation.details?.[state.mode]??((typeof state.detail==='function'?state.detail():state.detail)||elapsedSave(state.updatedAt))),state.retry?button(retrying?'Retrying…':(presentation.retryLabel??'Retry sync'),async()=>{if(retrying)return;retrying=true;disclosure.refresh();try{await onRetry();}finally{retrying=false;disclosure.refresh();}},'text-button'):null)});
- return {...disclosure,update(next){state={...state,...next};disclosure.trigger.replaceChildren(controlIcon(presentation.icons?.[state.mode]??state.mode));disclosure.trigger.dataset.state=state.mode;disclosure.trigger.setAttribute('aria-label',state.label||presentation.labels?.[state.mode]||(state.mode==='cloud'?'Saved to cloud':state.mode==='alert'?'Save needs attention':'Saved on this device'));disclosure.refresh();}};
+ const disclosure=compactDisclosure({label:'Save status',icon:'device',content:()=>el('div',{},el('span',{},syncPresentation(state,presentation).detail),state.retry?button(retrying?'Retrying…':(presentation.retryLabel??'Retry sync'),async()=>{if(retrying)return;retrying=true;disclosure.refresh();try{await onRetry();}finally{retrying=false;disclosure.refresh();}},'text-button'):null)});
+ return {...disclosure,update(next){state={...state,...next};disclosure.trigger.replaceChildren(controlIcon(syncPresentation(state,presentation).icon));disclosure.trigger.dataset.state=state.mode;disclosure.trigger.setAttribute('aria-label',syncPresentation(state,presentation).label);disclosure.refresh();}};
 }
