@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {syncPresentation} from '../public/quiet-controls.js';
+test('browser-only confirmed saves never claim cloud upload while standalone labels remain unchanged',()=>{const state={mode:'cloud',label:'Saved to cloud',detail:'Uploaded to server'};assert.deepEqual(syncPresentation(state,{},true),{icon:'device',label:'Saved on this device',detail:'Saved in this browser. Nothing is uploaded.'});assert.equal(syncPresentation(state,{},false).label,'Saved to cloud');assert.equal(syncPresentation({mode:'alert',detail:'Storage is full'}, {},true).detail,'Storage is full');});
