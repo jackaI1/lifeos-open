@@ -1954,16 +1954,16 @@ var init_md = __esm({
         const { view, buffer, blockLen } = this;
         const len = data3.length;
         for (let pos = 0; pos < len; ) {
-          const take = Math.min(blockLen - this.pos, len - pos);
-          if (take === blockLen) {
+          const take2 = Math.min(blockLen - this.pos, len - pos);
+          if (take2 === blockLen) {
             const dataView = createView(data3);
             for (; blockLen <= len - pos; pos += blockLen)
               this.process(dataView, pos);
             continue;
           }
-          buffer.set(data3.subarray(pos, pos + take), this.pos);
-          this.pos += take;
-          pos += take;
+          buffer.set(data3.subarray(pos, pos + take2), this.pos);
+          this.pos += take2;
+          pos += take2;
           if (this.pos === blockLen) {
             this.process(view, 0);
             this.pos = 0;
@@ -9888,9 +9888,33 @@ init_globals();
 // src/shared/assistant-contract.mjs
 init_globals();
 init_lifeos_day();
+var take = (data3, keys2) => Object.fromEntries(keys2.filter((k) => data3[k] !== void 0).map((k) => [k, data3[k]]));
 var assistantScopes = ["today", "academics", "finances", "lecture"];
 var assistantOperations = { task: ["status", "remainingMinutes", "nextStep", "userNotes", "dueDate", "dueAt"], project: ["title", "notes", "status", "category"], "task-create": ["title", "courseId", "dueDate", "dueAt", "remainingMinutes", "nextStep"], preferences: ["wakeTime", "lightsOut", "schoolMorningStart", "schoolMorningEnd", "schoolAfternoonStart", "schoolAfternoonEnd", "quietStart", "quietEnd"], "schedule-adjust": ["day", "start", "end", "hidden"], "calendar-create": ["title", "start", "end", "location"] };
 var assistantReplySchema = { type: "object", additionalProperties: false, properties: { reply: { type: "string" }, needsInput: { type: "boolean" }, proposals: { type: "array", items: { type: "object", additionalProperties: false, properties: { operation: { type: "string", enum: Object.keys(assistantOperations) }, recordId: { type: ["string", "null"] }, expectedVersion: { type: "integer" }, fields: { type: "array", items: { type: "object", additionalProperties: false, properties: { name: { type: "string" }, value: { type: ["string", "number", "boolean", "null"] } }, required: ["name", "value"] } }, reason: { type: "string" } }, required: ["operation", "recordId", "expectedVersion", "fields", "reason"] } } }, required: ["reply", "needsInput", "proposals"] };
+function assistantContext({ scope, records, now, days: days2 = [], finance = null }) {
+  enumValue(scope, assistantScopes);
+  if (scope === "finances") {
+    if (!finance?.configured) throw new AppError("Import the finance source before asking for budget advice");
+    const summary = finance.summary;
+    return { scope, asOf: now, lifeosDay: lifeosDay(now), timeZone: "America/Toronto", budget: { balances: summary.balances, forecast: summary.forecast, cards: summary.cards, lastTransactionDate: summary.lastDate, needsReconciliation: summary.needsReconciliation }, privacy: "Budget aggregates only. No bank credentials, raw statements, transactions or prayer content." };
+  }
+  const courses = records.course ?? [], courseMap = new Map(courses.map((c) => [c.id, c])), allTasks = records.task ?? [];
+  const permitted = allTasks.filter((t) => checkAcademicPolicy({ policy: courseMap.get(t.data.courseId)?.data.policy ?? t.data.policy ?? {}, action: "schedule" }).allowed);
+  const ordered = rankSchoolTasks({ tasks: permitted.map((t) => ({ ...t.data, id: t.id, version: t.version })), now, capacity: [], respectSchoolDay: false }).ranked;
+  const byId = new Map(permitted.map((t) => [t.id, t]));
+  const tasks = ordered.map((t) => {
+    const r = byId.get(t.id);
+    return { id: r.id, version: r.version, ...take(r.data, ["title", "courseId", "status", "dueDate", "dueAt", "remainingMinutes"]), nextStep: String(r.data.nextStep ?? "").slice(0, 200), rank: ordered.indexOf(t) + 1 };
+  });
+  for (const r of permitted) if (!tasks.some((t) => t.id === r.id)) tasks.push({ id: r.id, version: r.version, ...take(r.data, ["title", "courseId", "status", "dueDate", "dueAt", "remainingMinutes"]), nextStep: String(r.data.nextStep ?? "").slice(0, 200), rank: null });
+  const preferences = (records.settings ?? []).find((r) => r.id === "preferences"), projects2 = scope === "today" ? (records.project ?? []).filter((r) => !r.data.archived && r.data.status !== "archived").map((r) => ({ id: r.id, version: r.version, ...take(r.data, ["title", "category", "status"]), notes: String(r.data.notes ?? "").slice(0, 600) })) : [];
+  const excludedTitles = new Set(allTasks.filter((t) => !permitted.includes(t)).map((t) => t.data.title)), safeAction = (a) => excludedTitles.has(a?.title) ? { title: "Academic commitment", start: a.start, end: a.end } : a;
+  const schedule = days2.map((day) => ({ day: day.date, nowAction: take(safeAction(day.nowAction) ?? {}, ["title", "reason", "start", "end"]), entries: day.timeline.map((item2) => ({ id: item2.id, title: excludedTitles.has(item2.title) ? "Academic commitment" : item2.title, start: item2.start, end: item2.end ?? null, kind: item2.kind, state: item2.state, source: item2.source ?? null, correctionVersion: (records["schedule-correction"] ?? []).find((r) => r.id === hash(day.date + ":" + item2.id))?.version ?? 0 })) }));
+  const context = { scope, asOf: now, lifeosDay: lifeosDay(now), timeZone: "America/Toronto", dayRollover: "05:00", tasks, taskCoverage: { included: tasks.length, known: allTasks.length, policyExcluded: allTasks.length - permitted.length }, courses: courses.map((r) => ({ id: r.id, code: r.data.code, policy: take(r.data.policy ?? {}, ["status", "administration", "allAssistanceProhibited", "markedWorkProhibited", "unmarkedLearningAllowed", "generationAllowed"]), policyAuthority: String(r.data.policy?.authoritySource ?? "").slice(0, 1200) })), preferences: preferences ? { id: preferences.id, version: preferences.version, ...take(preferences.data, assistantOperations.preferences) } : { id: "preferences", version: 0 }, projects: projects2, schedule, practices: (records.spiritual ?? []).filter((r) => r.data.date === lifeosDay(now)).map((r) => take(r.data, ["date", "practice", "complete", "completedAt"])) };
+  if (JSON.stringify(context).length > 7e4) throw new AppError("This conversation needs a smaller task selection", 413);
+  return context;
+}
 function validateAssistantProposal(proposal, context) {
   exactFields(proposal, ["operation", "recordId", "expectedVersion", "fields", "reason"]);
   enumValue(proposal.operation, Object.keys(assistantOperations));
@@ -11998,8 +12022,8 @@ async function handle(request, env) {
     enumValue(body.action, ["promote", "rollback", "deploy-beta"]);
     if (env.ENVIRONMENT !== "production" && !env.LOCAL_STANDALONE || body.intentional !== true) throw new AppError("Production Settings and an intentional release choice are required", 403);
     if (!/^beta-[a-f0-9]{16}$/.test(body.releaseId ?? "")) throw new AppError("Invalid release");
-    const catalogue = await store.meta("release-catalogue"), target = body.action === "deploy-beta" ? "beta" : "production";
-    if (!catalogue || catalogue.current?.[target] !== body.expectedCurrentRelease || !catalogue.releases?.some((r) => r.releaseId === body.releaseId)) throw new AppError("Release state changed. Refresh before confirming.", 409);
+    const catalogue2 = await store.meta("release-catalogue"), target = body.action === "deploy-beta" ? "beta" : "production";
+    if (!catalogue2 || catalogue2.current?.[target] !== body.expectedCurrentRelease || !catalogue2.releases?.some((r) => r.releaseId === body.releaseId)) throw new AppError("Release state changed. Refresh before confirming.", 409);
     const job = { id: crypto.randomUUID(), type: "maintenance-release", payload: { action: body.action, releaseId: body.releaseId, expectedCurrentRelease: body.expectedCurrentRelease, intentional: true }, component: "maintenance", priority: 8, authority: "authenticated-release-action" };
     return Response.json(await store.commit({ id: mutationId(body.mutationId), fingerprint: { path, body }, jobs: [job], result: { job: { ...job, status: "queued", progress: "Waiting for the trusted release worker" } } }));
   }
@@ -12049,8 +12073,8 @@ async function handle(request, env) {
     return Response.json({ schemaVersion: 2, exportedAt: (/* @__PURE__ */ new Date()).toISOString(), environment: env.ENVIRONMENT, records: publicRecords(plan) }, { headers: { "Content-Disposition": 'attachment; filename="lifeos-export.json"' } });
   }
   if (path === "/api/releases" && request.method === "GET") {
-    const catalogue = await store.meta("release-catalogue") ?? { releases: [], current: { production: null, beta: null }, deployedCommit: env.RELEASE_COMMIT };
-    return Response.json({ ...catalogue, betaUrl: config.betaOrigin ? httpsOrigin(config.betaOrigin) : catalogue.betaUrl ?? null });
+    const catalogue2 = await store.meta("release-catalogue") ?? { releases: [], current: { production: null, beta: null }, deployedCommit: env.RELEASE_COMMIT };
+    return Response.json({ ...catalogue2, betaUrl: config.betaOrigin ? httpsOrigin(config.betaOrigin) : catalogue2.betaUrl ?? null });
   }
   if (path.startsWith("/api/") || path.startsWith("/internal/")) throw new AppError("Not found", 404);
   if (!["GET", "HEAD"].includes(request.method)) throw new AppError("Method not allowed", 405);
@@ -12335,6 +12359,7 @@ async function makeWorkspace(db, { demo = true, now = /* @__PURE__ */ new Date()
   await rec("task", "demo-prelab", { title: "Systems pre-lab checklist", sourceUrl: "/demo/sources/lab.html", courseId: "demo-course-design", dueDate: date3, estimatedMinutes: 10, remainingMinutes: 10, difficulty: 2, status: "todo", nextStep: "Pack safety goggles and your lab notebook, then check the pre-lab instructions." });
   await assignmentExamples(db, stamp, rec);
   await rec("calendar-event", "demo-lab", { title: "Systems lab", calendarId: "demo-school", start: { dateTime: new Date(now.getTime() + 10 * 6e4).toISOString() }, end: { dateTime: new Date(now.getTime() + 70 * 6e4).toISOString() }, location: "Room S-204", description: "Bring safety goggles and your lab notebook. Complete the pre-lab checklist before arriving." });
+  await rec("calendar-event", "demo-study-block", demoStudyBlock(date3));
   await rec("profile", "local-user", { name: DEMO_NAME, fictional: true });
   await rec("learning-note", "demo-feedback", { type: "concept", courseId: "demo-course-design", title: "Feedback loop", text: "A feedback loop returns information about a system output to influence future inputs.", status: "learning", linkedIds: [], studyItemIds: [], authority: "owner-study-note" });
   await rec("private-note-folder", "demo-folder", { title: "Class notes" });
@@ -12396,7 +12421,11 @@ async function makeWorkspace(db, { demo = true, now = /* @__PURE__ */ new Date()
   await db.prepare("INSERT INTO meta VALUES(?,?)").bind("demo-content-revision", DEMO_REVISION).run();
   await db.prepare("INSERT INTO meta VALUES(?,?)").bind("local-initialized", "true").run();
 }
-var DEMO_REVISION = "2026-10-22-content-v2";
+var DEMO_REVISION = "2026-10-22-content-v3";
+function demoStudyBlock(date3) {
+  const day = addDays(date3, 1);
+  return { title: "Study feedback models", calendarId: "demo-personal", start: { dateTime: zonedDateTime(day, "08:30", { timeZone: "America/Toronto" }) }, end: { dateTime: zonedDateTime(day, "08:50", { timeZone: "America/Toronto" }) }, description: "Fictional flexible study session for trying the schedule assistant." };
+}
 function demoTraining(date3) {
   const start = /* @__PURE__ */ new Date(date3 + "T12:00Z");
   start.setUTCDate(start.getUTCDate() - (start.getUTCDay() + 6) % 7 + 17 * 7 + 6);
@@ -12465,6 +12494,7 @@ async function refreshDemoExamples(db, now) {
     }
     const legacy = await get("project", "demo-project");
     if (legacy && JSON.parse(legacy.data).title === "Build a balcony planter") await put("project", "demo-project", { ...JSON.parse(legacy.data), archived: true });
+    if (!await get("calendar-event", "demo-study-block")) await put("calendar-event", "demo-study-block", demoStudyBlock(lifeosDay(now.getTime(), "America/Toronto")));
     for (const row of publicProjectRecords()) if (!await get("project", row.id)) await put("project", row.id, row.data);
     for (const row of prayerExamples()) if (!await get("prayer-note", row.id)) await put("prayer-note", row.id, row.data);
     const baseline = await get("training", "baseline");
@@ -12482,6 +12512,67 @@ async function refreshDemoExamples(db, now) {
 
 // src/local/services.ts
 init_globals();
+
+// public/demo-assistant.js
+init_globals();
+var catalogue = {
+  today: [["move", "Move a study block", "Move my next study block 30 minutes later."], ["add", "Add a walk", "Add a 20-minute walk to my schedule."], ["fit", "Would studying fit?", "Would a 30-minute study session fit tomorrow?"], ["time", "Find some free time", "When do I have time for a 20-minute break?"]],
+  academics: [["priority", "Choose what to work on", "What should I work on first, and why?"], ["lab", "Prepare for the lab", "What should I bring to my next lab?"], ["start", "Make the first step smaller", "Break my next assignment into three small steps."]],
+  finances: [["budget", "Check the dining budget", "How much of my dining budget is left this week?"], ["purchase", "Check a possible purchase", "Would a $15 lunch fit my dining budget?"], ["review", "Review spending", "What should I check before planning more spending?"]],
+  lecture: [["explain", "Explain feedback", "Explain negative and positive feedback with an example."], ["quiz", "Quiz me", "Ask me a practice question about feedback."], ["compare", "Compare two concepts", "How are an input and an output different?"]],
+  project: [["step", "Find a small first step", "What is one small next step for this project?"], ["checklist", "Make a starting checklist", "Make a short checklist to help me start this project."], ["review", "Check what is missing", "What should I check before working on this project?"]],
+  support: [["notes", "Find my notes", "How do I take and find lecture notes?"], ["privacy", "Understand demo saving", "Where are my demo edits saved?"], ["export", "Keep a copy", "How do I download a copy of my records?"]]
+};
+function demoAssistantOptions(scope) {
+  return (catalogue[scope] ?? []).map(([id, label2, message]) => ({ id: scope + "-" + id, label: label2, message }));
+}
+function demoAssistantAnswer(scope, message, context = {}) {
+  const option = demoAssistantOptions(scope).find((o) => o.message === message);
+  if (!option) return null;
+  const answer = (reply, proposals = []) => ({ reply, proposals }), tz = context.timeZone ?? "America/Toronto";
+  const when = (value) => new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
+  const tomorrow = context.lifeosDay ? new Date(Date.parse(context.lifeosDay + "T12:00Z") + 864e5).toISOString().slice(0, 10) : null;
+  const interval = (minutes) => (context.freeSlots ?? []).filter((s) => option.id !== "today-fit" || !tomorrow || s.day === tomorrow).find((s) => Date.parse(s.end) - Date.parse(s.start) >= minutes * 6e4);
+  const proposal = (operation, recordId, expectedVersion, fields8, reason) => ({ operation, recordId, expectedVersion, fields: Object.entries(fields8).map(([name, value]) => ({ name, value })), reason });
+  if (scope === "today") {
+    const minutes = option.id === "today-fit" ? 30 : 20, slot = interval(minutes);
+    if (option.id === "today-move") {
+      for (const day of context.schedule ?? []) for (const entry of day.entries) {
+        if (entry.source || ["completed", "observed"].includes(entry.state) || !entry.end || !/study|pre-lab|feedback|watershed|academic/i.test(entry.title ?? "") || Date.parse(entry.start) < Date.parse(context.asOf ?? (/* @__PURE__ */ new Date()).toISOString())) continue;
+        const start = new Date(Date.parse(entry.start) + 18e5).toISOString(), end2 = new Date(Date.parse(entry.end) + 18e5).toISOString();
+        if (!(context.freeSlots ?? []).some((s) => Date.parse(s.start) <= Date.parse(start) && Date.parse(s.end) >= Date.parse(end2))) continue;
+        return answer(`I can move \u201C${entry.title}\u201D to ${when(start)}. Review the times below and choose Apply change. Nothing has moved yet.`, [proposal("schedule-adjust", entry.id, entry.correctionVersion ?? 0, { day: day.day, start, end: end2 }, "Move this fictional study block 30 minutes later, keeping its duration.")]);
+      }
+      return answer("I could not find a future study block with enough room 30 minutes later. Nothing was changed. Try \u201CFind some free time\u201D to see an available window.");
+    }
+    if (!slot) return answer("I could not find an open window long enough in the next two days. Nothing was changed. Review Today to shorten a flexible task or choose another day.");
+    const end = new Date(Date.parse(slot.start) + minutes * 6e4).toISOString();
+    if (option.id === "today-add") return answer(`There is room for a 20-minute walk at ${when(slot.start)}. Choose Apply change to add it to this demo\u2019s local schedule. Nothing has been added yet.`, [proposal("calendar-create", null, 0, { title: "Walk", start: slot.start, end }, "Use an available 20-minute window without moving existing commitments.")]);
+    return answer(`${option.id === "today-fit" ? "Yes. A 30-minute session fits" : "There is time for a 20-minute break"} at ${when(slot.start)} until ${new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit" }).format(new Date(end))}. This is an available window, not a booking; your schedule is unchanged.`);
+  }
+  if (scope === "academics") {
+    const next = context.tasks?.find((t) => !["complete", "completed", "submitted", "cancelled", "blocked", "waiting", "archived"].includes(t.status) && t.rank !== null && !t.blocked);
+    if (option.id === "academics-lab") return null;
+    if (!next) return answer("There are no ready assignments in this demo work list. Review blocked tasks or add an assignment in Academics to try planning it.");
+    return answer(option.id === "academics-priority" ? `Start with \u201C${next.title}\u201D. Priority weighs the work remaining, its difficulty and the time left before its deadline. ${next.remainingMinutes ? `It has about ${next.remainingMinutes} minutes remaining. ` : ""}${next.nextStep ?? "Open its instructions and choose one small step."}` : `For \u201C${next.title}\u201D: 1. Open the saved instructions and identify the deliverable. 2. ${next.nextStep ?? "Write down the smallest useful first action."} 3. Save your progress and adjust the remaining-time estimate. This helps you start; it does not complete your assignment.`);
+  }
+  if (scope === "lecture") return answer(option.id === "lecture-quiz" ? "Practice question: a thermostat measures a room below the target temperature and switches on the heater. What is the input, what is the output, and how does the feedback reduce the difference? Try explaining it before checking your notes." : option.id === "lecture-compare" ? "An input enters a system; an output leaves it. For a heater, electricity is an input and heat is an output. Feedback returns information about that output, such as the room temperature, to influence the next input." : "Negative feedback reduces a difference: a thermostat turns the heater off when the room reaches its target temperature. Positive feedback reinforces a change, such as a microphone picking up its own amplified sound. These are examples from the fictional feedback lesson.");
+  if (scope === "finances") {
+    const remaining = context.diningCard?.remaining == null ? null : context.diningCard.remaining / 100;
+    if (remaining === null) return answer("Set a dining budget and record your spending in Finances first; this demo cannot infer an allowance that has not been saved.");
+    const amount = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(remaining);
+    return answer(option.id === "finances-review" ? "Check that your latest expenses are recorded, review the category balances, then compare any planned purchase with the amount remaining. The demo does not connect to a bank or make purchases." : option.id === "finances-purchase" ? `${remaining >= 15 ? "Yes, based on the expenses currently recorded" : "Not within the amount currently left"}: dining has ${amount} remaining this week. A $15 lunch would leave ${new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(remaining - 15)}. Unrecorded spending can change this; nothing was purchased or logged.` : `Your saved dining budget has ${amount} remaining this week, based on the expenses recorded in this demo. Check for missing expenses before relying on that balance.`);
+  }
+  if (scope === "project") {
+    const project = context.project ?? {}, title = project.title ?? "this project", next = String(project.nextStep ?? "").trim() || "define one small result you can check today";
+    return answer(option.id === "project-step" ? `For ${title}, ${next}. Keep the first session small enough to finish and review.` : option.id === "project-checklist" ? `Starting checklist for ${title}: 1. Define the result for this session. 2. ${next}. 3. Gather the notes or materials it needs. 4. Check the result before choosing another step.` : `Before starting ${title}, check the intended result, the information or materials still missing, the time available, and how you will tell whether the first step worked. No project records have changed.`);
+  }
+  if (scope === "support") return answer(option.id === "support-notes" ? "Open Academics \u2192 Live Notes, choose the course, then open a saved lecture or create a new one. Pen is selected when you enter. Your drawings stay with that lecture. Recording starts only when you press Record." : option.id === "support-privacy" ? "Demo edits and files are saved in this browser on this device. They are not uploaded to the LifeOS website and do not appear on another device. Clearing the browser\u2019s site data removes its local copy; download an export if you want to keep one." : "Open Settings \u2192 Backups & export \u2192 Download my records. Save the downloaded file somewhere you can find it. This creates a copy; it does not publish or send your records.");
+  return null;
+}
+
+// src/local/services.ts
+init_lifeos_day();
 init_crypto();
 
 // src/shared/llm.mjs
@@ -12552,6 +12643,8 @@ function mockReply(scope, message, context = "", env = {}) {
   }
   if (scope === "project") {
     const project = Array.isArray(saved) ? saved.find((r) => r.kind === "project") : saved?.projects?.[0] ?? saved;
+    const example = demoAssistantAnswer("project", message, { project });
+    if (example) return example.reply;
     return `Start with ${project?.title ?? "your project"}: ${project?.nextStep ?? project?.preparationSnapshot?.nextStep ?? "write down the smallest result you can check today"}. Review the materials and constraints in your notes before setting aside time to build.`;
   }
   if (scope === "cooking") {
@@ -12572,6 +12665,12 @@ I would welcome a chance to discuss how that experience fits the role. Review th
 var hash2 = (s) => createHash("sha256").update(s).digest("hex");
 async function assistantReply(scope, message, env, context = "", model, images = []) {
   return chatCompletion({ scope, message, env, context, model, images });
+}
+function demoAvailableSlots(days2, now) {
+  return days2.flatMap((d) => {
+    const occupied = d.timeline.filter((e) => e.start && e.end && Date.parse(e.end) > Date.parse(e.start) && (e.corrected || !["school", "rest", "free", "personal", "discretionary", "project"].includes(e.kind))).map((e) => ({ start: e.start, end: e.end }));
+    return [...d.availability.academicBlocks, ...d.availability.discretionaryBlocks].filter((s) => Date.parse(s.end) > Math.max(Date.parse(s.start), Date.parse(now))).flatMap((s) => availableIntervals({ start: new Date(Math.max(Date.parse(s.start), Date.parse(now))).toISOString(), end: s.end, busy: occupied }).map((slot) => ({ ...slot, day: d.date }))).filter((s) => Date.parse(s.end) > Date.parse(s.start));
+  }).sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
 }
 async function drainJobs(db, env) {
   const put = async (kind, id, data3) => {
@@ -12597,6 +12696,39 @@ async function drainJobs(db, env) {
         const timezone = (await get("settings", "preferences"))?.timezone ?? "America/Toronto";
         const prepared = thread?.preparationOnly && env.LLM_MODE === "real" ? JSON.parse(await chatCompletion({ env, scope: "project", message: message?.text ?? p.message ?? "", context: JSON.stringify(thread.preparationSnapshot), schema: projectReplySchema, model: p.model ?? thread?.model })) : null;
         reply = prepared?.reply ?? await assistantReply(thread?.preparationOnly ? "project" : scope, message?.text ?? p.message ?? "", { ...env, LIFEOS_TIMEZONE: timezone }, thread?.preparationOnly ? JSON.stringify(thread.preparationSnapshot) : context, p.model ?? thread?.model, scope === "lecture" ? [message?.note?.image, message?.slide?.image].filter(Boolean) : []);
+        let demoProposals = [];
+        if (env.AUTH_MODE === "demo" && env.LLM_MODE !== "real" && !thread?.preparationOnly) {
+          const kinds = ["task", "course", "settings", "project", "calendar-event", "schedule-correction"], records = {};
+          for (const kind of kinds) records[kind] = (await db.prepare("SELECT * FROM records WHERE kind=?").bind(kind).all()).results.map((r) => ({ ...r, data: JSON.parse(r.data) }));
+          const now = env.LOCAL_DEMO_NOW?.() ?? (/* @__PURE__ */ new Date()).toISOString(), day = lifeosDay(now, timezone), config = JSON.parse(env.APP_CONFIG ?? "{}"), settings = normalizeDomainSettings({ ...records.settings.find((r) => r.id === "preferences")?.data, allowedCalendarIds: Object.values(config.calendarIds ?? {}), schoolCalendarIds: [config.calendarIds?.schoolA, config.calendarIds?.schoolB].filter(Boolean) });
+          const days2 = [0, 1].map((offset) => {
+            const date3 = addDays(day, offset), events = records["calendar-event"].map((r) => {
+              const correction = records["schedule-correction"].find((c) => c.data.day === date3 && c.data.entryId === "plan:calendar:" + r.id && !c.data.undone)?.data;
+              return { ...r.data, id: r.id, ...correction ? { start: correction.start ?? r.data.start, end: correction.end ?? r.data.end, ...correction.hidden ? { status: "cancelled" } : {} } : {} };
+            });
+            return buildToday({ now, date: date3, records, events, settings });
+          });
+          const finance = scope === "finances" ? await financeSnapshot(new CloudStore(db), day) : null;
+          const context2 = { ...assistantContext({ scope: "today", records, now, days: days2 }), timeZone: timezone, freeSlots: demoAvailableSlots(days2, now), diningCard: finance?.summary?.cards.find((c) => c.id === "dining") };
+          for (const task of context2.tasks) {
+            const raw = records.task.find((r) => r.id === task.id)?.data;
+            task.blocked = !!raw?.blocked || (raw?.dependencies ?? []).some((id) => !["complete", "completed", "submitted"].includes(records.task.find((r) => r.id === id)?.data.status));
+          }
+          const example = demoAssistantAnswer(scope, message?.text ?? p.message ?? "", context2);
+          if (example) {
+            reply = example.reply;
+            if (example.proposals.length) {
+              await put("job-input", job.id, { job: { payload: p, context: { assistant: context2 } } });
+              for (const [i, raw] of example.proposals.entries()) {
+                const { values, ...proposal } = validateAssistantProposal(raw, context2);
+                void values;
+                const id = job.id + "-p" + i;
+                await put("assistant-proposal", id, { threadId: p.threadId, scope, jobId: job.id, proposal, contextRef: job.id, status: "proposed", expiresAt: Date.now() + 864e5, targetTitle: proposal.operation === "calendar-create" ? "Walk" : context2.schedule.flatMap((d) => d.entries).find((e) => e.id === proposal.recordId)?.title });
+                demoProposals.push(id);
+              }
+            }
+          }
+        }
         if (thread?.preparationOnly) {
           const threadRow = await db.prepare("SELECT * FROM records WHERE kind='support-thread' AND id=?").bind(p.threadId).first();
           const threadRecord = { id: p.threadId, data: thread, createdAt: threadRow.created_at };
@@ -12607,7 +12739,7 @@ async function drainJobs(db, env) {
           const artifact = prepared ? prepared.artifact : { kind: "checklist", title: "Starting-point checklist", body: "[ ] Review your project notes.\n[ ] " + (thread.preparationSnapshot.nextStep || "Identify one small next action.") + "\n[ ] Check the result before continuing.", nextAction: thread.preparationSnapshot.nextStep || "Write down one small next action.", assumptions: ["Canned fictional example; review all dimensions, costs and requirements."] };
           const preparation = savedProjectPreparation(threadRecord, { id: job.id, version: inputRow.version, data: inputData }, { artifact, needsInput: prepared?.needsInput ?? false });
           await put("support-message", job.id + "-reply", { threadId: p.threadId, role: "assistant", jobId: job.id, text: reply, scope: "today", mock: env.LLM_MODE !== "real", preparation });
-        } else await put("support-message", "local-answer-" + hash2(job.id).slice(0, 32), { threadId: p.threadId, role: "assistant", text: reply, scope: thread?.scope ?? "support", mock: env.LLM_MODE !== "real" });
+        } else await put("support-message", "local-answer-" + hash2(job.id).slice(0, 32), { threadId: p.threadId, role: "assistant", text: reply, proposalIds: demoProposals, scope: thread?.scope ?? "support", mock: env.LLM_MODE !== "real" });
       } else if (job.type === "lecture-study") {
         const request = await get("lecture-study-request", p.requestId), lecture = await get("lecture", p.lectureId);
         const type = request?.mode ?? "definition";

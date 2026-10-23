@@ -59,3 +59,9 @@ test('deleted examples stay deleted when a previous demo is upgraded',async()=>{
   assert.equal((await app.db.prepare('SELECT COUNT(*) AS n FROM retired_records').first()).n,3);
  }finally{app.close();}
 });
+
+test('an older demo gets a new example study block relative to its upgrade day',()=>fixture(async db=>{
+ await db.prepare("DELETE FROM meta WHERE key='demo-content-revision'").run();await db.prepare("DELETE FROM records WHERE kind='calendar-event' AND id='demo-study-block'").run();
+ await makeWorkspace(db,{now:new Date('2026-10-29T14:00:00Z')});
+ assert.ok((await row(db,'calendar-event','demo-study-block')).data.start.dateTime.startsWith('2026-10-30'));
+}));

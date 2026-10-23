@@ -1,3 +1,9 @@
+import {financeSnapshot} from '../cloud/finances.mjs';
+import {CloudStore} from '../cloud/store.mjs';
+import {demoAssistantAnswer} from '../../public/demo-assistant.js';
+import {buildToday,normalizeDomainSettings,addDays,availableIntervals} from '../domain/index.mjs';
+import {lifeosDay} from '../../public/lifeos-day.js';
+import {assistantContext,validateAssistantProposal} from '../shared/assistant-contract.mjs';
 import {projectReplySchema} from '../shared/project-artifact.mjs';
 import {studySchema,studyPrompt,validateStudyResult} from '../shared/lecture-study-contract.mjs';
 import {briefSchema,validateBrief} from '../shared/assignment-brief.mjs';
@@ -8,6 +14,12 @@ import {createHash,randomUUID} from 'node:crypto';
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 import {chatCompletion} from '../shared/llm.mjs';
 export async function assistantReply(scope:string,message:string,env:Record<string,any>,context:string='',model?:string,images:string[]=[]){return chatCompletion({scope,message,env,context,model,images});}
+export function demoAvailableSlots(days:any[],now:string){
+ return days.flatMap(d=>{
+  const occupied=d.timeline.filter((e:any)=>e.start&&e.end&&Date.parse(e.end)>Date.parse(e.start)&&(e.corrected||!['school','rest','free','personal','discretionary','project'].includes(e.kind))).map((e:any)=>({start:e.start,end:e.end}));
+  return [...d.availability.academicBlocks,...d.availability.discretionaryBlocks].filter(s=>Date.parse(s.end)>Math.max(Date.parse(s.start),Date.parse(now))).flatMap(s=>availableIntervals({start:new Date(Math.max(Date.parse(s.start),Date.parse(now))).toISOString(),end:s.end,busy:occupied}).map(slot=>({...slot,day:d.date}))).filter(s=>Date.parse(s.end)>Date.parse(s.start));
+ }).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));
+}
 export async function drainJobs(db:WorkspaceDatabase,env:Record<string,any>){
  const put=async(kind:string,id:string,data:any)=>{const old=await db.prepare('SELECT * FROM records WHERE kind=? AND id=?').bind(kind,id).first(),now=new Date().toISOString();await db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data,version=excluded.version,updated_at=excluded.updated_at').bind(kind,id,JSON.stringify(data),(old?.version??0)+1,old?.created_at??now,now).run();};
  const get=async(kind:string,id:string)=>{const row=await db.prepare('SELECT data FROM records WHERE kind=? AND id=?').bind(kind,id).first();return row?JSON.parse(row.data):null;};
@@ -24,6 +36,18 @@ export async function drainJobs(db:WorkspaceDatabase,env:Record<string,any>){
     const timezone=(await get('settings','preferences'))?.timezone??'America/Toronto';
     const prepared=thread?.preparationOnly&&env.LLM_MODE==='real'?JSON.parse(await chatCompletion({env,scope:'project',message:message?.text??p.message??'',context:JSON.stringify(thread.preparationSnapshot),schema:projectReplySchema,model:p.model??thread?.model})):null;
     reply=prepared?.reply??await assistantReply(thread?.preparationOnly?'project':scope,message?.text??p.message??'',{...env,LIFEOS_TIMEZONE:timezone},thread?.preparationOnly?JSON.stringify(thread.preparationSnapshot):context,p.model??thread?.model,scope==='lecture'?[message?.note?.image,message?.slide?.image].filter(Boolean):[]);
+    let demoProposals:string[]=[];
+    if(env.AUTH_MODE==='demo'&&env.LLM_MODE!=='real'&&!thread?.preparationOnly){
+     const kinds=['task','course','settings','project','calendar-event','schedule-correction'],records:Record<string,any[]>={};
+     for(const kind of kinds)records[kind]=(await db.prepare('SELECT * FROM records WHERE kind=?').bind(kind).all()).results.map(r=>({...r,data:JSON.parse(r.data)}));
+     const now=env.LOCAL_DEMO_NOW?.()??new Date().toISOString(),day=lifeosDay(now,timezone),config=JSON.parse(env.APP_CONFIG??'{}'),settings=normalizeDomainSettings({...records.settings.find(r=>r.id==='preferences')?.data,allowedCalendarIds:Object.values(config.calendarIds??{}),schoolCalendarIds:[config.calendarIds?.schoolA,config.calendarIds?.schoolB].filter(Boolean)});
+     const days=[0,1].map(offset=>{const date=addDays(day,offset),events=records['calendar-event'].map(r=>{const correction=records['schedule-correction'].find(c=>c.data.day===date&&c.data.entryId==='plan:calendar:'+r.id&&!c.data.undone)?.data;return {...r.data,id:r.id,...(correction?{start:correction.start??r.data.start,end:correction.end??r.data.end,...(correction.hidden?{status:'cancelled'}:{})}:{})};});return buildToday({now,date,records,events,settings} as any);});
+     const finance=scope==='finances'?await financeSnapshot(new CloudStore(db),day):null;
+     const context:any={...assistantContext({scope:'today',records,now,days} as any),timeZone:timezone,freeSlots:demoAvailableSlots(days,now),diningCard:finance?.summary?.cards.find(c=>c.id==='dining')};
+     for(const task of context.tasks){const raw=records.task.find(r=>r.id===task.id)?.data;task.blocked=!!raw?.blocked||(raw?.dependencies??[]).some((id:string)=>!['complete','completed','submitted'].includes(records.task.find(r=>r.id===id)?.data.status));}
+     const example=demoAssistantAnswer(scope,message?.text??p.message??'',context);
+     if(example){reply=example.reply;if(example.proposals.length){await put('job-input',job.id,{job:{payload:p,context:{assistant:context}}});for(const [i,raw]of example.proposals.entries()){const {values,...proposal}=validateAssistantProposal(raw,context);void values;const id=job.id+'-p'+i;await put('assistant-proposal',id,{threadId:p.threadId,scope,jobId:job.id,proposal,contextRef:job.id,status:'proposed',expiresAt:Date.now()+86400000,targetTitle:proposal.operation==='calendar-create'?'Walk':context.schedule.flatMap((d:any)=>d.entries).find((e:any)=>e.id===proposal.recordId)?.title});demoProposals.push(id);}}}
+    }
     if(thread?.preparationOnly){
      const threadRow=await db.prepare("SELECT * FROM records WHERE kind='support-thread' AND id=?").bind(p.threadId).first();const threadRecord={id:p.threadId,data:thread,createdAt:threadRow!.created_at};
      const context=projectPreparationContext(threadRecord,new Date().toISOString());
@@ -32,7 +56,7 @@ export async function drainJobs(db:WorkspaceDatabase,env:Record<string,any>){
      const artifact=prepared?prepared.artifact:{kind:'checklist',title:'Starting-point checklist',body:'[ ] Review your project notes.\n[ ] '+(thread.preparationSnapshot.nextStep||'Identify one small next action.')+'\n[ ] Check the result before continuing.',nextAction:thread.preparationSnapshot.nextStep||'Write down one small next action.',assumptions:['Canned fictional example; review all dimensions, costs and requirements.']};
      const preparation=savedProjectPreparation(threadRecord,{id:job.id,version:inputRow!.version,data:inputData},{artifact,needsInput:prepared?.needsInput??false});
      await put('support-message',job.id+'-reply',{threadId:p.threadId,role:'assistant',jobId:job.id,text:reply,scope:'today',mock:env.LLM_MODE!=='real',preparation});
-    }else await put('support-message','local-answer-'+hash(job.id).slice(0,32),{threadId:p.threadId,role:'assistant',text:reply,scope:thread?.scope??'support',mock:env.LLM_MODE!=='real'});
+    }else await put('support-message','local-answer-'+hash(job.id).slice(0,32),{threadId:p.threadId,role:'assistant',text:reply,proposalIds:demoProposals,scope:thread?.scope??'support',mock:env.LLM_MODE!=='real'});
    }else if(job.type==='lecture-study'){
     const request=await get('lecture-study-request',p.requestId),lecture=await get('lecture',p.lectureId);const type=request?.mode??'definition';
     const fields=env.LLM_MODE==='real'?validateStudyResult(JSON.parse(await chatCompletion({env,scope:'lecture',message:studyPrompt({mode:type,context:request?.context??{},page:request?.page}),context:JSON.stringify({request,lecture},(key,value)=>key==='image'?undefined:value),images:[request?.page?.image??request?.context?.slide?.image].filter(Boolean),schema:studySchema})),type):{question:'Explain the feedback loop in a thermostat.',answer:'A sensor reports temperature; heating changes it; the sensor feeds the result back to the controller.',hint:'Identify one output and the input it changes.',text:type==='index'?'Feedback loop, input, output. This demo index is an example; review your handwriting yourself.':'',uncertain:true,evidence:'Canned fictional example; review the selected page yourself.'};

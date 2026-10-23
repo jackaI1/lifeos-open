@@ -1,3 +1,4 @@
+import {demoAssistantChoices} from './demo-assistant-choices.js';
 import {preparedWorkContent} from './project-preparations.js';
 import {DEFAULT_ASSISTANT_PRESET} from './assistant-presets.js';
 import {assistantEffort} from './assistant-effort.js';
@@ -13,7 +14,7 @@ const names={today:'Personal assistant',academics:'Academic advisor',finances:'F
 export function assistantButton(ctx,scope){const b=button(controlIcon('chat'),()=>ctx.go(base(scope)+'?assistant'),'quiet icon-button');b.setAttribute('aria-label',names[scope]);b.title=names[scope];return b;}
 export function assistantPollDelay(job,sentAt=0,now=Date.now()){if(job.status==='running')return 2000;if(/quota|reserve|allowance|sign-in|earlier/i.test(job.waiting||job.progress||''))return 30000;return /computer/i.test(job.waiting||job.progress||'')?(now-sentAt<60000?3000:15000):2000;}
 export async function mountAssistant(root,ctx,scope,options={}){
- let sentForPollingAt=0,loadSequence=0,watchedJob=null,selectionSave=Promise.resolve();
+ let sentForPollingAt=0,loadSequence=0,watchedJob=null,selectionSave=Promise.resolve(),opened=false,restoring=0;
  const usage=ctx.capabilities?.usage===false?{node:null,refresh:async()=>{},destroy(){}}:usageIndicator(ctx);
  const localScope=scope+(options.lectureId?':'+options.lectureId:'')+(options.projectId?':project:'+options.projectId:''),embedded=!!options.embedded;
  let disposed=false,thread=null,threads=[],watchTimer=null,job=null,draftToken=crypto.randomUUID(),dirty=false,localDurable=true,sending=false,generation=0,savePromise=Promise.resolve(),lastMessage='',attachments=[],useVisibleNotes=true,uploadingPhotos=0,creating=false;
@@ -46,7 +47,8 @@ export async function mountAssistant(root,ctx,scope,options={}){
   finally{uploadingPhotos--;send.disabled=sending||uploadingPhotos>0;}
  }
  const send=button(controlIcon('send'),()=>void sendMessage(),'assistant-send icon-button');send.setAttribute('aria-label','Send message');
- replace(root,el('section',{class:'assistant-page'+(embedded?' assistant-embedded':'')},el('header',{class:'assistant-header'},sidebar,el('h1',{},options.projectId?'Project help':names[scope]),usage.node,newChat),options.projectId?preparationState:null,drawer,messages,state,scope==='lecture'?contextRow:null,el('form',{class:'assistant-composer',onsubmit:e=>{e.preventDefault();void sendMessage();}},scope==='lecture'?attachmentRow:null,input.node,el('div',{class:'assistant-composer-tools'},scope==='lecture'?attach:back,ctx.capabilities?.modelChoice===false?null:menu.node,send))));
+ const examples=demoAssistantChoices({session:ctx.state.session,scope:options.projectId?'project':scope,input:input.input,onSend:sendMessage,onBlocked:report,canSend:()=>opened&&!creating&&!sending&&!uploadingPhotos&&!restoring});
+ replace(root,el('section',{class:'assistant-page'+(embedded?' assistant-embedded':'')},el('header',{class:'assistant-header'},sidebar,el('h1',{},options.projectId?'Project help':names[scope]),usage.node,newChat),options.projectId?preparationState:null,drawer,messages,examples,state,scope==='lecture'?contextRow:null,el('form',{class:'assistant-composer',onsubmit:e=>{e.preventDefault();void sendMessage();}},scope==='lecture'?attachmentRow:null,input.node,el('div',{class:'assistant-composer-tools'},scope==='lecture'?attach:back,ctx.capabilities?.modelChoice===false?null:menu.node,send))));
  function saveDraft(){dirty=true;draftToken=crypto.randomUUID();const key=draftKey(),value={token:draftToken,text:input.input.value,attachments,useVisibleNotes,threadId:thread?.id??null};savePromise=ctx.store.put(key,value).then(ok=>{localDurable=ok!==false;if(!localDurable)report('This device could not save the draft.',button('Download draft',()=>download('lifeos-unsent-message.txt',input.input.value,'text/plain'),'text-button'));});};
  function sizeComposer(){if(input.input.scrollHeight){input.input.style.height='auto';input.input.style.height=Math.min(input.input.scrollHeight,180)+'px';}}
  input.input.rows=1;input.input.oninput=()=>{saveDraft();sizeComposer();};input.input.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&matchMedia('(hover: hover) and (pointer: fine)').matches){e.preventDefault();void sendMessage();}};if(scope==='lecture')input.input.onpaste=e=>{const files=[...(e.clipboardData?.items??[])].filter(i=>i.type.startsWith('image/')).map(i=>i.getAsFile()).filter(Boolean);if(files.length){e.preventDefault();for(const file of files.slice(0,2-attachments.length))void addPhoto(file);}};
@@ -73,7 +75,7 @@ export async function mountAssistant(root,ctx,scope,options={}){
  function renderHistory(){replace(history,...threads.map(t=>button(t.data.title||formatDate(t.createdAt),()=>void choose(t).then(chosen=>{if(chosen)hideHistory();}),'list-button'+(thread?.id===t.id?' active':''))));}
  async function newThread(carry=false){
   if(disposed||creating)return false;if(uploadingPhotos){report('Wait for the photo to finish saving.');return false;}
-  creating=true;newChat.disabled=true;
+  creating=true;examples?.refresh();newChat.disabled=true;
   const previousId=thread?.id,selectedGeneration=++generation,preset=carry?effort.preset:DEFAULT_ASSISTANT_PRESET,current=()=>!disposed&&generation===selectedGeneration;
   try{
    await savePromise;if(!current())return false;
@@ -88,10 +90,11 @@ export async function mountAssistant(root,ctx,scope,options={}){
    if(carry&&launchKey){await ctx.store.put(launchKey,{id:result.item.id});if(!current())return false;}
    if(!await choose(result.item,{keepComposer:carry}))return false;
    hideHistory();menu.hide();report('');sizeComposer();input.input.focus({preventScroll:true});return true;
-  }catch(e){if(current())report(e.message);return false;}finally{creating=false;newChat.disabled=false;if(!disposed&&thread?.id===previousId)watch(watchedJob);}
+  }catch(e){if(current())report(e.message);return false;}finally{creating=false;examples?.refresh();newChat.disabled=false;if(!disposed&&thread?.id===previousId)watch(watchedJob);}
  }
  async function choose(next,{keepComposer=false}={}){
   if(disposed)return false;if(!acceptsThread(next)){report('This conversation belongs to another workspace.');return false;}if(uploadingPhotos){report('Wait for the photo to finish saving.');return false;}
+  restoring++;examples?.refresh();
   const previousId=thread?.id,selectedGeneration=++generation,id=next.id,oldKey=draftKey(),key=`draft:assistant:${localScope}:${id}`,current=()=>!disposed&&generation===selectedGeneration;
   try{
    await savePromise;if(!current())return false;
@@ -112,8 +115,8 @@ export async function mountAssistant(root,ctx,scope,options={}){
     const draft=await ctx.store.get(key);if(!current())return false;
     if(draft&&draftToken===restoreToken){input.input.value=draft.text;draftToken=draft.token;attachments=draft.attachments??[];useVisibleNotes=draft.useVisibleNotes!==false;visibleToggle.checked=useVisibleNotes;dirty=!!draft.text||attachments.length>0;}
    }
-   paintAttachments();sizeComposer();renderHistory();await load();return current();
-  }catch(e){if(current())report(e.message);return false;}finally{if(!disposed&&thread?.id===previousId)watch(watchedJob);}
+   paintAttachments();sizeComposer();renderHistory();await load();if(current())opened=true;return current();
+  }catch(e){if(current())report(e.message);return false;}finally{restoring--;examples?.refresh();if(!disposed&&thread?.id===previousId)watch(watchedJob);}
  }
  function historyReplace(){if(embedded||disposed)return;window.history.replaceState(null,'','#'+base(scope)+'?assistant='+encodeURIComponent(thread.id));ctx.state.routeHash=location.hash;}
  const formatValue=(key,value)=>{if(value===null)return 'Clear';if(typeof value==='boolean')return value?'Yes':'No';if(['start','end','dueAt'].includes(key)&&value)return formatDate(value)+' · '+formatTime(value);return String(value);};
@@ -149,7 +152,7 @@ export async function mountAssistant(root,ctx,scope,options={}){
    await ctx.store.remove(key,token);if(disposed||thread?.id!==expected)return;
    if(draftToken===token){input.input.value='';sizeComposer();attachments=[];paintAttachments();dirty=false;}if(generation!==selectedGeneration){await load();return;}lastMessage=message;
    if(result.pending){messages.append(el('article',{class:'assistant-message user'},message));report(result.reason);return;}
-   thread=result.thread;await load();
+   thread=result.thread;await load();if(current())messages.scrollTop=messages.scrollHeight;
   }catch(e){if(current())report(e.message);}finally{sending=false;send.disabled=uploadingPhotos>0;}}
  const visibility=()=>{clearTimeout(watchTimer);if(!document.hidden)void load();};document.addEventListener('visibilitychange',visibility);
  const openingGeneration=generation,openingDraftToken=draftToken,openingCurrent=()=>!disposed&&generation===openingGeneration;
@@ -183,7 +186,7 @@ export async function mountAssistant(root,ctx,scope,options={}){
   }
   return true;
  }
- let opened=false;try{opened=await openInitial();}catch(e){if(openingCurrent())report(e.message);}
+ try{opened=await openInitial();}catch(e){if(openingCurrent())report(e.message);}finally{examples?.refresh();}
  if(opened&&!disposed&&options.initialMessage&&!input.input.value&&!thread){input.input.value=options.initialMessage;saveDraft();sizeComposer();if(options.sendInitial)void sendMessage();}
  if(opened&&options.initialPhotoIds?.length)for(const id of options.initialPhotoIds.slice(0,2)){if(!await attachExistingPhoto(id))break;}
  return {focus:()=>input.input.focus({preventScroll:true}),attachPhoto:attachExistingPhoto,dirty:()=>(dirty&&!localDurable)||sending||uploadingPhotos>0,beforeLeave:async()=>{if(uploadingPhotos){toast('Wait for the photo to finish saving before closing.');return false;}await savePromise;if(!localDurable&&dirty){toast('Download the unsent message before leaving. This device could not save it.');return false;}return true;},update:()=>{if(!sending)void load();},destroy(){disposed=true;generation++;clearTimeout(watchTimer);stopHistoryDismiss();document.removeEventListener('keydown',historyKey);menu.destroy();usage.destroy();document.removeEventListener('visibilitychange',visibility);}};

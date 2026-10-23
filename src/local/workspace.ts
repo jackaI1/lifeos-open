@@ -6,6 +6,7 @@ import {scenarioRecords,scenarioEvents,assignmentBundle,STORY_DAY} from '../../d
 import {assignmentSources} from '../shared/assignment-brief.mjs';
 import {publicProjectRecords} from '../../demo/public-projects.mjs';
 import {createDemoMarathonSource,DEMO_MARATHON_GOAL_MINUTES} from '../../demo/marathon-plan.mjs';
+import {addDays,zonedDateTime} from '../domain/time.mjs';
 import {lifeosDay} from '../../public/lifeos-day.js';
 const sha=(s:string|Uint8Array)=>createHash('sha256').update(s).digest('hex');
 export const DEMO_NAME='Alex Morgan';
@@ -26,6 +27,7 @@ export async function makeWorkspace(db:WorkspaceDatabase,{demo=true,now=new Date
  await assignmentExamples(db,stamp,rec);
  await rec('calendar-event','demo-lab',{title:'Systems lab',calendarId:'demo-school',start:{dateTime:new Date(now.getTime()+10*60000).toISOString()},end:{dateTime:new Date(now.getTime()+70*60000).toISOString()},location:'Room S-204',description:'Bring safety goggles and your lab notebook. Complete the pre-lab checklist before arriving.'});
 
+ await rec('calendar-event','demo-study-block',demoStudyBlock(date));
  await rec('profile','local-user',{name:DEMO_NAME,fictional:true});
  await rec('learning-note','demo-feedback',{type:'concept',courseId:'demo-course-design',title:'Feedback loop',text:'A feedback loop returns information about a system output to influence future inputs.',status:'learning',linkedIds:[],studyItemIds:[],authority:'owner-study-note'});
  await rec('private-note-folder','demo-folder',{title:'Class notes'});
@@ -84,7 +86,8 @@ export async function makeWorkspace(db:WorkspaceDatabase,{demo=true,now=new Date
  await db.prepare('INSERT INTO meta VALUES(?,?)').bind('local-initialized','true').run();
 }
 
-const DEMO_REVISION='2026-10-22-content-v2';
+const DEMO_REVISION='2026-10-22-content-v3';
+function demoStudyBlock(date:string){const day=addDays(date,1);return {title:'Study feedback models',calendarId:'demo-personal',start:{dateTime:zonedDateTime(day,'08:30',{timeZone:'America/Toronto'})},end:{dateTime:zonedDateTime(day,'08:50',{timeZone:'America/Toronto'})},description:'Fictional flexible study session for trying the schedule assistant.'};}
 function demoTraining(date:string){const start=new Date(date+'T12:00Z');start.setUTCDate(start.getUTCDate()-((start.getUTCDay()+6)%7)+17*7+6);return {raceDate:start.toISOString().slice(0,10),goalMinutes:DEMO_MARATHON_GOAL_MINUTES,notes:'Hansons Beginner Marathon · 18 weeks. Example goal: 4 hours. Keep the published workout days and mileage; adjust to your own training history.'};}
 function prayerExamples(){return [
  ['demo-thanks','thanksgiving','Gratitude','Give thanks for daily provision, friendship and opportunities to learn.'],
@@ -120,6 +123,7 @@ async function refreshDemoExamples(db:WorkspaceDatabase,now:Date){
   const oldPoints=['Notice something good.','Consider the context.','Reflect on kindness.','Name a human need.','Choose one practical act.','Listen with care.','Take a quiet moment.'];
   for(const r of (await db.prepare("SELECT * FROM records WHERE kind='devotional'").all()).results){const d=JSON.parse(r.data);if(JSON.stringify(d.points)===JSON.stringify(oldPoints)&&d.complete===false)await put('devotional',r.id,{...d,points:Array(7).fill('')});}
   const legacy=await get('project','demo-project');if(legacy&&JSON.parse(legacy.data).title==='Build a balcony planter')await put('project','demo-project',{...JSON.parse(legacy.data),archived:true});
+  if(!await get('calendar-event','demo-study-block'))await put('calendar-event','demo-study-block',demoStudyBlock(lifeosDay(now.getTime(),'America/Toronto')));
   for(const row of publicProjectRecords())if(!await get('project',row.id))await put('project',row.id,row.data);
   for(const row of prayerExamples())if(!await get('prayer-note',row.id))await put('prayer-note',row.id,row.data);
   const baseline=await get('training','baseline');if(baseline&&JSON.parse(baseline.data).notes==='Fictional fitness plan; edit for your own ability.')await put('training','baseline',demoTraining(date));
