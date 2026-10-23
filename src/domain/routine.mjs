@@ -3,11 +3,12 @@ import {lifeosDay} from '../../public/lifeos-day.js';
 import { DEFAULT_TIME_ZONE, instant, localDate, zonedDateTime, weekday, addDays, addMinutes, availableIntervals, mergeIntervals, minutesBetween, overlap } from './time.mjs';
 import { assessSpiritualPlans, schoolReleaseExtension } from './spiritual.mjs';
 
-export const ROUTINE_DEFAULTS = Object.freeze({ timeZone: DEFAULT_TIME_ZONE, wakeTime: '06:30', outOfBedCutoff: '06:45', campusArrivalTime: '08:30', releaseTime: '17:00', bedTime: '22:00', recoveryTime: '20:30', breakfastMinutes: 30, commuteMinutes: 30, lunchMinutes: 45, dinnerMinutes: 60, exerciseMinutes: 60, fridayRunMinutes: 30, showerMinutes: 30, transitionMinutes: 5, focusBlockMinutes: 50, studyBreakMinutes: 10, fridayFellowshipStart: '19:30', fridayFellowshipEnd: '21:30', fridayTravelMinutes: 30, fridayBedTime: '22:30', saturdayWakeTime: '07:00', groceryMinutes: 120 });
+export const ROUTINE_DEFAULTS = Object.freeze({ spiritualPracticesEnabled: false, timeZone: DEFAULT_TIME_ZONE, wakeTime: '06:30', outOfBedCutoff: '06:45', campusArrivalTime: '08:30', releaseTime: '17:00', bedTime: '22:00', recoveryTime: '20:30', breakfastMinutes: 30, commuteMinutes: 30, lunchMinutes: 45, dinnerMinutes: 60, exerciseMinutes: 60, fridayRunMinutes: 30, showerMinutes: 30, transitionMinutes: 5, focusBlockMinutes: 50, studyBreakMinutes: 10, fridayFellowshipStart: '19:30', fridayFellowshipEnd: '21:30', fridayTravelMinutes: 30, fridayBedTime: '22:30', saturdayWakeTime: '07:00', groceryMinutes: 120 });
 
 /** Feasible blocks only. Unfittable commitments stay visible in conflicts/unscheduled. */
 export function buildDayPlan({ date, now, events = [], settings = {}, spiritual = {} }) {
   const config = { ...ROUTINE_DEFAULTS, ...settings, ...(settings.exceptions?.[date] ?? {}) };
+  const spiritualPracticesEnabled = config.spiritualPracticesEnabled === true;
   const morningCommuteMinutes = config.morningCommuteMinutes ?? config.commuteMinutes;
   const eveningCommuteMinutes = config.eveningCommuteMinutes ?? config.commuteMinutes;
   for (const key of ['breakfastMinutes', 'commuteMinutes', 'lunchMinutes', 'dinnerMinutes', 'exerciseMinutes', 'fridayRunMinutes', 'showerMinutes', 'transitionMinutes', 'focusBlockMinutes', 'studyBreakMinutes', 'fridayTravelMinutes', 'groceryMinutes']) {
@@ -46,20 +47,20 @@ export function buildDayPlan({ date, now, events = [], settings = {}, spiritual 
   // Keep morning preparation separate from devotional and food preparation.
   let morning = wake;
   reserve('getting-ready', 'Wake up and get ready', morning, 10); morning = addMinutes(morning, 10);
-  reserve('devotional', 'Morning devotional', morning, 30, { plan: 'A', optionalIfComplete: true }); morning = addMinutes(morning, 30);
+  if (spiritualPracticesEnabled) { reserve('devotional', 'Morning devotional', morning, 30, { plan: 'A', optionalIfComplete: true }); morning = addMinutes(morning, 30); }
   reserve('getting-ready', 'Wash and get ready', morning, 20); morning = addMinutes(morning, 20);
   reserve('breakfast', 'Breakfast and lunch preparation', morning, config.breakfastMinutes, { protected: true }); morning = addMinutes(morning, config.breakfastMinutes);
 
-  const extensionMinutes = sunday || saturday ? 0 : schoolReleaseExtension({ date, devotional: spiritual.devotional, timeZone: config.timeZone });
+  const extensionMinutes = !spiritualPracticesEnabled || sunday || saturday ? 0 : schoolReleaseExtension({ date, devotional: spiritual.devotional, timeZone: config.timeZone });
   const release = addMinutes(at(config.releaseTime), extensionMinutes);
   let schoolWindow = null, dinner = null, discretionaryWindow = null;
   if (!sunday && !saturday) {
     const commuteStart = addMinutes(at(config.campusArrivalTime), -morningCommuteMinutes);
-    reserve('commute', 'Walk to campus and prayer', commuteStart, morningCommuteMinutes, { prayerPlan: 'A', requiresSafeStationaryFinish: morningCommuteMinutes < 15 });
-    if (instant(morning) > instant(commuteStart)) notes.push('Morning preparation exceeds the arrival plan. Adjust preparation or use a spiritual fallback; do not overlap the time.');
+    reserve('commute', spiritualPracticesEnabled ? 'Walk to campus and prayer' : 'Walk to campus', commuteStart, morningCommuteMinutes, spiritualPracticesEnabled ? { prayerPlan: 'A', requiresSafeStationaryFinish: morningCommuteMinutes < 15 } : {});
+    if (instant(morning) > instant(commuteStart)) notes.push('Morning preparation exceeds the arrival plan. Adjust preparation without overlapping the time.');
     schoolWindow = { start: at(config.campusArrivalTime), end: release };
     flexible('lunch', 'Lunch', at('11:30'), at('14:00'), config.lunchMinutes, { protected: true });
-    reserve('commute', 'Walk home', release, eveningCommuteMinutes, { prayerPlan: 'C' });
+    reserve('commute', 'Walk home', release, eveningCommuteMinutes, spiritualPracticesEnabled ? { prayerPlan: 'C' } : {});
     dinner = reserve('dinner', 'Dinner', addMinutes(release, eveningCommuteMinutes), config.dinnerMinutes, { protected: true });
     if (friday) {
       const outbound = addMinutes(at(config.fridayFellowshipStart), -config.fridayTravelMinutes);
@@ -89,8 +90,8 @@ export function buildDayPlan({ date, now, events = [], settings = {}, spiritual 
       }
     }
   } else if (saturday) {
-    reserve('prayer', 'Morning prayer', morning, 15, { plan: 'A' });
-    schoolWindow = { start: addMinutes(morning, 15), end: at('12:00'), optional: true };
+    if (spiritualPracticesEnabled) reserve('prayer', 'Morning prayer', morning, 15, { plan: 'A' });
+    schoolWindow = { start: spiritualPracticesEnabled ? addMinutes(morning, 15) : morning, end: at('12:00'), optional: true };
     flexible('lunch', 'Lunch', at('12:00'), at('13:30'), config.lunchMinutes, { protected: true });
     flexible('groceries', 'Groceries', at('12:00'), at('17:30'), config.groceryMinutes);
     if (config.saturdayRunMinutes != null) flexible('exercise', 'Configured run time including warm-up and cooldown', at('12:00'), at('17:30'), config.saturdayRunMinutes, { trainingPrescription: false });
@@ -100,7 +101,7 @@ export function buildDayPlan({ date, now, events = [], settings = {}, spiritual 
     else notes.push('Configure the actual commute home after dinner. No travel duration has been assumed.');
     discretionaryWindow = { start: at('12:00'), end: at('17:30') };
   } else {
-    reserve('prayer', 'Prayer', morning, 15, { plan: 'A' });
+    if (spiritualPracticesEnabled) reserve('prayer', 'Prayer', morning, 15, { plan: 'A' });
     flexible('lunch', 'Lunch', at('11:30'), at('14:00'), config.lunchMinutes, { protected: true });
     dinner = reserve('dinner', 'Dinner', at('17:30'), config.dinnerMinutes, { protected: true });
     notes.push('Sunday is for church, family, rest and spiritual practices. School planning, projects and exercise are excluded.');
@@ -108,7 +109,7 @@ export function buildDayPlan({ date, now, events = [], settings = {}, spiritual 
   }
   // Allocate independent B slots only from actual remaining weekday capacity.
   const campusSlots = [];
-  if (schoolWindow && !saturday) {
+  if (spiritualPracticesEnabled && schoolWindow && !saturday) {
     for (const kind of ['devotional', 'prayer']) {
       const state = spiritual[kind],duration=kind==='prayer'?15:30;
       if (state?.complete && (kind==='devotional'||state.completedAt) && practiceDay(state,kind,config.timeZone) === date) continue;
@@ -122,7 +123,7 @@ export function buildDayPlan({ date, now, events = [], settings = {}, spiritual 
   }
   const spiritualPlans = assessSpiritualPlans({ date, now: now ?? wake, devotional: spiritual.devotional, prayer: spiritual.prayer, campusSlots, settings: config });
   // Move proposed practice time, never recorded completion evidence.
-  for(const kind of ['devotional','prayer']){
+  for(const kind of spiritualPracticesEnabled ? ['devotional','prayer'] : []){
     const duration=kind==='prayer'?15:30;const state=spiritualPlans[kind],original=blocks.find(b=>b.kind===kind),current=instant(now??wake);
     if(state.complete){for(let i=blocks.length-1;i>=0;i--)if(blocks[i].kind===kind)blocks.splice(i,1);continue;}
     const missed=original?instant(original.end)<=current:current>=instant(at(config.campusArrivalTime));
@@ -153,7 +154,7 @@ export function buildDayPlan({ date, now, events = [], settings = {}, spiritual 
   }
   const availableEvening = discretionaryWindow && instant(discretionaryWindow.end) > instant(discretionaryWindow.start) ? availableIntervals({ ...discretionaryWindow, busy: blocks, minimumMinutes: 5 }).map(i => ({ ...i, roomOnly: blocks.some(b => b.kind === 'shower' && instant(b.end) <= instant(i.start)) })) : [];
 
-  return { date, dayType: sunday ? 'sunday' : saturday ? 'saturday' : friday ? 'friday' : 'weekday', timeZone: config.timeZone, blocks: blocks.sort((a, b) => instant(a.start) - instant(b.start)), calendarEvents: actual, conflicts, unscheduled, notes, schoolWindow, academicBlocks, academicMinutes: academicBlocks.reduce((sum, b) => sum + b.minutes, 0), academicAllowed: !sunday, academicOptional: saturday, discretionaryBlocks: availableEvening, discretionaryMinutes: availableEvening.reduce((sum, b) => sum + b.minutes, 0), ticketEvening: day >= 1 && day <= 4, campusSlots, spiritual: spiritualPlans, releaseAt: sunday || saturday ? null : release, extensionMinutes, sleepOpportunityMinutes: minutesBetween(bedtime, zonedDateTime(addDays(date, 1), friday ? config.saturdayWakeTime : config.wakeTime, { timeZone: config.timeZone })) };
+  return { date, spiritualPracticesEnabled, dayType: sunday ? 'sunday' : saturday ? 'saturday' : friday ? 'friday' : 'weekday', timeZone: config.timeZone, blocks: blocks.sort((a, b) => instant(a.start) - instant(b.start)), calendarEvents: actual, conflicts, unscheduled, notes, schoolWindow, academicBlocks, academicMinutes: academicBlocks.reduce((sum, b) => sum + b.minutes, 0), academicAllowed: !sunday, academicOptional: saturday, discretionaryBlocks: availableEvening, discretionaryMinutes: availableEvening.reduce((sum, b) => sum + b.minutes, 0), ticketEvening: day >= 1 && day <= 4, campusSlots, spiritual: spiritualPlans, releaseAt: sunday || saturday ? null : release, extensionMinutes, sleepOpportunityMinutes: minutesBetween(bedtime, zonedDateTime(addDays(date, 1), friday ? config.saturdayWakeTime : config.wakeTime, { timeZone: config.timeZone })) };
 }
 
 export function academicAutomationAllowed({ now, settings = {} }) {

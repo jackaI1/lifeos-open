@@ -15,10 +15,10 @@ export function scheduleTick({store,config,now=new Date().toISOString()}){
   const current=Date.parse(now),sleeping=today.blocks.some(block=>block.kind==='sleep'&&Date.parse(block.start)<=current&&Date.parse(block.end)>current);
   const wake=weekday(localDate(now,timeZone))===6?(prefs.saturdayWakeTime??'07:00'):(prefs.wakeTime??'06:30'),bed=weekday(localDate(now,timeZone))===5?(prefs.fridayBedtime??prefs.lightsOut??'22:00'):(prefs.lightsOut??'22:00');
   const awake=wake<bed?clock>=wake&&clock<bed:clock>=wake||clock<bed;
-  if(awake&&prefs.hourlyPrayerReminder!==false){const hour=clock.slice(0,2),civilDay=localDate(now,timeZone);once('hourly-prayer:'+date+':'+civilDay+':'+hour,'notification',{id:'hourly-prayer-'+civilDay+'-'+hour,route:'prayer',notice:'hourly-prayer',expiresAt:Math.min(current+10*60000,Math.floor(current/3600000)*3600000+3600000)},9);}
+  if(awake&&prefs.hourlyPrayerReminder===true){const hour=clock.slice(0,2),civilDay=localDate(now,timeZone);once('hourly-prayer:'+date+':'+civilDay+':'+hour,'notification',{id:'hourly-prayer-'+civilDay+'-'+hour,route:'prayer',notice:'hourly-prayer',expiresAt:Math.min(current+10*60000,Math.floor(current/3600000)*3600000+3600000)},9);}
   const unfinished=Object.values(today.spiritual).filter(state=>state?.complete===false),recovery=unfinished.some(state=>state.plan==='D');
   if(!sleeping&&!quietNow(now,prefs))for(const state of unfinished){
-   if(state.kind==='prayer'&&prefs.hourlyPrayerReminder!==false)continue;
+   if(state.kind==='prayer'&&prefs.hourlyPrayerReminder===true)continue;
    const campusDay=['weekday','friday'].includes(today.dayType),start=Date.parse(state.slot?.start),end=Date.parse(state.slot?.end);
    const due=state.plan==='D'||campusDay&&(state.plan==='B'&&start<=current+5*60000&&end>current||state.plan==='C'&&current>=Date.parse(today.releaseAt)-5*60000);
    if(due){const key=`spiritual:${today.date}:${state.kind}:${state.plan}`;once(key,'notification',{id:key,route:state.kind,notice:'practice-due',practice:state.kind,expiresAt:current+15*60000},8);}
