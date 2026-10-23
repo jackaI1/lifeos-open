@@ -1,0 +1,11 @@
+import {createRequire} from 'node:module';import {readFile,readdir,writeFile,mkdir} from 'node:fs/promises';import {resolve,extname} from 'node:path';
+const require=createRequire(import.meta.url);
+export async function createHostedRuntime({origin='https://demo.example.test',parent='https://owner.example.test',port=0,persist=false,inspect=false,secure=false}={}){
+ const {Miniflare}=await import(require.resolve('miniflare',{paths:[process.env.LIFEOS_WORKER_TOOLCHAIN??process.cwd()]}));
+ const dir=resolve('.runtime/hosted/build'),modules={};
+ for(const name of await readdir(dir)){const ext=extname(name);if(!['.js','.sql','.wav','.jpg','.pdf'].includes(ext))continue;const data=await readFile(resolve(dir,name));modules[name]={type:ext==='.js'?'esm':ext==='.sql'?'text':'data',contents:['.js','.sql'].includes(ext)?data.toString():data};}
+ const blocked=[];
+ const config={name:'demo-test',type:'worker',compatibilityDate:'2026-09-07',compatibilityFlags:['nodejs_compat'],manifest:{mainModule:'worker.js',modules},env:{ASSETS:{type:'assets'},WORKSPACES:{type:'durable-object',worker:'demo-test',exportName:'DemoWorkspace'},ADMISSION:{type:'durable-object',worker:'demo-test',exportName:'DemoAdmission'},DEMO_ORIGIN:{type:'text',value:origin},PARENT_ORIGIN:{type:'text',value:parent},SESSION_SECRET:{type:'text',value:'synthetic-only-visitor-secret-for-local-runtime-2026'}},exports:{DemoWorkspace:{type:'durable-object',storage:'sqlite'},DemoAdmission:{type:'durable-object',storage:'sqlite'}},assets:{directory:resolve('public'),runWorkerFirst:true,hasUserWorker:true,notFoundHandling:'none'}};
+ const mf=new Miniflare({https:secure,unsafeInspectDurableObjects:inspect,host:'127.0.0.1',port,...(persist?{resourcePersistencePath:resolve('.runtime/hosted/preview-storage')}:{}),workers:[{config,dev:{outboundService:{type:'fetcher',handler:r=>{blocked.push(new URL(r.url).origin);return new Response('External services are disabled in this test.',{status:502});}}}}]});
+ try{const url=await mf.ready;await mkdir('.runtime/hosted',{recursive:true});await writeFile('.runtime/hosted/active-runtime.json',JSON.stringify({owner:'isolated hosted demo runtime',pid:process.pid,origin:String(url),cleanup:'await mf.dispose() in caller finally'}));return {mf,blocked,origin,parent,url};}catch(e){await mf.dispose();throw e;}
+}

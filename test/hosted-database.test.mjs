@@ -33,3 +33,5 @@ test('storage cap rejects a write and rolls it back atomically',async()=>{
  assert.equal((await db.prepare('SELECT count(*) n FROM sample').first()).n,0);
  }finally{s.close();}
 });
+
+test('visitor exports exclude platform-internal storage',async()=>{const s=storage();try{const db=await adapter(s);db.exec(`CREATE TABLE _cf_KV(value TEXT); INSERT INTO _cf_KV VALUES('secret visitor credential'); CREATE TABLE records(id TEXT);`);const {createBackup}=await import('../src/local/backup-data.ts');const b=await createBackup(db);assert.ok(!Object.keys(b.tables).some(k=>k.startsWith('_')));}finally{s.close();}});
