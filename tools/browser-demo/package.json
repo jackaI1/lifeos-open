@@ -1,0 +1,13 @@
+{
+  "name": "lifeos-browser-demo-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@noble/hashes": "2.0.1",
+    "base64-js": "1.5.1",
+    "buffer": "6.0.3",
+    "ieee754": "1.2.1",
+    "sql.js": "1.13.0"
+  }
+}

@@ -1,0 +1,13 @@
+import {build} from 'esbuild';
+import {mkdir,copyFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import './browser-demo/install.mjs';
+const root=resolve(import.meta.dirname,'..'),modules=resolve(root,'.runtime/browser-demo/node_modules'),output=resolve(root,'public/vendor/browser-demo');await mkdir(output,{recursive:true});
+const aliases={name:'browser-only-adapters',setup(b){b.onResolve({filter:/\/(scheduled|worker-api)\.mjs$/},()=>({path:resolve(root,'src/browser/no-server-workers.mjs')}));b.onResolve({filter:/^(node:crypto|crypto)$/},()=>({path:resolve(root,'src/browser/crypto.mjs')}));b.onResolve({filter:/^(node:fs\/promises|fs|path)$/},()=>({path:resolve(root,'src/browser/no-filesystem.mjs')}));}};
+const common={bundle:true,target:'es2022',format:'esm',nodePaths:[modules],inject:[resolve(root,'src/browser/globals.mjs')],loader:{'.sql':'text'},plugins:[aliases],sourcemap:false,legalComments:'inline'};
+await build({...common,entryPoints:[resolve(root,'src/browser/worker.mjs')],platform:'browser',define:{process:'undefined'},outfile:resolve(output,'worker.mjs')});
+await build({...common,entryPoints:[resolve(root,'src/browser/client.mjs')],platform:'browser',outfile:resolve(output,'client.mjs')});
+await copyFile(resolve(modules,'sql.js/dist/sql-wasm.wasm'),resolve(output,'sql-wasm.wasm'));
+await copyFile(resolve(root,'src/cloud/schema.sql'),resolve(output,'schema.sql'));
+if(process.argv.includes('--test-bundle'))await build({...common,entryPoints:[resolve(root,'src/browser/service.mjs')],platform:'node',outfile:resolve(root,'.runtime/browser-demo/service-test.mjs')});
+console.log('Built browser-only LifeOS engine, client bridge, and SQLite WASM.');
