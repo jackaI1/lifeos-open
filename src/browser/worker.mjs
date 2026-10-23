@@ -1,6 +1,7 @@
 import initSqlJs from 'sql.js/dist/sql-wasm.js';
 import {Buffer} from 'buffer';
 import {createBrowserService} from './service.mjs';
+import {createWorkspaceRequest} from './request.mjs';
 import {openWorkspaceDatabase,readWorkspace,writeWorkspace,withWorkspaceLock} from './persistence.mjs';
 const nativeFetch=globalThis.fetch.bind(globalThis),origin=self.location.origin;
 const assets=new Map([
@@ -22,9 +23,7 @@ async function operate(message){
  return withWorkspaceLock(async()=>{
   const saved=await readWorkspace(storage),service=await createBrowserService({SQL,origin,bytes:saved?.bytes,readAsset});
   try{
-   const headers=new Headers(message.headers);headers.set('origin',origin);headers.set('x-lifeos-csrf',service.csrf);
-   const method=message.method??'GET',url=new URL(message.url,origin);if(url.origin!==origin||!/^\/(api\/|auth\/)/.test(url.pathname))throw Error('Only local workspace requests are supported.');
-   const request=new Request(url,{method,headers,...(!['GET','HEAD'].includes(method)&&message.body?.byteLength?{body:message.body}:{})});
+   const request=createWorkspaceRequest(message,{origin,csrf:service.csrf});
    const before=service.db.exec('SELECT total_changes() AS count')[0].values[0][0];
    const response=await service.fetch(request),body=await response.arrayBuffer();
    const changed=service.db.exec('SELECT total_changes() AS count')[0].values[0][0]!==before;

@@ -12553,6 +12553,19 @@ async function createBrowserService({ SQL: SQL2, origin: origin2, bytes: bytes2,
   } };
 }
 
+// src/browser/request.mjs
+init_globals();
+function createWorkspaceRequest(message, { origin: origin2, csrf, RequestClass = Request }) {
+  const method = message.method ?? "GET", url = new URL(message.url, origin2);
+  if (url.origin !== origin2 || !/^\/(api\/|auth\/)/.test(url.pathname)) throw Error("Only local workspace requests are supported.");
+  const headers = new Headers(message.headers);
+  headers.set("origin", origin2);
+  headers.set("x-lifeos-csrf", csrf);
+  const request = new RequestClass(url, { method, headers, ...!["GET", "HEAD"].includes(method) && message.body?.byteLength ? { body: message.body } : {} });
+  Object.defineProperty(request, "headers", { value: headers });
+  return request;
+}
+
 // src/browser/persistence.mjs
 init_globals();
 var DATABASE = "lifeos-browser-workspace-v1";
@@ -12637,12 +12650,7 @@ async function operate(message) {
   return withWorkspaceLock(async () => {
     const saved = await readWorkspace(storage), service = await createBrowserService({ SQL, origin, bytes: saved?.bytes, readAsset });
     try {
-      const headers = new Headers(message.headers);
-      headers.set("origin", origin);
-      headers.set("x-lifeos-csrf", service.csrf);
-      const method = message.method ?? "GET", url = new URL(message.url, origin);
-      if (url.origin !== origin || !/^\/(api\/|auth\/)/.test(url.pathname)) throw Error("Only local workspace requests are supported.");
-      const request = new Request(url, { method, headers, ...!["GET", "HEAD"].includes(method) && message.body?.byteLength ? { body: message.body } : {} });
+      const request = createWorkspaceRequest(message, { origin, csrf: service.csrf });
       const before = service.db.exec("SELECT total_changes() AS count")[0].values[0][0];
       const response2 = await service.fetch(request), body = await response2.arrayBuffer();
       const changed2 = service.db.exec("SELECT total_changes() AS count")[0].values[0][0] !== before;

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createHash,randomUUID} from 'node:crypto';
+import {createWorkspaceRequest} from './request.mjs';
 import {createBrowserService} from '../../.runtime/browser-demo/service-test.mjs';
 import initSqlJs from '../../.runtime/browser-demo/node_modules/sql.js/dist/sql-wasm.js';
 const SQL=await initSqlJs(),origin='https://demo.invalid';
@@ -42,4 +43,19 @@ test('browser SQL batches roll back all writes on a violated precondition',async
 test('offline upload preserves bytes and verifies real SHA256 and MD5 checksums',async()=>{
  const previous=globalThis.fetch;globalThis.fetch=()=>{throw Error('Unexpected network');};const service=await createBrowserService({SQL,origin,readAsset:readFile});
  try{const bytes=new TextEncoder().encode('A local attachment.');const result=await service.fetch(new Request(origin+'/api/uploads/browser-upload/0',{method:'POST',headers:{origin,'x-lifeos-csrf':service.csrf,'x-mutation-id':randomUUID(),'content-type':'text/plain','x-content-sha256':createHash('sha256').update(bytes).digest('hex')},body:bytes}));assert.equal(result.status,200,await result.clone().text());await json(await call(service,'/api/actions/upload-finalize','POST',{mutationId:randomUUID(),sessionId:'browser-upload',totalChunks:1,kind:'attachment',title:'Offline file',mimeType:'text/plain'}));assert.equal(await (await call(service,'/api/files/browser-upload')).text(),'A local attachment.');}finally{globalThis.fetch=previous;service.close();}
+});
+
+test('local RPC preserves trusted origin when a browser strips forbidden request headers',async()=>{
+ const service=await createBrowserService({SQL,origin,readAsset:readFile});
+ class BrowserRequest extends Request {
+  constructor(url,options){super(url,options);this.headers.delete('origin');}
+ }
+ try{
+  const message={url:origin+'/api/private-notes/browser-origin-test',method:'PUT',headers:[['content-type','application/json'],['origin','https://untrusted.invalid']],body:new TextEncoder().encode(JSON.stringify({mutationId:randomUUID(),version:0,data:{title:'Browser origin check',text:'Saved on this device.'}}))};
+  const request=createWorkspaceRequest(message,{origin,csrf:service.csrf,RequestClass:BrowserRequest});
+  assert.equal(request.headers.get('origin'),origin,'local RPC must retain its validated origin');
+  const response=await service.fetch(request);assert.equal(response.status,200,await response.clone().text());
+  assert.equal((await json(await call(service,'/api/private-notes/browser-origin-test'))).item.data.text,'Saved on this device.');
+  assert.throws(()=>createWorkspaceRequest({...message,url:'https://untrusted.invalid/api/private-notes/blocked'},{origin,csrf:service.csrf,RequestClass:BrowserRequest}),/Only local workspace/);
+ }finally{service.close();}
 });
