@@ -3,7 +3,7 @@ export class HostedStatement {
  db:HostedDatabase;query:string;args:any[];
  constructor(db:HostedDatabase,query:string,args:any[]=[]){this.db=db;this.query=query;this.args=args;}
  bind(...args:any[]){return new HostedStatement(this.db,this.query,args.map(v=>v===undefined?null:typeof v==='boolean'?Number(v):ArrayBuffer.isView(v)?v.buffer.slice(v.byteOffset,v.byteOffset+v.byteLength):v));}
- execute(){const cursor=this.db.storage.sql.exec(this.query,...this.args);return {results:cursor.toArray(),success:true,meta:{changes:cursor.rowsWritten,rows_read:cursor.rowsRead,rows_written:cursor.rowsWritten,duration:0}};}
+ execute(){const cursor=this.db.storage.sql.exec(this.query,...this.args);return {results:cursor.toArray().map((row:any)=>Object.fromEntries(Object.entries(row).map(([k,v])=>[k,v instanceof ArrayBuffer?new Uint8Array(v):v]))),success:true,meta:{changes:cursor.rowsWritten,rows_read:cursor.rowsRead,rows_written:cursor.rowsWritten,duration:0}};}
  async all(){return this.db.atomic(()=>this.execute());}
  async first(column?:string){const row=(await this.all()).results[0];return column?row?.[column]??null:row??null;}
  async run(){return this.all();}
