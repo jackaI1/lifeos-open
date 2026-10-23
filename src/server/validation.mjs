@@ -3,12 +3,13 @@ import {validateDocument,documentText} from '../../public/document-format.js';
 import {selectedPassage} from '../../public/bible.js';
 import {AppError} from '../shared/errors.mjs';
 import {assistantPreset} from '../../public/assistant-presets.js';
+import {githubProjectUrl} from '../../public/github-project-url.js';
 const fields={
  'prayer-list':'sections',
  'accountability-draft':'entryId entryVersion previousEntryId prayerSessionId prayed repentance followThrough applications text status approvedAt',
  settings:'spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder schoolMorningStart schoolMorningEnd schoolAfternoonStart schoolAfternoonEnd timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
  'prayer-note':'section title text archived rotation people notes weekday weekdays nodes',
- project:'title category notes status archived nextStep steps timeBlocks',meal:'title notes recipe day slot ingredients steps',grocery:'title checked quantity notes archived',
+ project:'title category notes status archived nextStep steps timeBlocks githubUrl',meal:'title notes recipe day slot ingredients steps',grocery:'title checked quantity notes archived',
  coursework:'title taskId text language document attachmentIds notes archived',training:'weeklyKm longestKm pain injury recovery guidance raceDate goalMinutes sundayExceptionConfirmed baselineDate notes',
  run:'date distanceKm durationMinutes effort pain fatigue notes workoutId', 'support-thread':'title archived model effort',
  'coop-role':'title employer sourceUrl deadlineDate deadlineTime deadlineEvidence status location industry description notes draftText archived'
@@ -35,6 +36,7 @@ export function recordData(kind,input){
  if(kind==='support-thread'&&(data.model!==undefined||data.effort!==undefined)&&!assistantPreset(data.model,data.effort))throw new AppError('Choose a supported model and effort');
  if(kind==='project'){for(const [key,limit]of [['steps',200],['timeBlocks',100]])if(data[key]!==undefined){if(!Array.isArray(data[key])||data[key].length>limit)throw new AppError('Too many project entries');for(const row of data[key]){identifier(row.id);if(key==='steps'){exactFields(row,['id','title','done']);text(row.title,300,{required:true});boolean(row.done);}else{exactFields(row,['id','minutes','day']);number(row.minutes,1,1440);date(row.day);}}}}
  if(kind==='project'&&data.nextStep!==undefined)text(data.nextStep,2000);
+ if(kind==='project'&&data.githubUrl!==undefined){const url=githubProjectUrl(data.githubUrl);if(!url)throw new AppError('Use an HTTPS GitHub profile or repository URL');data.githubUrl=url;}
  if(kind==='accountability-draft'){identifier(data.entryId);version(data.entryVersion);for(const k of ['previousEntryId','prayerSessionId'])if(data[k]!=null)identifier(data[k]);for(const k of ['prayed','repentance','followThrough','applications','text'])text(data[k],22000);enumValue(data.status,['draft','approved']);if(data.approvedAt!=null&&!Number.isFinite(Date.parse(data.approvedAt)))throw new AppError('Invalid approval time');}
  if(kind==='settings'){
   if(data.notificationDeviceId)identifier(data.notificationDeviceId);

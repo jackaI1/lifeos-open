@@ -398,6 +398,7 @@ button.task-clock svg{flex-shrink:0}
 .project-overview,.project-editor,.project-assistant{max-width:var(--reading-width)}
 .project-list-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:var(--space-4);padding-block:var(--space-4);border-bottom:1px solid var(--line)}
 .project-list-row>div{min-width:0}.project-list-row .project-title{font-size:18px;text-align:left;overflow-wrap:anywhere}
+.project-list-row>a.quiet{display:inline-flex;align-items:center;justify-content:center;min-height:var(--touch);padding:10px 16px;border:1px solid var(--line);border-radius:var(--radius-sm);color:var(--ink);font-size:14px;font-weight:560;text-decoration:none}.project-list-row>a.quiet:hover{background:var(--raised)}
 .project-list-row p{margin-block:0 var(--space-1);overflow-wrap:anywhere}.project-next-action{color:var(--ink)}
 .project-ledger-link{margin-top:var(--space-6)}
 .project-editor{display:grid;gap:var(--space-5)}
