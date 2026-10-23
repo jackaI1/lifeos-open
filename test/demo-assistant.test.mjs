@@ -78,3 +78,14 @@ test('project examples have a useful first step when portfolio notes are empty',
  const reply=demoAssistantAnswer('project',demoAssistantOptions('project')[0].message,{project:{title:'LifeOS Open',nextStep:''}}).reply;
  assert.match(reply,/define one small result/);assert.doesNotMatch(reply,/, \./);
 });
+
+test('an authored example preserves a photo-only draft and ignores a completed native double-click',async()=>{
+ const {demoAssistantChoices}=await import('../public/demo-assistant-choices.js');
+ class Node{constructor(tag){this.tagName=tag;this.children=[];this.listeners={};this.dataset={};}setAttribute(){}addEventListener(k,v){this.listeners[k]=v;}append(v){this.children.push(v);}querySelector(){return this.children[0];}}
+ const oldDocument=globalThis.document,oldNode=globalThis.Node;globalThis.Node=Node;globalThis.document={createElement:t=>new Node(t),createTextNode:t=>({textContent:t})};
+ try{const photoDraft={attachments:['retained-photo']},original=structuredClone(photoDraft);let attachments=photoDraft.attachments,sent=0,preserved=0;const input={value:'',dispatchEvent(){}};
+ const node=demoAssistantChoices({session:{mode:'demo',services:{ai:'mock'}},scope:'today',input,hasDraft:()=>!!input.value.trim()||attachments.length>0,onDraft:async()=>{preserved++;attachments=[];return true;},onSend:async()=>{assert.deepEqual(attachments,[]);sent++;input.value='';}}),choice=node.children[1].children[0];
+ await choice.listeners.click({detail:1});assert.equal(sent,1);assert.equal(preserved,1);assert.deepEqual(photoDraft,original);
+ await choice.listeners.click({detail:2});assert.equal(sent,1);assert.equal(input.value,'');
+ }finally{globalThis.document=oldDocument;globalThis.Node=oldNode;}
+});

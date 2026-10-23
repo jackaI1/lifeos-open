@@ -1,4 +1,6 @@
 import {demoAssistantChoices} from '../demo-assistant-choices.js';
+import {configureDemoComposer} from '../demo-assistant-composer.js';
+import {demoAssistantOptions} from '../demo-assistant.js';
 import {controlIcon,compactDisclosure} from '../quiet-controls.js';
 import {usageIndicator} from '../interactive-usage.js';
 import {assistantEffort} from '../assistant-effort.js';
@@ -54,7 +56,8 @@ export async function mount(root, ctx) {
   function renderMessages(items) { items=items.slice().sort((a,b)=>String(a.createdAt??a.data.createdAt??'').localeCompare(String(b.createdAt??b.data.createdAt??''))||(a.data.role==='user'?-1:1));replace(messages, ...(items.length ? items.map(record => { const data = record.data; return el('article', { class: `message assistant-message ${data.role === 'user' ? 'user' : 'assistant'}` }, el('small', {}, data.role === 'user' ? 'You' : data.mock?'Demo AI':'LifeOS'), data.text || data.content || data.message || '', data.auditId ? button('Undo this change', event => busy(event.currentTarget, async () => showResult(await ctx.action('undo', { auditId: data.auditId }))), 'text-button') : null); }) : [])); messages.scrollTop = messages.scrollHeight; }
   async function loadMessages(id) { if (disposed||thread?.id !== id) return;const requestId=token;try { const [response,list] = await Promise.all([ctx.request('/api/records/support-message?limit=1000'),ctx.request('/api/records/support-thread')]);if(!disposed&&requestId===token&&thread?.id===id){renderMessages(response.items.filter(item => item.data.threadId === id));const fresh=list.items.filter(t=>!t.data.scope).map(item=>{const saved=threads.find(t=>t.id===item.id);return saved?.version>item.version?saved:item;});threads.splice(0,threads.length,...fresh);thread=threads.find(t=>t.id===id)??thread;renderThreads();} } catch {} }
   input.input.oninput=()=>{dirty=true;draftToken=crypto.randomUUID();const savedToken=draftToken;savePromise=ctx.store.put(`draft:support:${thread?.id||'new'}`,{token:savedToken,text:input.input.value}).then(ok=>{if(!disposed&&draftToken===savedToken){localDurable=ok!==false;if(!localDurable)draftWarning();}});composerStatus.textContent='Draft on this device';};
-  async function sendMessage() {
+  async function sendMessage(example) {
+    if(demoMode&&!demoAssistantOptions('support').some(option=>option.id===example?.id&&option.message===input.input.value.trim()))return;
     if(disposed||!input.input.value.trim()||sending)return;
     sending=true;
     const text=input.input.value.trim(),sentToken=draftToken;let requestToken=token,threadId=thread?.id;const current=()=>!disposed&&token===requestToken&&thread?.id===threadId;
@@ -79,7 +82,8 @@ export async function mount(root, ctx) {
     }catch(error){if(current())composerStatus.textContent=error.message;}finally{sending=false;}
   }
   const send=button('Send',event=>busy(event.currentTarget,sendMessage));
-  const examples=demoAssistantChoices({session:ctx.state.session,scope:'support',input:input.input,onSend:sendMessage,canSend:()=>ready&&!creating&&!sending&&!choosing,onBlocked:text=>{composerStatus.textContent=text;}});
+  const demoMode=configureDemoComposer(ctx.state.session,input.input,send);
+  const examples=demoAssistantChoices({session:ctx.state.session,scope:'support',input:input.input,onSend:sendMessage,onDraft:()=>newThread(),canSend:()=>ready&&!creating&&!sending&&!choosing,onBlocked:text=>{composerStatus.textContent=text;}});
   const corrections = panel('Corrections & requests', button('Report a bug or request a feature', () => ctx.reportBug(), 'quiet'), el('div', { class: 'rule' }), button('Review correction history', async event => busy(event.currentTarget, async () => { const response = await ctx.request('/api/audit'); modal('Correction history', el('div', {}, response.items?.length ? response.items.map(item => el('div', { class: 'practice-row row' }, el('div', {}, el('h3', {}, `${item.kind} · ${item.recordId || ''}`), el('p', { class: 'muted' }, `${formatDate(item.createdAt)} · ${item.actor || 'Owner'}`)), !item.undoOf ? button('Undo', event => busy(event.currentTarget, async () => showResult(await ctx.action('undo', { auditId: item.id }))), 'text-button') : status('Undo record'))) : empty('No corrections have been recorded.'))); }), 'text-button'));
   const newChat=button(controlIcon('newChat'),e=>busy(e.currentTarget,()=>newThread()),'text-button icon-button');newChat.setAttribute('aria-label','New chat');
   const sidebar=button(controlIcon('sidebar'),()=>{drawer.hidden=!drawer.hidden;sidebar.setAttribute('aria-expanded',String(!drawer.hidden));},'text-button icon-button');sidebar.setAttribute('aria-label','Conversation history');

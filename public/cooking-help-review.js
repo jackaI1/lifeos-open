@@ -2,11 +2,12 @@ import {el,append,replace,button,field,download} from './ui.js';
 import {cookingRecipeProjection} from './cooking-recipe-selection.js';
 import {captureCookingHelpIntent,createCookingHelpRequest} from './cooking-help-contract.js';
 import {prepareCookingRecoveryDownload} from './cooking-recovery-download.js';
+import {configureDemoComposer} from './demo-assistant-composer.js';
 const labels={prepared:'Not sent',waiting:'Waiting for the original request',unknown:'Original outcome not verified',review:'Original needs review','receipt-unretained':'Answer received; device save needed',refused:'Request refused',queued:'Queued',running:'Preparing a draft','needs-input':'More information needed',completed:'Draft answer', 'late-result':'Late draft answer',uncertain:'Original outcome not verified',expired:'Original request expired',failed:'Original request failed',cancelled:'Cancellation recorded',unavailable:'Local help unavailable'};
 const displayOriginal=text=>cookingRecipeProjection(text).text;
 // This view presents retained originals. It never acquires authority from a
 // status paint, disclosure toggle, remount or replacement view.
-export function createCookingHelpReview({host,manager,getView,onAdopt}){
+export function createCookingHelpReview({host,manager,getView,onAdopt,session}){
  let retired=false,entry=null,stepId=null,context=null,boundEntry=null,composer=null,raw='',range=null,draft=null,problem='',active=0,inputEpoch=0;
  const help=()=>manager.help,current=()=>!retired&&getView().eligible&&getView().entry===entry&&getView().stepId===stepId;
  const related=()=>[...(help()?.intents.values()??[])].filter(e=>e.value.intent.cookId===entry?.value.cookId&&e.value.intent.selectedStep.id===stepId);
@@ -39,12 +40,25 @@ export function createCookingHelpReview({host,manager,getView,onAdopt}){
   // only this composer's pending restore; do not persist, send or cancel work.
   for(const input of [source.input,question.input])for(const type of ['focus','select'])input.addEventListener(type,()=>{if(current()&&host.contains(input))inputEpoch++;});
   const use=button('Use selected excerpt',owned(()=>{range=projection.range({recipe:entry.value.source.data.recipe,text:source.input.value,start:source.input.selectionStart,end:source.input.selectionEnd});inputEpoch++;problem='';retain();}),'quiet');
-  const ask=button('Ask',owned(async()=>{problem=validate()??'';if(problem)return;const original=related().find(e=>sameQuestion(e.value.intent));if(original)return help().operation(original.value.requestId);if(!range||!raw.trim()){problem='Select a recipe excerpt and write your question.';return;}retain();if(!draft)throw Error('Keep this question open until it is saved.');await help().ask(entry,{stepId,draftToken:draft.value.token});}));
+  async function sendQuestion(){problem=validate()??'';if(problem)return;const original=related().find(e=>sameQuestion(e.value.intent));if(original)return help().operation(original.value.requestId);if(!range||!raw.trim()){problem='Select a recipe excerpt and write your question.';return;}retain();if(!draft)throw Error('Keep this question open until it is saved.');await help().ask(entry,{stepId,draftToken:draft.value.token});}
+  const ask=button('Ask',owned(sendQuestion)),demo=configureDemoComposer(session,question.input,ask);
+  const choices=demo?[
+   ['Explain this step','Explain this preparation step using the selected saved recipe excerpt.'],
+   ['What should I check?','What should I check in the selected saved recipe excerpt before doing this preparation step?'],
+   ['Check the recipe instructions','Help me review the selected saved recipe instructions for this preparation step without inventing missing details.']
+  ].map(([label,message])=>button(label,owned(async()=>{
+   const previous=help().draft(entry,stepId);if(previous&&!previous.durable)throw Error('Keep the earlier question open until its device save is verified.');
+   // Each journal draft has its own immutable key; earlier writing stays retained.
+   const selectedRange=range??projection.range({recipe:original,text:source.input.value,start:0,end:source.input.value.length});
+   const value=entry.value,step=value.steps.find(s=>s.id===stepId);
+   createCookingHelpRequest(captureCookingHelpIntent({schema:1,operation:'explain-step',environment:'beta',owner:help().owner,requestId:value.token,cookId:value.cookId,branchId:value.branchId,selectionToken:value.token,revision:value.revision,source:{kind:value.source.kind,id:value.source.id,version:value.source.version,recipe:original,range:selectedRange},selectedStep:{id:stepId,text:step.text},question:message}));
+   inputEpoch++;raw=message;range=selectedRange;question.input.value=raw;problem='';await sendQuestion();
+  }),'quiet demo-assistant-choice')):[];
   const retryDraft=button('Retry question save',owned(()=>help().retryLocal()),'quiet');
   const exportDraft=button('Download question draft',()=>{const saved=help()?.draft(entry,stepId);if(current()&&saved)exportOriginal(saved.value);},'text-button');
   const close=button('Close help',()=>{if(!current())return;const focused=document.activeElement===close;composer.details.open=false;if(focused&&document.activeElement===close)composer.summary.focus({preventScroll:true});},'text-button');
-  const summary=el('summary',{},'Help with this step'),details=el('details',{class:'cooking-step-help'},summary,el('p',{class:'muted'},'Local Qwen draft. Review it against the saved recipe.'),el('p',{class:'cooking-original-text'},'Your preparation step: '+entry.value.steps.find(s=>s.id===stepId).text),source.node,el('div',{class:'actions'},use),selection,question.node,notice,save,el('div',{class:'actions'},ask,close,retryDraft,exportDraft),answerHost,history);
-  composer={details,summary,source,question,selection,notice,save,ask,retryDraft,answerHost};rows.clear();replace(historyBody);replace(host,details);paint();
+  const summary=el('summary',{},'Help with this step'),details=el('details',{class:'cooking-step-help'},summary,el('p',{class:'muted'},demo?'Authored example response. Review it against the saved recipe.':'Local Qwen draft. Review it against the saved recipe.'),el('p',{class:'cooking-original-text'},'Your preparation step: '+entry.value.steps.find(s=>s.id===stepId).text),source.node,el('div',{class:'actions'},use),selection,question.node,choices.length?el('details',{class:'demo-assistant-choices',open:true},el('summary',{},'Try a question'),el('div',{class:'actions'},choices)):null,notice,save,el('div',{class:'actions'},ask,close,retryDraft,exportDraft),answerHost,history);
+  composer={details,summary,source,question,selection,notice,save,ask,retryDraft,answerHost,demo,choices};rows.clear();replace(historyBody);replace(host,details);paint();
  }
  function makeRow(saved){
   const intent=saved.value.intent,id=intent.requestId,status=el('p',{class:'muted',role:'status'}),answer=el('div',{}),originals=el('details',{},el('summary',{},'Original question and excerpt'),el('p',{class:'cooking-original-text'},displayOriginal(intent.question)),el('p',{class:'muted'},'Saved recipe'),el('blockquote',{class:'cooking-original-text'},displayOriginal(intent.source.recipe.slice(intent.source.range.start,intent.source.range.end))),button('Download original question',()=>exportOriginal(saved.value),'text-button'));
@@ -65,12 +79,13 @@ export function createCookingHelpReview({host,manager,getView,onAdopt}){
   composer.selection.hidden=!range;composer.selection.textContent=range?'Chosen excerpt: '+displayOriginal(entry.value.source.data.recipe.slice(range.start,range.end)):'';
   const saved=help().draft(entry,stepId);composer.save.textContent=saved?(saved.error||(!saved.durable?'Saving question on this device…':'Question saved on this device')):'';
   controlState(composer.retryDraft,{hidden:!saved||saved.durable});
-  const matching=related().find(e=>sameQuestion(e.value.intent));controlState(composer.ask,{disabled:!active&&(!range||!raw.trim()||!!matching)}); // owned() is the synchronous repeat fence.
+  const matching=related().find(e=>sameQuestion(e.value.intent));controlState(composer.ask,{disabled:composer.demo||!active&&(!range||!raw.trim()||!!matching)}); // owned() is the synchronous repeat fence.
+  for(const choice of composer.choices)controlState(choice,{disabled:!!active});
   const originals=related();for(const original of originals){const id=original.value.requestId;let row=rows.get(id);if(!row){row=makeRow(original);rows.set(id,row);}const op=help().operation(id),result=op?.receipt?.result;
    // Explain this exact retained refusal without turning it into an unfinished
    // job or gaining retry/cancellation authority from a presentation label.
    const disabledHelp=op.status==='refused'&&[...help().facts.values()].some(f=>f.value.requestId===id&&f.value.kind==='error'&&f.value.method==='POST'&&f.value.outcome?.status===503&&f.value.outcome?.code==='cooking_help_unavailable');
-   row.status.textContent=(disabledHelp?labels.unavailable:labels[op.status]??'Original needs review')+(op.cancelRequested?' · Cancellation requested; an answer may still arrive':'');
+   row.status.textContent=(disabledHelp?labels.unavailable:composer.demo&&op.status==='completed'?'Example response':labels[op.status]??'Original needs review')+(op.cancelRequested?' · Cancellation requested; an answer may still arrive':'');
    if(result&&JSON.stringify(result)!==row.result){row.result=JSON.stringify(result);replace(row.answer,el('p',{class:'cooking-original-text'},result.explanation),result.sourceExcerpts.length?el('details',{},el('summary',{},'Sources in this draft'),result.sourceExcerpts.map(excerpt=>el('div',{},el('p',{class:'muted'},excerpt.field==='recipe'?'Saved recipe':'Your preparation step'),el('blockquote',{class:'cooking-original-text'},displayOriginal(excerpt.text))))):null,result.questions.map(text=>el('p',{class:'cooking-original-text'},text)),result.suggestedStepText?el('div',{},el('p',{class:'muted'},'Suggested preparation step · not reviewed'),el('p',{class:'cooking-original-text'},result.suggestedStepText)):null);}
    const questionMatches=sameQuestion(original.value.intent);controlState(row.restore,{hidden:op.status!=='completed'||!sameSource(original.value.intent)||questionMatches||!!help().adoptions.get(id),disabled:!!active});
    const unfinished=['prepared','waiting','queued','running','unknown','uncertain','needs-input','expired','failed','unavailable'].includes(op.status),pending=op.requestPending||!!active;

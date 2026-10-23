@@ -5,9 +5,32 @@ import {createHash,randomUUID} from 'node:crypto';
 import {createWorkspaceRequest} from './request.mjs';
 import {createBrowserService} from '../../.runtime/browser-demo/service-test.mjs';
 import initSqlJs from '../../.runtime/browser-demo/node_modules/sql.js/dist/sql-wasm.js';
+import {MomentDraft} from '../../public/private-moment-draft.js';
+import {PrivateStore} from '../../public/storage.js';
 const SQL=await initSqlJs(),origin='https://demo.invalid';
 const call=(service,path,method='GET',data,extra={})=>service.fetch(new Request(origin+path,{method,headers:{origin,'x-lifeos-csrf':service.csrf,...(data?{'content-type':'application/json'}:{}),...extra},...(data?{body:typeof data==='string'?data:JSON.stringify(data)}:{})}));
 async function json(response){assert.ok(response.ok,await response.clone().text());return response.json();}
+test('journal draft saves two revisions and reopens its confirmed version after browser database reload',async()=>{
+ const online=Object.getOwnPropertyDescriptor(navigator,'onLine'),previous=globalThis.fetch;
+ Object.defineProperty(navigator,'onLine',{value:true,configurable:true});globalThis.fetch=()=>{throw Error('Unexpected network');};
+ const service=await createBrowserService({SQL,origin,readAsset:readFile});let restored;
+ const bytes=new Map(),store=new PrivateStore({indexedDB:null,storage:{getItem:key=>bytes.get(key)??null,setItem:(key,value)=>bytes.set(key,value),removeItem:key=>bytes.delete(key)}});
+ const key='entry:browser-journal-history',path='/api/private-journal/entries/browser-journal-history';
+ const request=service=>(path,options={})=>call(service,path,options.method,options.body).then(json);
+ try{
+  const draft=new MomentDraft({store,request:request(service),key,path});
+  await draft.open(null,{day:'2026-10-22',title:'Synthetic reflection',templateId:null,templateName:'Daily reflection',answers:[{id:'learned',prompt:'What did you learn today?',text:'First browser revision.'}]});
+  await draft.save();assert.equal(draft.value.version,1);assert.equal(draft.value.dirty,false);
+  await draft.edit({...draft.value.data,answers:[{id:'learned',prompt:'What did you learn today?',text:'Second browser revision.'}]});await draft.save();
+  assert.equal(draft.value.version,2);assert.equal(draft.value.dirty,false);
+  restored=await createBrowserService({SQL,origin,bytes:service.db.export(),readAsset:()=>{throw Error('Unexpected reseeding');}});
+  const item=(await json(await call(restored,path))).item;
+  const reopened=new MomentDraft({store,request:request(restored),key,path});await reopened.open(item);
+  assert.equal(reopened.value.version,2);assert.equal(reopened.value.data.answers[0].text,'Second browser revision.');
+  const history=await json(await call(restored,'/api/revisions/private-journal/browser-journal-history'));
+  assert.equal(history.items.find(row=>row.version===1).data.answers[0].text,'First browser revision.');
+ }finally{restored?.close();service.close();globalThis.fetch=previous;if(online)Object.defineProperty(navigator,'onLine',online);else delete navigator.onLine;}
+});
 test('real routes save notes, reminders, coursework, mock assistant replies, and complete binary exports offline',async()=>{
  const previous=globalThis.fetch;globalThis.fetch=()=>{throw Error('Unexpected network');};
  const service=await createBrowserService({SQL,origin,readAsset:readFile});
@@ -58,4 +81,30 @@ test('local RPC preserves trusted origin when a browser strips forbidden request
   assert.equal((await json(await call(service,'/api/private-notes/browser-origin-test'))).item.data.text,'Saved on this device.');
   assert.throws(()=>createWorkspaceRequest({...message,url:'https://untrusted.invalid/api/private-notes/blocked'},{origin,csrf:service.csrf,RequestClass:BrowserRequest}),/Only local workspace/);
  }finally{service.close();}
+});
+
+test('authored cooking questions return completed source-bound receipts immediately and survive browser reload',async()=>{
+ const previous=globalThis.fetch;globalThis.fetch=()=>{throw Error('No model or network is available in the browser demo');};
+ const service=await createBrowserService({SQL,origin,readAsset:readFile});let restored;
+ try{
+  const session=await json(await call(service,'/api/session')),meal=(await json(await call(service,'/api/records/meal/demo-recipe'))).item;
+  const source=meal.data.recipe,explanations=[];let last;
+  for(const question of ['Explain this preparation step using the selected saved recipe excerpt.','What should I check in the selected saved recipe excerpt before doing this preparation step?','Help me review the selected saved recipe instructions for this preparation step without inventing missing details.']){
+   const intent={schema:1,operation:'explain-step',environment:'beta',owner:session.email,requestId:randomUUID(),cookId:randomUUID(),branchId:randomUUID(),selectionToken:randomUUID(),revision:0,source:{kind:'meal',id:meal.id,version:meal.version,recipe:source,range:{start:0,end:Math.min(70,source.length)}},selectedStep:{id:randomUUID(),text:'Simmer the lentils.'},question};
+   const completed=await json(await call(service,'/api/cooking-help','POST',intent));
+   assert.equal(completed.status,'completed','Clicking an authored example must deliver its answer without a second Check request');
+   assert.equal(completed.sourceChanged,false);assert.equal(completed.cancelled,false);assert.equal(completed.late,false);
+   assert.ok(completed.result.sourceExcerpts.some(excerpt=>excerpt.field==='recipe'&&excerpt.text===source.slice(intent.source.range.start,intent.source.range.end)));
+   assert.equal(completed.result.suggestedStepText,null,'Examples do not alter preparation steps');
+   explanations.push(completed.result.explanation);
+   const repeated=await json(await call(service,'/api/cooking-help','POST',intent));
+   const {serverNow:initialNow,...initialReceipt}=completed,{serverNow:repeatedNow,...repeatedReceipt}=repeated;
+   assert.ok(repeatedNow>=initialNow);assert.deepEqual(repeatedReceipt,initialReceipt,'Repeated clicks reuse the same result');last={intent,completed};
+  }
+  assert.equal(new Set(explanations).size,3,'Each authored question provides its own useful answer');
+  assert.equal((await service.db.prepare("SELECT count(*) n FROM jobs WHERE type='cooking-help'").first()).n,3,'Repeated requests do not create duplicate jobs');
+  assert.deepEqual((await json(await call(service,'/api/records/meal/demo-recipe'))).item,meal,'Saved recipe remains unchanged');
+  restored=await createBrowserService({SQL,origin,bytes:service.db.export(),readAsset:()=>{throw Error('Unexpected reseeding');}});
+  const reopened=await json(await call(restored,'/api/cooking-help/'+last.intent.requestId));assert.deepEqual(reopened.result,last.completed.result);assert.equal(reopened.status,'completed');
+ }finally{globalThis.fetch=previous;restored?.close();service.close();}
 });
