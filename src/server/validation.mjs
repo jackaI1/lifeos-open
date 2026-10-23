@@ -6,7 +6,7 @@ import {assistantPreset} from '../../public/assistant-presets.js';
 const fields={
  'prayer-list':'sections',
  'accountability-draft':'entryId entryVersion previousEntryId prayerSessionId prayed repentance followThrough applications text status approvedAt',
- settings:'notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder schoolMorningStart schoolMorningEnd schoolAfternoonStart schoolAfternoonEnd timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
+ settings:'spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder schoolMorningStart schoolMorningEnd schoolAfternoonStart schoolAfternoonEnd timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
  'prayer-note':'section title text archived rotation people notes weekday weekdays nodes',
  project:'title category notes status archived nextStep steps timeBlocks',meal:'title notes recipe day slot ingredients steps',grocery:'title checked quantity notes archived',
  coursework:'title taskId text language document attachmentIds notes archived',training:'weeklyKm longestKm pain injury recovery guidance raceDate goalMinutes sundayExceptionConfirmed baselineDate notes',
@@ -41,6 +41,7 @@ export function recordData(kind,input){
   if(data.textSize!==undefined)enumValue(data.textSize,['standard','large','largest']);if(data.controlDensity!==undefined)enumValue(data.controlDensity,['compact','spacious']);if(data.handedness!==undefined)enumValue(data.handedness,['left','right']);
   if(data.accountabilityDiscordUrl!==undefined&&!/^https:\/\/discord\.com\/channels\/@me\/\d+$/.test(data.accountabilityDiscordUrl))throw new AppError('Use the Discord direct-message URL');
   if(data.hourlyPrayerReminder!==undefined)boolean(data.hourlyPrayerReminder);
+  if(data.spiritualPracticesEnabled!==undefined)boolean(data.spiritualPracticesEnabled);
   if(data.timezone!==undefined){try{new Intl.DateTimeFormat('en',{timeZone:data.timezone}).format();}catch{throw new AppError('Unknown timezone');}}
   for(const key of ['schoolMorningStart','schoolMorningEnd','schoolAfternoonStart','schoolAfternoonEnd','wakeTime','lightsOut','quietStart','quietEnd','schoolStart','schoolEnd','fridayBedtime','saturdayWakeTime'])if(data[key]!==undefined)clock(data[key]);
   for(const key of ['morningCommuteMinutes','eveningCommuteMinutes','breakfastMinutes','lunchPrepMinutes','dinnerMinutes','fridayTravelMinutes'])if(data[key]!==undefined)number(data[key],0,360);

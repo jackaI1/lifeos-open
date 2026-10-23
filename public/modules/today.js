@@ -125,7 +125,7 @@ export async function mount(root,ctx){
 
  const hidden=ctx.records('schedule-correction').filter(r=>r.data.day===selectedDay&&r.data.hidden&&!r.data.undone);
 
- const pastPrayer=ctx.capabilities?.spiritualCompletion!==false&&selectedDay<view.date&&schedule.spiritual?.prayer?.complete!==true;
+ const pastPrayer=schedule.spiritualPracticesEnabled===true&&ctx.capabilities?.spiritualCompletion!==false&&selectedDay<view.date&&schedule.spiritual?.prayer?.complete!==true;
  const undatedPrayer=selectedDay<view.date&&schedule.spiritual?.prayer?.complete===true&&!schedule.spiritual.prayer.completedAt;
  const prayerStatus=pastPrayer?button('Mark prayer completed',e=>busy(e.currentTarget,()=>markPastPrayerComplete(context,e.currentTarget)),'text-button'):undatedPrayer?el('p',{class:'save-meta'},'Prayer completed · Time not recorded'):null;
  replaceSchedule(friendReminders.node,el('section',{class:'today-review panel','aria-labelledby':'day-review-title'},el('div',{class:'panel-heading'},el('h2',{id:'day-review-title'},'Full Schedule'),ctx.state.session?.mode?button('Add event',()=>editEvent(),'quiet compact'):null,toggle),navigation,prayerStatus,timeline,hidden.length?el('details',{open:scheduleEditing},el('summary',{},'Hidden entries'),hidden.map(r=>{const intent=entryIntent({id:r.data.entryId},context,true);return button('Restore '+(r.data.source?.kind||'entry'),e=>busy(e.currentTarget,()=>saveCorrection(intent,{...intent.original,hidden:false},false,e.currentTarget)),'quiet compact');})):null));if(!scheduleEditing)swipeDays(scheduleHost.querySelector('.today-review'),changeDay);

@@ -55,7 +55,7 @@ export function interpretToday({now,date,plan,calendar,school,tickets,records={}
   nowAction=timed('conflict',sourceOnly?'Confirm this commitment':'Two commitments overlap',{start:now,end:iso(Math.min(...currentEvents.map(e=>instant(e.end))))},{detail:currentEvents.map(e=>e.title||'Untitled calendar event').join(' / '),reason:sourceOnly?'The school feeds disagree. Both versions remain visible.':'Both commitments are happening now. Review their times and locations.',target:{route:'today',detail:'conflicts'},buttonLabel:'Review commitments'});
  } else if(currentEvents.length){
   const e=currentEvents[0];nowAction=timed('calendar',e.title||'Untitled calendar event',e,{detail:e.location||null,target:routeTarget('today',{eventId:e.id}),buttonLabel:'View commitment'});
- } else if(fixed?.kind==='sleep'&&instant(fixed.start)>instant(day.start)&&['devotional','prayer'].some(kind=>!completed(kind))){
+ } else if(plan.spiritualPracticesEnabled&&fixed?.kind==='sleep'&&instant(fixed.start)>instant(day.start)&&['devotional','prayer'].some(kind=>!completed(kind))){
   const kind=['devotional','prayer'].find(kind=>!completed(kind));
   nowAction=practice(kind,null);
   nowAction.reason='Finish this daily practice before going to sleep.';
@@ -69,7 +69,7 @@ export function interpretToday({now,date,plan,calendar,school,tickets,records={}
   if(fixed.kind==='commute'&&fixed.prayerPlan&&!completed('prayer')){nowAction.detail='Pray during the walk when safe, or finish somewhere safe.';nowAction.target=routeTarget('prayer');nowAction.buttonLabel='Begin prayer';}
  } else {
   const practiceBlock=currentBlocks.find(b=>['devotional','prayer'].includes(b.kind));
-  const recovery=['devotional','prayer'].find(kind=>!completed(kind)&&(plan.spiritual[kind].plan==='D'||plan.spiritual[kind].slot?.end&&current>=instant(plan.spiritual[kind].slot.end)||plan.spiritual[kind].plan==='C'&&plan.releaseAt&&current>=instant(plan.releaseAt)));
+  const recovery=plan.spiritualPracticesEnabled&&['devotional','prayer'].find(kind=>!completed(kind)&&(plan.spiritual[kind].plan==='D'||plan.spiritual[kind].slot?.end&&current>=instant(plan.spiritual[kind].slot.end)||plan.spiritual[kind].plan==='C'&&plan.releaseAt&&current>=instant(plan.releaseAt)));
   if(practiceBlock)nowAction=practice(practiceBlock.kind,practiceBlock);
   else if(recovery)nowAction=practice(recovery,null);
   else if(plan.dayType!=='sunday'){
