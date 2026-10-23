@@ -2,13 +2,16 @@
   "name": "lifeos-open-demo",
   "main": "src/hosted/worker.ts",
   "compatibility_date": "2026-09-07",
-  "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "preview_urls": false,
-  "assets": {"directory":"public", "binding":"ASSETS", "run_worker_first":true},
-  "durable_objects": {"bindings":[{"name":"WORKSPACES","class_name":"DemoWorkspace"},{"name":"ADMISSION","class_name":"DemoAdmission"}]},
-  "migrations": [{"tag":"demo-v1","new_sqlite_classes":["DemoWorkspace","DemoAdmission"]}],
+  "build": {"command":"node tools/build-hosted-assets.mjs"},
+  "assets": {
+    "directory":".runtime/hosted/assets",
+    "binding":"ASSETS",
+    "run_worker_first":["/", "/index.html", "/api", "/api/*", "/auth", "/auth/*"],
+    "html_handling":"none",
+    "not_found_handling":"none"
+  },
   "vars": {"DEMO_ORIGIN":"https://demo.example.invalid","PARENT_ORIGIN":"https://owner.example.invalid"},
-  "rules": [{"type":"Text","globs":["**/*.sql"],"fallthrough":true},{"type":"Data","globs":["**/*.wav","**/*.pdf","**/*.jpg"],"fallthrough":true}],
   "observability": {"enabled":false}
 }
