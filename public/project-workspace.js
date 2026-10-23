@@ -2,10 +2,11 @@ import {el,replace,button,heading,field,select,busy,toast,download,empty,section
 import {controlIcon} from './quiet-controls.js';
 import {mountAssistant} from './assistant-chat.js';
 import {mountProjectPreparations} from './project-preparations.js';
+import {projectOpenControl} from './project-open.js';
 
 const categories=[{value:'personal-project',label:'Personal project'},{value:'school-project',label:'School-related project'},{value:'wildcard',label:'Wildcard'}];
 const states=[{value:'active',label:'Active'},{value:'later',label:'Later'},{value:'completed',label:'Completed'},{value:'archived',label:'Archived'}];
-const editable=data=>Object.fromEntries(['title','category','notes','status','archived','nextStep','steps','timeBlocks'].filter(k=>data[k]!==undefined).map(k=>[k,data[k]]));
+const editable=data=>Object.fromEntries(['title','category','notes','status','archived','nextStep','steps','timeBlocks','githubUrl'].filter(k=>data[k]!==undefined).map(k=>[k,data[k]]));
 
 // Experimental beta workspace. Original records and the original ticket view remain available.
 export async function mountProjectWorkspace(root,ctx,query){
@@ -19,7 +20,7 @@ export async function mountProjectWorkspace(root,ctx,query){
  if(!id){
   let filter='active';const list=el('div',{class:'project-list'}),tabs=sectionTabs(states.filter(s=>s.value!=='archived').map(s=>({id:s.value,label:s.label})),filter,next=>{filter=next;paint();});
   list.id=tabs.panelId;list.setAttribute('role','tabpanel');list.setAttribute('aria-labelledby',tabs.labelId);
-  function paint(){if(disposed)return;list.setAttribute('aria-labelledby',tabs.node.querySelector('[aria-selected="true"]')?.id||tabs.labelId);const rows=projects().filter(r=>!r.data.archived&&(r.data.status||'active')===filter);replace(list,...(rows.length?rows.map(r=>el('article',{class:'project-list-row'},el('div',{},button(r.data.title,()=>open(r),'text-button project-title'),r.data.nextStep?el('p',{class:'project-next-action'},r.data.nextStep):el('p',{class:'muted'},'Choose a next action'),el('small',{class:'muted'},categories.find(c=>c.value===r.data.category)?.label||'Project')),button('Open',()=>open(r),'quiet'))):[empty(filter==='active'?'No active projects. Add something you want to move forward.':filter==='later'?'No projects saved for later.':'No completed projects yet.')]));}
+  function paint(){if(disposed)return;list.setAttribute('aria-labelledby',tabs.node.querySelector('[aria-selected="true"]')?.id||tabs.labelId);const rows=projects().filter(r=>!r.data.archived&&(r.data.status||'active')===filter);replace(list,...(rows.length?rows.map(r=>el('article',{class:'project-list-row'},el('div',{},button(r.data.title,()=>open(r),'text-button project-title'),r.data.nextStep?el('p',{class:'project-next-action'},r.data.nextStep):el('p',{class:'muted'},r.data.status==='completed'?(r.data.notes||'Completed project'):'Choose a next action'),el('small',{class:'muted'},categories.find(c=>c.value===r.data.category)?.label||'Project')),projectOpenControl(r,open))):[empty(filter==='active'?'No active projects. Add something you want to move forward.':filter==='later'?'No projects saved for later.':'No completed projects yet.')]));}
   const add=button(controlIcon('add'),()=>ctx.go('tickets?project=new'),'quiet icon-button');add.setAttribute('aria-label','Add project');
   replace(root,heading('Tickets & projects',null,el('div',{class:'actions'},add)),el('section',{class:'project-overview'},tabs.node,list),el('div',{class:'project-ledger-link'},button('Weekly tickets and recorded time',()=>ctx.go('tickets?classic=1'),'text-button')));paint();
   return {update:paint,destroy(){disposed=true;}};
