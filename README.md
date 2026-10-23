@@ -1,6 +1,6 @@
 # LifeOS Open
 
-A standalone personal workspace for scheduling, coursework, lecture notebooks and everyday records, backed by local SQLite and seeded with fictional data.
+An open-source personal workspace for scheduling, coursework, lecture notebooks and everyday records, with local SQLite and a browser-only fictional demo.
 
 https://github.com/user-attachments/assets/507355df-52b6-4dfb-8c79-15ccb2f1134e
 
@@ -12,7 +12,7 @@ handwriting, audio and slides need a common timeline rather than separate files.
 
 LifeOS Open runs the browser interface and domain rules against a local Node
 service. SQLite stores records and file bytes. The default workspace is authored
-for Alex Morgan, with fictional courses and contacts such as Maya Chen; it needs
+for Alex Morgan, with fictional courses and contacts such as John Doe; it needs
 no external account. Optional assistant services use labelled demo replies until
 an operator configures a compatible provider.
 
@@ -21,6 +21,40 @@ personal workspace or original private history. The demo video, fixtures and inc
 [screenshots](docs/screenshots/today.png) use fictional or synthetic content.
 See the [screen inventory](docs/features.md) and
 [route inventory](docs/api-routes.json) for the retained surface.
+
+## Public browser demo
+
+Try the [interactive demo](https://lifeos.jacklai.ca) without signing in.
+It uses the same fictional application in this repository. Changes and uploaded
+files stay in that browser's IndexedDB/local cache; the public host has no
+application API, visitor database or model credentials. Clearing site data or
+browser eviction can remove those local edits. There is no cross-device sync.
+
+The demo's gray chat composer is read-only. Click an authored question to send
+it and see its example response. The schedule examples apply their own local
+change and provide Undo. These replies are scripted; they do not demonstrate
+arbitrary AI analysis, real email delivery or connected personal accounts.
+
+- [Browser engine](src/browser/service.mjs): SQLite WASM and local job adapters.
+- [Static host](src/hosted/worker.ts): public assets, no server-side workspace API.
+- [Asset builder](tools/build-hosted-assets.mjs) and
+  [deployment template](wrangler.public.example.jsonc): separate demo/parent origins.
+- [Public frame](src/hosted/public-entry.mjs): the centered Demo banner, source
+  link, login control and sandboxed frame used on the public website. This is
+  presentation only. The website's personal authentication and private backend
+  are separate and are not included in this repository. An integrating host
+  selects this frame only for anonymous root requests after its own session check.
+
+The default `npm run dev` mode still runs the standalone Node/SQLite workspace.
+For a browser-only build, install its pinned build dependencies automatically
+with `node tools/build-browser-demo.mjs`; then configure the example hosting
+origins and build assets with `node tools/build-hosted-assets.mjs`.
+No private account credentials are needed for either demo mode.
+
+See the [October 22 audit](docs/demo-audit-2026-10-22.md) for the checked paths
+and explicit limits. Demo changes include training-plan fixtures, whole-list
+priority ranking, optional Devotional/Prayer routines, pen-first live notes,
+reachable effort controls, local-save repairs and the authored chat examples.
 
 ## How it works
 
@@ -83,8 +117,10 @@ See the [screen inventory](docs/features.md) and
 
 ## Results and evaluation
 
-Reproducible here: `npm test` runs 50 unit/API regression tests against fictional
-fixtures, local persistence and controlled services. Run the command after
+Reproducible here: `npm test` runs unit/API regression tests against fictional
+fixtures, local persistence and controlled services. Browser-engine integration
+tests run separately with `node --test src/browser/browser-service.test.mjs`
+after `node tools/build-browser-demo.mjs --test-bundle`. Run the command after
 `npm ci`; no credentials are required.
 
 The end-to-end command, `npm run test:e2e`, has 46 cases: the 21 workflows shown in the demo video,
