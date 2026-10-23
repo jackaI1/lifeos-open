@@ -8,9 +8,9 @@ const assets=new Map([
  ['public/demo-lecture.wav','/demo-lecture.wav'],['public/demo-slides.pdf','/demo-slides.pdf'],['public/demo-landscape.jpg','/demo-landscape.jpg']
 ]);
 let initialized,storage,SQL,serial=Promise.resolve();
-async function readAsset(name){const path=assets.get(name);if(!path)throw Error('Unknown browser demo asset');const response=await nativeFetch(new URL(path,origin),{credentials:'omit',cache:'force-cache'});if(!response.ok)throw Error('The example assets could not load. Reload to retry.');return Buffer.from(await response.arrayBuffer());}
+async function readAsset(name){const path=assets.get(name);if(!path)throw Error('Unknown browser demo asset');const response=await nativeFetch(new URL(path,origin),{credentials:'same-origin',cache:'force-cache'});if(!response.ok)throw Error('The example assets could not load. Reload to retry.');return Buffer.from(await response.arrayBuffer());}
 async function initialize(){
- const wasm=await nativeFetch(new URL('./sql-wasm.wasm',self.location.href),{credentials:'omit',cache:'force-cache'});if(!wasm.ok)throw Error('The browser database engine could not load.');
+ const wasm=await nativeFetch(new URL('./sql-wasm.wasm',self.location.href),{credentials:'same-origin',cache:'force-cache'});if(!wasm.ok)throw Error('The browser database engine could not load.');
  SQL=await initSqlJs({wasmBinary:await wasm.arrayBuffer()});storage=await openWorkspaceDatabase();
  // Never allow an application route to turn a local request into a network request.
  globalThis.fetch=async()=>{throw Error('External requests are disabled in the browser workspace.');};
