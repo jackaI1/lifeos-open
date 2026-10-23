@@ -1,4 +1,24 @@
-import {assert,button,visible,go,reload,saveNote,lecture,draw,ask,saved} from './helpers.mjs';
-export default async function({page:p,configured}){
-await go(p,'school');await p.locator('.task-card').filter({hasText:'Read the watershed example'}).getByRole('button',{name:'Task options',exact:true}).click();await button(p,'Edit task').click();await p.getByLabel('Due date',{exact:true}).fill('2026-10-19');await p.getByLabel('Difficulty',{exact:true}).selectOption('5');await button(p,'Save task').click();await saved(p);await p.locator('.hero-action h2').filter({hasText:'Read the watershed example'}).waitFor();assert.match(await p.locator('.hero-action h2').innerText(),/Read the watershed/);await reload(p);assert.match(await p.locator('.hero-action h2').innerText(),/Read the watershed/);await p.locator('.hero-action').getByRole('button',{name:'Task options',exact:true}).click();await button(p,'Edit task').click();await p.getByLabel('Difficulty',{exact:true}).selectOption('1');await button(p,'Save task').click();await saved(p);await p.locator('.hero-action h2').filter({hasText:'Systems pre-lab checklist'}).waitFor();await reload(p);assert.match(await p.locator('.hero-action h2').innerText(),/Systems pre-lab/);
+import {assert,button,go,reload,saved} from './helpers.mjs';
+export default async function({page:p}){
+  await go(p,'school');
+  const priority=['Compare two feedback models','Systems pre-lab checklist','Sketch the watershed diagram','Map the feedback loop','Read the watershed example','Check the workshop reflection deadline'];
+  const deadlines=['Systems pre-lab checklist','Map the feedback loop','Read the watershed example','Sketch the watershed diagram','Compare two feedback models','Check the workshop reflection deadline'];
+  const order=()=>p.locator('.hero-action:visible h2, .task-card h3').allTextContents();
+  assert.deepEqual(await order(),priority);
+  await p.getByLabel('Sort academic tasks',{exact:true}).selectOption('due');
+  assert.deepEqual(await order(),deadlines);
+  await reload(p);
+  assert.deepEqual(await order(),deadlines);
+  await p.getByLabel('Sort academic tasks',{exact:true}).selectOption('priority');
+  assert.deepEqual(await order(),priority);
+  // Saving less remaining work must reorder the middle of the list too.
+  await p.locator('.task-card').filter({hasText:'Sketch the watershed diagram'}).getByRole('button',{name:'Task options',exact:true}).click();
+  await button(p,'Edit task').click();
+  await p.getByLabel('Estimated minutes',{exact:true}).fill('5');
+  await p.getByLabel('Difficulty',{exact:true}).selectOption('1');
+  await button(p,'Save task').click();await saved(p);
+  const after=['Compare two feedback models','Systems pre-lab checklist','Map the feedback loop','Read the watershed example','Sketch the watershed diagram','Check the workshop reflection deadline'];
+  assert.deepEqual(await order(),after);
+  await reload(p);
+  assert.deepEqual(await order(),after);
 }
