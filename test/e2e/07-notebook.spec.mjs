@@ -1,6 +1,15 @@
-import {assert,button,visible,lecture,draw,reload,ink,waitInk,darkInk} from './helpers.mjs';
+import {assert,button,visible,lecture,draw,reload,go,ink,waitInk,darkInk} from './helpers.mjs';
 export default async function({page:p}){
- await lecture(p);for(const name of ['Pen','Highlighter','Eraser','Lasso','Draw graph'])await button(p,name).waitFor();const initial=(await ink(p)).strokes.filter(s=>!s.hidden).length;
+ await lecture(p);for(const name of ['Pen','Highlighter','Eraser','Lasso','Draw graph'])await button(p,name).waitFor();
+ const original=(await ink(p)).strokes;assert.ok(original.some(s=>!s.hidden),'The historical lecture must retain its saved ink');
+ assert.equal(await button(p,'Pen').getAttribute('aria-pressed'),'true','Opening historical notes should select Pen');
+ assert.equal(await button(p,'Record').count(),1,'Opening notes must not start recording');
+ await button(p,'Tap notes to listen').click();assert.equal(await button(p,'Tap notes to listen').getAttribute('aria-pressed'),'true');
+ await go(p,'school');await lecture(p);
+ assert.equal(await button(p,'Pen').getAttribute('aria-pressed'),'true','Returning to live notes should select Pen');
+ assert.equal(await button(p,'Record').count(),1,'Returning to notes must not start recording');
+ assert.deepEqual((await ink(p)).strokes,original,'Selecting Pen on entry must preserve existing ink');
+ const initial=original.filter(s=>!s.hidden).length;
  await button(p,'Pen').click();const pixels=await darkInk(p);await draw(p);await waitInk(p,v=>v.strokes.filter(s=>!s.hidden).length===initial+1);assert.ok(await darkInk(p)>pixels,'Pen stroke is not visible');await button(p,'Undo').click();await waitInk(p,v=>v.strokes.filter(s=>!s.hidden).length===initial);await button(p,'Redo').click();await waitInk(p,v=>v.strokes.filter(s=>!s.hidden).length===initial+1);
  const drawnPixels=await darkInk(p);await button(p,'Eraser').click();await draw(p);await waitInk(p,v=>v.strokes.filter(s=>!s.hidden).length<initial+1);assert.ok(await darkInk(p)<drawnPixels,'Eraser did not remove visible ink');await button(p,'Undo').click();await waitInk(p,v=>v.strokes.filter(s=>!s.hidden).length===initial+1);
  await button(p,'Highlighter').click();await draw(p,160,190,130,0);await waitInk(p,v=>v.strokes.some(s=>s.intent==='unclear'&&!s.hidden));await button(p,'Draw graph').click();await draw(p,180,240,130,90);await waitInk(p,v=>v.strokes.some(s=>s.graph&&!s.hidden));

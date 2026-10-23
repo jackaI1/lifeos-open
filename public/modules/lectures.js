@@ -353,7 +353,7 @@ async function mountWorkspace(root, ctx, course, id, store) {
     pageId = "0001",
     page = blank(),
     drawing = null,
-    mode = remote.item.data.endedAt ? "listen" : "pen",
+    mode = "pen",
     width = 2.5,
     undo = [],
     redo = [],
@@ -1265,7 +1265,7 @@ async function mountWorkspace(root, ctx, course, id, store) {
     storeName:store.name,finished:()=>locallyFinished,
     finish:finishNow,syncPause,
     suspendView(){viewActive=false;void pauseLecture().catch(()=>{});document.body.classList.remove('lecture-open');if(slides?.element)slides.element.hidden=true;if(tutor?.element)tutor.element.hidden=true;},
-    resumeView(){viewActive=true;document.body.classList.add('lecture-open');sizePaper();if(slides?.element)slides.element.hidden=false;if(tutor?.element)tutor.element.hidden=false;if(routeQuery().get('source'))void showSlides(routeQuery().get('source'),Number(routeQuery().get('slide')||1)).catch(e=>toast(e.message));if(routeQuery().has('study')&&!studyHost)void toggleStudy().catch(e=>toast(e.message));},
+    resumeView(){viewActive=true;chooseMode('pen');document.body.classList.add('lecture-open');sizePaper();if(slides?.element)slides.element.hidden=false;if(tutor?.element)tutor.element.hidden=false;if(routeQuery().get('source'))void showSlides(routeQuery().get('source'),Number(routeQuery().get('slide')||1)).catch(e=>toast(e.message));if(routeQuery().has('study')&&!studyHost)void toggleStudy().catch(e=>toast(e.message));},
     dirty: () => !updateReady && (!!drawing || dirty || unsavedLocal.size > 0 || !!localError || !!imageImporting || record.state === 'recording' || !!(record.emergencyChunks?.length && !record.emergencyAcknowledged)),
     beforeLeave: async () => {
       if(selectionEditor?.busy()){toast("Finish the selection before leaving.");return false;}
