@@ -17,6 +17,11 @@ export default async function({page:p}){
   await p.getByLabel('Estimated minutes',{exact:true}).fill('5');
   await p.getByLabel('Difficulty',{exact:true}).selectOption('1');
   await button(p,'Save task').click();await saved(p);
+  // Dialog closure precedes the asynchronous list refresh; wait for the saved
+  // values to render before asserting the resulting priority order.
+  const edited=p.locator('.task-card').filter({hasText:'Sketch the watershed diagram'});
+  await edited.getByText('5 min remaining',{exact:false}).waitFor();
+  await edited.getByText('Difficulty 1/5',{exact:false}).waitFor();
   const after=['Compare two feedback models','Systems pre-lab checklist','Map the feedback loop','Read the watershed example','Sketch the watershed diagram','Check the workshop reflection deadline'];
   assert.deepEqual(await order(),after);
   await reload(p);

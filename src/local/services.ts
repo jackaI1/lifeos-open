@@ -9,11 +9,22 @@ import {studySchema,studyPrompt,validateStudyResult} from '../shared/lecture-stu
 import {briefSchema,validateBrief} from '../shared/assignment-brief.mjs';
 import {savedProjectPreparation} from '../cloud/project-artifacts.mjs';
 import {projectPreparationContext} from '../cloud/project-preparation.mjs';
+import {validateCookingHelpResult} from '../shared/cooking-help-contract.mjs';
 import type {WorkspaceDatabase} from './database.ts';
 import {createHash,randomUUID} from 'node:crypto';
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 import {chatCompletion} from '../shared/llm.mjs';
 export async function assistantReply(scope:string,message:string,env:Record<string,any>,context:string='',model?:string,images:string[]=[]){return chatCompletion({scope,message,env,context,model,images});}
+function authoredCookingAnswer(intent:any){
+ const explanations:Record<string,string>={
+  'Explain this preparation step using the selected saved recipe excerpt.':'Follow the preparation step alongside the exact saved recipe excerpt below. Keep its stated quantities and timing. This example does not fill in omitted temperatures, ingredients, or doneness checks.',
+  'What should I check in the selected saved recipe excerpt before doing this preparation step?':'Before beginning, check the selected recipe for the ingredients, equipment, quantities, timing, and any safety instructions this step needs. If a detail is missing, consult the original recipe rather than guessing.',
+  'Help me review the selected saved recipe instructions for this preparation step without inventing missing details.':'Compare your preparation step with the saved recipe quoted below. Preserve its wording and quantities, and resolve any missing information before continuing. This example cannot verify whether food is safe or done.'
+ };
+ const explanation=explanations[intent?.question];if(!explanation)return null;
+ const {start,end}=intent.source.range;
+ return validateCookingHelpResult({schema:1,explanation,sourceExcerpts:[{field:'recipe',start,end,text:intent.source.recipe.slice(start,end)},...(intent.selectedStep.text?[{field:'selectedStep',start:0,end:intent.selectedStep.text.length,text:intent.selectedStep.text}]:[])],questions:['Does the original recipe supply everything you need for this step?'],suggestedStepText:null},intent);
+}
 export function demoAvailableSlots(days:any[],now:string){
  return days.flatMap(d=>{
   const occupied=d.timeline.filter((e:any)=>e.start&&e.end&&Date.parse(e.end)>Date.parse(e.start)&&(e.corrected||!['school','rest','free','personal','discretionary','project'].includes(e.kind))).map((e:any)=>({start:e.start,end:e.end}));
@@ -66,7 +77,7 @@ export async function drainJobs(db:WorkspaceDatabase,env:Record<string,any>){
     const record=await get('prayer-session',p.sessionId);if(record)await put('prayer-session',p.sessionId,{...record,transcriptText:record.transcriptText??'Mock transcript: a quiet moment for gratitude, kindness and the community.',cleanedTranscript:record.cleanedTranscript??'Mock transcript: a quiet moment for gratitude, kindness and the community.',processingStatus:'review-needed',processingResult:{cleanedTranscript:'Mock transcript: a quiet moment for gratitude, kindness and the community.',sections:[{id:'thanksgiving',title:'Thanksgiving',summary:[{text:'Reflect on gratitude and kindness.'}]}]},archiveStatus:'local',mock:true});
     reply='Mock transcript ready for human review. The original recording remains local.';
    }else if(job.type==='cooking-help'){
-    const request=await get('cooking-help-request',p.requestId??job.id);const answer={schema:1,explanation:await assistantReply('cooking',request?.intent?.question??'',env,JSON.stringify(request?.intent??request??{})),sourceExcerpts:[],questions:['What texture does your saved recipe ask for?'],suggestedStepText:null};
+    const request=await get('cooking-help-request',p.requestId??job.id),example=env.AUTH_MODE==='demo'&&env.LLM_MODE!=='real'?authoredCookingAnswer(request?.intent):null;const answer=example??{schema:1,explanation:await assistantReply('cooking',request?.intent?.question??'',env,JSON.stringify(request?.intent??request??{})),sourceExcerpts:[],questions:['What texture does your saved recipe ask for?'],suggestedStepText:null};
     await put('cooking-help-result',p.requestId??job.id,{result:answer,late:false,mock:env.LLM_MODE!=='real',intentHash:request?.intentHash});reply=answer.explanation;
    }else if(job.type==='assignment-brief'){
     const task=await get('task',p.taskId),source=p.sources?.[0];const brief=env.LLM_MODE==='real'?validateBrief(JSON.parse(await chatCompletion({env,scope:'academics',message:'Summarize these assignment instructions and the first practical step.',context:JSON.stringify({task,sources:p.sources}),schema:briefSchema})),p.sources??[]):{summary:'Mock assignment outline: explain one system and its feedback loop in your own words.',sections:[{title:'Start here',items:[{text:task?.nextStep??'Read the fictional source and identify one question.',sourceId:source?.id??p.taskId,quote:source?.text?.slice(0,200)??''}]}],missing:['Review the original fictional instructions before completing your work.'],estimatedTotalMinutes:task?.estimatedMinutes??30,estimateReason:'Authored mock estimate.',workplace:null,submission:null};await put('assignment-brief',p.taskId,{...brief,sourceHash:p.sourceHash});reply='Assignment outline saved.';

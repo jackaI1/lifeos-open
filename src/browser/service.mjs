@@ -21,6 +21,12 @@ export async function createBrowserService({SQL,origin,bytes,readAsset,now=new D
   if(url.pathname==='/auth/google'||url.pathname.startsWith('/api/worker/'))return Response.json({error:'This workspace stays in this browser.'},{status:403});
   let response=await cloud.fetch(request,env);
   if(response.ok&&!['GET','HEAD'].includes(request.method))await drainJobs(db,env);
+  // This offline job has already settled. Return its exact retained receipt so
+  // a preset click does not require a second manual status check.
+  if(response.ok&&request.method==='POST'&&url.pathname==='/api/cooking-help'){
+   const {requestId}=await response.clone().json();
+   response=await cloud.fetch(new Request(origin+'/api/cooking-help/'+encodeURIComponent(requestId),{headers:request.headers}),env);
+  }
   if(url.pathname==='/api/session'&&response.ok)response=Response.json({...await response.json(),storage:'browser',mode:'demo',services:{ai:'mock',files:'local'},browserOnly:true,fictional:true,ai:{models:configuredModels(env),usage:false},externalOrigins:[]});
   if(url.pathname==='/api/health'&&response.ok)response=Response.json({...await response.json(),storage:'browser'});
   return response;

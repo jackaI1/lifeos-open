@@ -65,3 +65,21 @@ test('an older demo gets a new example study block relative to its upgrade day',
  await makeWorkspace(db,{now:new Date('2026-10-29T14:00:00Z')});
  assert.ok((await row(db,'calendar-event','demo-study-block')).data.start.dateTime.startsWith('2026-10-30'));
 }));
+
+test('task planning edits survive bootstrap refresh and a later demo seed upgrade',async()=>{
+ const {createService}=await import('../src/local/service.ts');
+ const app=await createService({database:':memory:',origin:'http://127.0.0.1:18749',env:{DEMO_CLOCK:now.toISOString()}});
+ try{
+  const session=await(await app.fetch(new Request(app.origin+'/api/session'))).json();
+  const before=(await app.db.prepare("SELECT * FROM records WHERE kind='task'").all()).results.map(r=>({...r,data:JSON.parse(r.data)})).find(r=>r.data.title==='Sketch the watershed diagram');
+  const response=await app.fetch(new Request(app.origin+'/api/task-tools/'+before.id,{method:'POST',headers:{origin:app.origin,'x-lifeos-csrf':session.csrf,'content-type':'application/json'},body:JSON.stringify({mutationId:crypto.randomUUID(),version:before.version,operation:'planning',dueDate:before.data.dueDate,difficulty:1,estimatedMinutes:5})}));
+  assert.equal(response.status,200);const saved=await response.json();
+  assert.equal(saved.item.data.remainingMinutes,5);assert.equal(saved.item.data.difficulty,1);
+  const boot=await(await app.fetch(new Request(app.origin+'/api/bootstrap'))).json();
+  assert.equal(boot.records.task.find(r=>r.id===before.id).data.remainingMinutes,5);
+  await app.db.prepare("DELETE FROM meta WHERE key='demo-content-revision'").run();
+  await makeWorkspace(app.db,{now:new Date('2026-10-23T14:00:00Z')});
+  const after=await row(app.db,'task',before.id);
+  assert.deepEqual(after.data,saved.item.data);assert.equal(after.version,saved.item.version);
+ }finally{app.close();}
+});

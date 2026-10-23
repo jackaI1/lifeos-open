@@ -40,6 +40,10 @@ export async function createService(options:ServiceOptions={}){
   if(u.pathname==='/api/operation-world'&&env.LOCAL_MOCK_SERVICES)return Response.json(operationWorldEmbed(u.searchParams.get('day')));
   let response=await cloud.fetch(req,env);
   if(response.ok&&!['GET','HEAD'].includes(req.method))await drainJobs(db,env);
+  if(response.ok&&authMode==='demo'&&env.LLM_MODE!=='real'&&req.method==='POST'&&u.pathname==='/api/cooking-help'){
+   const {requestId}=await response.clone().json();
+   response=await cloud.fetch(new Request(origin+'/api/cooking-help/'+encodeURIComponent(requestId),{headers:req.headers}),env);
+  }
   if(u.pathname==='/api/session'&&response.ok){const session=await response.json();response=Response.json({...session,mode:authMode,services:{ai:env.LLM_MODE,files:env.LOCAL_OBJECTS?'local':'google'},fictional:options.demo??vars.DEMO_SEED!=='false',ai:{models:configuredModels(env),usage:false},externalOrigins:env.GOOGLE_MODE==='real'?[vars.SCHOOL_HOME_URL,vars.SCHOOL_CAREERS_URL,vars.SCHOOL_OUTLINE_URL,...String(vars.EXTERNAL_LINK_ORIGINS??'').split(',')].filter(Boolean).map(value=>new URL(value!).origin):[]});}
   // Local-only service capabilities used by feature UIs; no external workers are launched.
   return response;

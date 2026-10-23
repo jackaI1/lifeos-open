@@ -386,11 +386,11 @@ var require_buffer = __commonJS({
       }
       return buf;
     }
-    function fromArrayLike(array) {
-      const length = array.length < 0 ? 0 : checked(array.length) | 0;
+    function fromArrayLike(array2) {
+      const length = array2.length < 0 ? 0 : checked(array2.length) | 0;
       const buf = createBuffer(length);
       for (let i = 0; i < length; i += 1) {
-        buf[i] = array[i] & 255;
+        buf[i] = array2[i] & 255;
       }
       return buf;
     }
@@ -401,20 +401,20 @@ var require_buffer = __commonJS({
       }
       return fromArrayLike(arrayView);
     }
-    function fromArrayBuffer(array, byteOffset, length) {
-      if (byteOffset < 0 || array.byteLength < byteOffset) {
+    function fromArrayBuffer(array2, byteOffset, length) {
+      if (byteOffset < 0 || array2.byteLength < byteOffset) {
         throw new RangeError('"offset" is outside of buffer bounds');
       }
-      if (array.byteLength < byteOffset + (length || 0)) {
+      if (array2.byteLength < byteOffset + (length || 0)) {
         throw new RangeError('"length" is outside of buffer bounds');
       }
       let buf;
       if (byteOffset === void 0 && length === void 0) {
-        buf = new Uint8Array(array);
+        buf = new Uint8Array(array2);
       } else if (length === void 0) {
-        buf = new Uint8Array(array, byteOffset);
+        buf = new Uint8Array(array2, byteOffset);
       } else {
-        buf = new Uint8Array(array, byteOffset, length);
+        buf = new Uint8Array(array2, byteOffset, length);
       }
       Object.setPrototypeOf(buf, Buffer5.prototype);
       return buf;
@@ -10592,6 +10592,37 @@ function createCookingHelpRequest(input) {
   if (bytes(JSON.stringify(request)) > 4096) throw limit();
   return freeze(request);
 }
+function array(value, max) {
+  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) throw invalid();
+  const keys2 = Reflect.ownKeys(value);
+  if (keys2.length !== value.length + 1 || keys2.some((key2) => key2 !== "length" && (typeof key2 !== "string" || !/^(0|[1-9]\d*)$/.test(key2))) || value.length > max) throw invalid();
+  const result = [];
+  for (let index = 0; index < value.length; index++) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+    if (!descriptor?.enumerable || !Object.hasOwn(descriptor, "value")) throw invalid();
+    result.push(descriptor.value);
+  }
+  return result;
+}
+function validateCookingHelpResult(input, request) {
+  const intent = captureCookingHelpIntent(request), value = fields5(input, ["schema", "explanation", "sourceExcerpts", "questions", "suggestedStepText"]);
+  if (value.schema !== 1) throw invalid();
+  value.explanation = text3(value.explanation, 3e3, { required: true });
+  value.sourceExcerpts = array(value.sourceExcerpts, 6).map((item2) => {
+    const excerpt = fields5(item2, ["field", "start", "end", "text"]);
+    if (!["recipe", "selectedStep"].includes(excerpt.field)) throw invalid();
+    const original2 = excerpt.field === "recipe" ? intent.source.recipe : intent.selectedStep.text;
+    range({ start: excerpt.start, end: excerpt.end }, original2);
+    if (excerpt.field === "recipe" && (excerpt.start < intent.source.range.start || excerpt.end > intent.source.range.end)) throw invalid();
+    text3(excerpt.text, 2e3, { required: true });
+    if (original2.slice(excerpt.start, excerpt.end) !== excerpt.text) throw invalid();
+    return excerpt;
+  });
+  value.questions = array(value.questions, 3).map((question) => text3(question, 500, { required: true }));
+  if (value.suggestedStepText !== null) value.suggestedStepText = text3(value.suggestedStepText, 2e3, { required: true });
+  if (bytes(JSON.stringify(value)) > 12288) throw limit();
+  return freeze(value);
+}
 
 // src/cloud/d1-policy.mjs
 init_globals();
@@ -12666,6 +12697,17 @@ var hash2 = (s) => createHash("sha256").update(s).digest("hex");
 async function assistantReply(scope, message, env, context = "", model, images = []) {
   return chatCompletion({ scope, message, env, context, model, images });
 }
+function authoredCookingAnswer(intent) {
+  const explanations = {
+    "Explain this preparation step using the selected saved recipe excerpt.": "Follow the preparation step alongside the exact saved recipe excerpt below. Keep its stated quantities and timing. This example does not fill in omitted temperatures, ingredients, or doneness checks.",
+    "What should I check in the selected saved recipe excerpt before doing this preparation step?": "Before beginning, check the selected recipe for the ingredients, equipment, quantities, timing, and any safety instructions this step needs. If a detail is missing, consult the original recipe rather than guessing.",
+    "Help me review the selected saved recipe instructions for this preparation step without inventing missing details.": "Compare your preparation step with the saved recipe quoted below. Preserve its wording and quantities, and resolve any missing information before continuing. This example cannot verify whether food is safe or done."
+  };
+  const explanation = explanations[intent?.question];
+  if (!explanation) return null;
+  const { start, end } = intent.source.range;
+  return validateCookingHelpResult({ schema: 1, explanation, sourceExcerpts: [{ field: "recipe", start, end, text: intent.source.recipe.slice(start, end) }, ...intent.selectedStep.text ? [{ field: "selectedStep", start: 0, end: intent.selectedStep.text.length, text: intent.selectedStep.text }] : []], questions: ["Does the original recipe supply everything you need for this step?"], suggestedStepText: null }, intent);
+}
 function demoAvailableSlots(days2, now) {
   return days2.flatMap((d) => {
     const occupied = d.timeline.filter((e) => e.start && e.end && Date.parse(e.end) > Date.parse(e.start) && (e.corrected || !["school", "rest", "free", "personal", "discretionary", "project"].includes(e.kind))).map((e) => ({ start: e.start, end: e.end }));
@@ -12752,8 +12794,8 @@ async function drainJobs(db, env) {
         if (record3) await put("prayer-session", p.sessionId, { ...record3, transcriptText: record3.transcriptText ?? "Mock transcript: a quiet moment for gratitude, kindness and the community.", cleanedTranscript: record3.cleanedTranscript ?? "Mock transcript: a quiet moment for gratitude, kindness and the community.", processingStatus: "review-needed", processingResult: { cleanedTranscript: "Mock transcript: a quiet moment for gratitude, kindness and the community.", sections: [{ id: "thanksgiving", title: "Thanksgiving", summary: [{ text: "Reflect on gratitude and kindness." }] }] }, archiveStatus: "local", mock: true });
         reply = "Mock transcript ready for human review. The original recording remains local.";
       } else if (job.type === "cooking-help") {
-        const request = await get("cooking-help-request", p.requestId ?? job.id);
-        const answer = { schema: 1, explanation: await assistantReply("cooking", request?.intent?.question ?? "", env, JSON.stringify(request?.intent ?? request ?? {})), sourceExcerpts: [], questions: ["What texture does your saved recipe ask for?"], suggestedStepText: null };
+        const request = await get("cooking-help-request", p.requestId ?? job.id), example = env.AUTH_MODE === "demo" && env.LLM_MODE !== "real" ? authoredCookingAnswer(request?.intent) : null;
+        const answer = example ?? { schema: 1, explanation: await assistantReply("cooking", request?.intent?.question ?? "", env, JSON.stringify(request?.intent ?? request ?? {})), sourceExcerpts: [], questions: ["What texture does your saved recipe ask for?"], suggestedStepText: null };
         await put("cooking-help-result", p.requestId ?? job.id, { result: answer, late: false, mock: env.LLM_MODE !== "real", intentHash: request?.intentHash });
         reply = answer.explanation;
       } else if (job.type === "assignment-brief") {
@@ -12919,6 +12961,10 @@ async function createBrowserService({ SQL: SQL2, origin: origin2, bytes: bytes2,
     if (url.pathname === "/auth/google" || url.pathname.startsWith("/api/worker/")) return Response.json({ error: "This workspace stays in this browser." }, { status: 403 });
     let response2 = await app_default.fetch(request, env);
     if (response2.ok && !["GET", "HEAD"].includes(request.method)) await drainJobs(db, env);
+    if (response2.ok && request.method === "POST" && url.pathname === "/api/cooking-help") {
+      const { requestId } = await response2.clone().json();
+      response2 = await app_default.fetch(new Request(origin2 + "/api/cooking-help/" + encodeURIComponent(requestId), { headers: request.headers }), env);
+    }
     if (url.pathname === "/api/session" && response2.ok) response2 = Response.json({ ...await response2.json(), storage: "browser", mode: "demo", services: { ai: "mock", files: "local" }, browserOnly: true, fictional: true, ai: { models: configuredModels(env), usage: false }, externalOrigins: [] });
     if (url.pathname === "/api/health" && response2.ok) response2 = Response.json({ ...await response2.json(), storage: "browser" });
     return response2;

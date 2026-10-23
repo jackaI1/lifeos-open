@@ -24,4 +24,10 @@
 
 .assistant-effort{display:grid;gap:12px;width:min(270px,calc(100vw - 56px));max-width:100%;padding:6px}.assistant-effort output{font-size:15px;text-align:center}.assistant-effort input{width:100%;min-width:0;min-height:44px;margin:0;padding:0;accent-color:var(--accent)}
 
+.assistant-page .assistant-composer:has(.demo-ai-input){background:color-mix(in srgb,var(--muted) 12%,var(--control-bg,var(--panel)))}
+.assistant-page .assistant-composer textarea.demo-ai-input{color:var(--muted);cursor:not-allowed;caret-color:transparent;min-height:calc(3lh + 16px);opacity:1}
+.assistant-page .assistant-composer textarea.demo-ai-input::placeholder{color:var(--muted);opacity:1}
+.cooking-step-help textarea.demo-ai-input{background:color-mix(in srgb,var(--muted) 12%,var(--control-bg,var(--panel)));color:var(--muted);cursor:not-allowed;caret-color:transparent;opacity:1}
+.cooking-step-help textarea.demo-ai-input::placeholder{color:var(--muted);opacity:1}
+
 .demo-assistant-choices{padding:4px 0 8px;color:var(--muted);font-size:14px}.demo-assistant-choices summary{min-height:44px;display:flex;align-items:center;cursor:pointer;list-style:revert}.demo-assistant-choice-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.demo-assistant-choice{min-height:44px;text-align:left;font-size:14px;white-space:normal}.demo-assistant-choices:not([open]) .demo-assistant-choice-list{display:none}@media(max-width:540px){.demo-assistant-choice-list{grid-template-columns:minmax(0,1fr)}}

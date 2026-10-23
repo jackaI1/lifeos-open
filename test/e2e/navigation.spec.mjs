@@ -1,8 +1,16 @@
 import {assert,button,visible,go} from './helpers.mjs';
 import {writeFile,mkdir} from 'node:fs/promises';
+// Exact owner-approved source/repository links only; this audit never fetches them.
+const allowedExternalLinks=new Set([
+ 'https://hansons-running.com/content/training-plans','https://operationworld.org/',
+ 'https://github.com/jackaI1/lifeos-open','https://github.com/jackaI1/Kitchen-Renovation-Modeling',
+ 'https://github.com/jackaI1/structural-review-prototype','https://github.com/jackaI1/DistroFit',
+ 'https://github.com/jackaI1/predictive-workload-management-system',
+ 'https://github.com/jackaI1/computer-vision-layout-stamping-system','https://github.com/jackaI1/multimodal-drawing-review-system'
+]);
 export default async function({page:p}){
  if(process.env.E2E_AUDIT_CONTROLS)p.on('dialog',async dialog=>{if(dialog.type()==='beforeunload')await dialog.accept();else await dialog.dismiss();});
- async function scan(route){const text=await p.locator('body').innerText();assert.doesNotMatch(text,/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}|\b(?:undefined|null|NaN)\b|\[object|codex|gpt-|astra|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i,'Visible text on '+route);const links=await p.locator('#main a[href^=http]:visible').evaluateAll(es=>es.map(e=>e.href));assert.deepEqual(links.filter(url=>new URL(url).origin!==p.origin),[],'Unconfigured external links on '+route);}
+ async function scan(route){const text=await p.locator('body').innerText();assert.doesNotMatch(text,/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}|\b(?:undefined|null|NaN)\b|\[object|codex|gpt-|astra|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i,'Visible text on '+route);const links=await p.locator('#main a[href^=http]:visible').evaluateAll(es=>es.map(e=>e.href));assert.deepEqual(links.filter(url=>new URL(url).origin!==p.origin&&!allowedExternalLinks.has(url)),[],'Unconfigured external links on '+route);}
  const routes=['today','devotional','prayer','school','tickets','exercise','reminders','email','finances','notes','friends','journal','photos','support','settings','settings?section=deleted','school?view=courses','school?view=work','school?view=coop','school?learning=demo-course-design','journal?view=templates','prayer?view=journal','reminders?view=cooking'];const inventory=[];
  for(const route of routes){await go(p,route);await p.locator('#main h1').waitFor();assert.ok(!/This page could not open|Your workspace is unavailable|Invalid record identifier|temporarily unavailable|is not iterable|Cannot read properties/.test(await p.locator('#main').innerText()),'Broken destination '+route);await scan(route);const fit=await p.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));assert.ok(fit.scroll<=fit.width+2,'Overflow on '+route+JSON.stringify(fit));
   const controls=await p.locator('#main button:enabled,#main input:not([type=hidden]),#main select,#main textarea,#main summary,#main a').evaluateAll(es=>es.map(e=>({tag:e.tagName,label:e.getAttribute('aria-label')??e.innerText??e.getAttribute('placeholder'),href:e.getAttribute('href'),visible:!!e.getClientRects().length})));inventory.push({route,controls});
@@ -10,7 +18,7 @@ export default async function({page:p}){
    const offered=[];for(const control of await p.locator('#main').getByRole('button').all()){if(!await control.isVisible()||!await control.isEnabled())continue;const match=(await control.ariaSnapshot()).match(/^- button \"((?:[^\"\\]|\\.)*)\"/);if(match)offered.push(JSON.parse('"'+match[1]+'"'));}const names=[...new Set(offered)],actions=[];let visit=0;
    for(const name of names){await p.goto(p.origin+'/?audit='+encodeURIComponent(route)+'-'+(++visit)+'#'+route,{waitUntil:'networkidle'});const control=p.locator('#main').getByRole('button',{name:name.startsWith('Timers and time history')?/^Timers and time history/:name,exact:!name.startsWith('Timers and time history')}).filter({visible:true}).first();
     if(!await control.count()){actions.push({name,result:'State changed after an earlier primary action'});continue;}if(!await control.isEnabled()){actions.push({name,result:'Disabled by current state'});continue;}
-    if(/Send/.test(name)){const input=p.locator('#main textarea:visible').last();if(await input.count())await input.fill('Synthetic interface audit: how do I use this page?');}
+    if(/Send/.test(name)){const input=p.locator('#main textarea:visible').last();if(await input.count()&&await input.isEditable())await input.fill('Synthetic interface audit: how do I use this page?');}
     await control.click();await p.waitForTimeout(150);actions.push({name,result:'Clicked',destination:p.url().split('#')[1]});for(const popup of p.context().pages().filter(tab=>tab!==p))await popup.close();await p.keyboard.press('Escape');if(await p.locator('#dialog').isVisible())await p.locator('#dialog').getByRole('button',{name:'Close',exact:true}).click();
    }inventory.at(-1).actions=actions;await go(p,route);
   }
