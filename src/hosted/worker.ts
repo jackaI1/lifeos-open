@@ -33,7 +33,7 @@ export default {
    const asset=/^\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_.-]+\.(?:js|mjs|css|png|jpg|jpeg|svg|ico|woff2?|ttf|json|webmanifest|pdf|wav|mp4|wasm|sql|html)$/.test(url.pathname)&&!url.pathname.includes('..');
    if(!shell&&!asset)return secure(denied('Demo asset not found',404),env.PARENT_ORIGIN,head);
    // A fresh request deliberately carries no visitor cookies or credentials.
-   const assetURL=new URL(env.DEMO_ORIGIN+(shell?'/':url.pathname));
+   const assetURL=new URL(env.DEMO_ORIGIN+(shell?'/index.html':url.pathname));
    let response=await env.ASSETS.fetch(new Request(assetURL,{method:shell?'GET':request.method}));
    if(shell&&response.ok){
     const html=(await response.text()).replace(/src="\/app\.js"/g,'src="/demo-bootstrap.js"'),headers=new Headers(response.headers);
