@@ -36,3 +36,13 @@ Run unit tests, typecheck, lint, privacy checks, browser engine integration test
 Static assets use CDN asset serving; only root/API/auth fallback routes invoke the small Worker. This removes server-side visitor writes and per-visitor database cost. Static traffic can still consume hosting resources; browser-only storage is not a denial-of-service guarantee. Confirm actual Free hosting entitlement, capacity and supported traffic controls before release, without paid enrollment or a card.
 
 After owner approval, stage the isolated demo first and verify deployed policies, then enable only the personal root frame. Verify real owner-only Google login separately. Roll back code/configuration on failure; never restore or migrate an old personal database.
+
+### Example content and read-only public sources
+
+The fictional workspace includes the published 18-week Hansons Beginner Marathon numerical schedule, with a source link in Exercise. The original Sunday workouts remain on Sundays; an example goal is not a personalized prescription. New devotional answers are blank. Prayer requests are generic fictional examples.
+
+Operation World is the one optional external read-only panel: opening its prayer step loads the provider's official isolated widget from `https://widget.operationworld.org`. No visitor writing, identifiers, recording or local API data is sent to it. Its scripts run inside that separate origin, with no referrer and a sandbox; it needs an internet connection and follows the provider's current-day feed. It does not upload edits to this website.
+
+The owner-selected portfolio uses explicit GitHub repository links. GitHub still controls their public availability. LifeOS Open is active; the other six are completed. Repository visibility is never changed by the demo.
+
+Older browser workspaces receive a one-time update to untouched known examples. Edited records, drafts, run logs and files are preserved; deleted examples stay deleted. Replaced fixture rows are retained in a local-only originals table. There is no reset, expiry or new storage namespace.

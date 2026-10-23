@@ -27,7 +27,8 @@ test('owner-selected repositories seed with LifeOS active and six completed proj
 });
 
 test('project links reject non-GitHub, insecure and credential-bearing destinations',()=>{
- for(const githubUrl of ['javascript:alert(1)','http://github.com/jackaI1','https://github.com.evil.test/jackaI1','https://jackaI1:secret@github.com/project','https://github.com/jackaI1?token=secret','https://github.com/jackaI1#private','https://github.com/jackaI1/repo/issues','https://github.com/jackaI1/%2e%2e','https://github.com/jackaI1\\repo']){
+ const credentialUrl=new URL('https://github.com/project');credentialUrl.username='example';credentialUrl.password='fictional-placeholder';
+ for(const githubUrl of ['javascript:alert(1)','http://github.com/jackaI1','https://github.com.evil.test/jackaI1',credentialUrl.href,'https://github.com/jackaI1?token=secret','https://github.com/jackaI1#private','https://github.com/jackaI1/repo/issues','https://github.com/jackaI1/%2e%2e','https://github.com/jackaI1\\repo']){
   assert.throws(()=>recordData('project',{title:'Example',githubUrl}),undefined,githubUrl);
  }
 });

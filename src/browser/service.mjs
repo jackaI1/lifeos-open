@@ -1,3 +1,4 @@
+import {operationWorldEmbed} from '../../public/operation-world.js';
 import cloud from '../cloud/app.mjs';
 import {makeWorkspace,DEMO_EMAIL} from '../local/workspace.ts';
 import {LocalObjects} from '../local/objects.ts';
@@ -15,8 +16,8 @@ export async function createBrowserService({SQL,origin,bytes,readAsset,now=new D
  env.LOCAL_BACKUP=async(id)=>{const exists=await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='local_snapshots'").first();if(!exists)return null;const row=await db.prepare('SELECT content FROM local_snapshots WHERE id=?').bind(id).first();return row?JSON.parse(row.content):null;};
  return {db,csrf,close:()=>db.close(),async fetch(request){
   const url=new URL(request.url);if(url.origin!==origin)return Response.json({error:'Browser workspace origin denied'},{status:403});
-  // These public sources normally query external sites. Browser demo is strictly offline.
-  if(url.pathname==='/api/operation-world')return Response.json({day:url.searchParams.get('day'),items:[{title:'Community reflection',text:'Remember people who need kindness, shelter and peace.'}],source:null,checkedAt:new Date().toISOString(),mock:true});
+  // Return only the public widget descriptor; the isolated frame fetches its own feed.
+  if(url.pathname==='/api/operation-world')return Response.json(operationWorldEmbed(url.searchParams.get('day')));
   if(url.pathname==='/auth/google'||url.pathname.startsWith('/api/worker/'))return Response.json({error:'This workspace stays in this browser.'},{status:403});
   let response=await cloud.fetch(request,env);
   if(response.ok&&!['GET','HEAD'].includes(request.method))await drainJobs(db,env);

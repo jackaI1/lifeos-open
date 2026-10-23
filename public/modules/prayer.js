@@ -1,6 +1,6 @@
 import {prayerJournalDay,withPrayerDates} from '../prayer-dates.js';
 import {trashEntryButton} from '../deleted.js';
-import {prayerStep} from '../operation-world.js';
+import {prayerStep,OPERATION_WORLD_EMBED} from '../operation-world.js';
 import {revisionHistory} from '../revision-history.js';
 import {answeredPrayers} from '../spiritual-tools-ui.js';
 import {controlIcon,helpControl} from '../quiet-controls.js';
@@ -30,7 +30,11 @@ export async function mount(root,ctx){
  function renderTree(nodes){const day=new Date(ctx.date()+'T12:00:00Z').getUTCDay();return el('ul',{class:'prayer-tree'},nodes.filter(n=>n.weekday==null||n.weekday===day).map(n=>el('li',{class:'prayer-node '+n.type},n.text?el(n.type==='group'?'h3':'div',{class:n.type==='guidance'?'prayer-guidance':'block-'+(n.blockStyle??'paragraph')},renderPrayerText(n)):null,n.children?.length?renderTree(n.children):null)));}
  function prayerNav(name,label,action){const b=button(controlIcon(name),action,'quiet icon-button');b.setAttribute('aria-label',label);return b;}
  function renderCard(){const world=prayerStep(position).world;replace(card,el('div',{class:'prayer-section-heading'},el('h2',{},world?'Operation World':TITLES[section])),world?worldView():renderTree(sections[section].nodes),el('div',{class:'prayer-card-nav'},prayerNav('left','Previous section',()=>move(-1)),prayerNav('right','Next section',()=>move(1))));if(world&&!worldData&&!worldError&&!worldLoading)void loadWorld();}
- function worldView(){return el('div',{},worldData?.items.map(item=>el('section',{},el('h3',{},item.title),el('div',{class:'operation-world-content'},item.text)))??el('p',{role:'status'},worldError?'The daily prayer could not load.':'Loading the daily prayer…'),worldError?button('Retry',()=>{worldError=null;void loadWorld();},'quiet'):null,el('div',{class:'operation-world-source'},el('a',{href:'https://operationworld.org/',target:'_blank',rel:'noopener noreferrer'},'Operation World'),worldData?' · '+formatDate(worldData.day):''));}
+ function worldView(){
+  const source=el('div',{class:'operation-world-source'},el('a',{href:'https://operationworld.org/',target:'_blank',rel:'noopener noreferrer'},'Operation World'),worldData?.live?' · Today’s live prayer':worldData?' · '+formatDate(worldData.day):'');
+  const content=worldData?.embedUrl===OPERATION_WORLD_EMBED?el('iframe',{class:'operation-world-widget',src:OPERATION_WORLD_EMBED,title:'Operation World daily prayer',referrerPolicy:'no-referrer',sandbox:'allow-scripts allow-same-origin allow-popups',loading:'lazy'}):worldData?.items.map(item=>el('section',{},el('h3',{},item.title),el('div',{class:'operation-world-content'},item.text)))??el('p',{role:'status'},worldError?'The daily prayer could not load.':'Loading the daily prayer…');
+  return el('div',{},source,content,worldError?button('Retry',()=>{worldError=null;void loadWorld();},'quiet'):null);
+ }
  async function loadWorld(){worldLoading=true;try{worldData=await ctx.request('/api/operation-world?day='+ctx.date());worldError=null;}catch(e){worldError=e.message;}finally{worldLoading=false;if(!disposed&&!editing&&prayerStep(position).world)renderCard();}}
  function move(delta){position=(position+delta+7)%7;section=prayerStep(position).section;recorder.mark(section);renderCard();card.scrollIntoView?.({block:'start',behavior:'smooth'});}
  function showMain(){editing=false;dock.hidden=false;root.classList.remove('prayer-editing');replace(root,heading('Prayer',null,editButton),card,button('Prayer Journal',()=>ctx.go('prayer?view=journal&day='+ctx.date()),'quiet prayer-journal-link'),dock);renderCard();renderControls();}

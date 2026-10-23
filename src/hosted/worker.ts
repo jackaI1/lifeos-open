@@ -10,7 +10,7 @@ export function validateStaticBindings(env:DemoEnv){
 }
 export function staticSecurityHeaders(parent:string){
  return {
-  'content-security-policy':`default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors ${origin(parent)}`,
+  'content-security-policy':`default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; worker-src 'self'; frame-src https://widget.operationworld.org; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors ${origin(parent)}`,
   'referrer-policy':'no-referrer','x-content-type-options':'nosniff','permissions-policy':'camera=(), microphone=(self), geolocation=(), payment=()','cross-origin-resource-policy':'same-origin'
  };
 }

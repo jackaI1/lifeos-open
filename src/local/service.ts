@@ -1,3 +1,4 @@
+import {operationWorldEmbed} from '../../public/operation-world.js';
 import {configuredModels} from '../shared/llm.mjs';
 import {mkdir,readFile,stat,realpath} from 'node:fs/promises';
 import {dirname,resolve,extname,relative} from 'node:path';
@@ -36,7 +37,7 @@ export async function createService(options:ServiceOptions={}){
    if(candidate.length!==expected.length||!timingSafeEqual(candidate,expected))return new Response('Access token rejected',{status:403});
    return new Response(null,{status:303,headers:{location:'/', 'set-cookie':`lifeos-local=${sessionToken}; Path=/; HttpOnly; SameSite=Strict`}});
   }
-  if(u.pathname==='/api/operation-world'&&env.LOCAL_MOCK_SERVICES)return Response.json({day:u.searchParams.get('day'),items:[{title:'Community reflection',text:'Remember people who need kindness, shelter and peace.'}],source:null,checkedAt:new Date().toISOString(),mock:true});
+  if(u.pathname==='/api/operation-world'&&env.LOCAL_MOCK_SERVICES)return Response.json(operationWorldEmbed(u.searchParams.get('day')));
   let response=await cloud.fetch(req,env);
   if(response.ok&&!['GET','HEAD'].includes(req.method))await drainJobs(db,env);
   if(u.pathname==='/api/session'&&response.ok){const session=await response.json();response=Response.json({...session,mode:authMode,services:{ai:env.LLM_MODE,files:env.LOCAL_OBJECTS?'local':'google'},fictional:options.demo??vars.DEMO_SEED!=='false',ai:{models:configuredModels(env),usage:false},externalOrigins:env.GOOGLE_MODE==='real'?[vars.SCHOOL_HOME_URL,vars.SCHOOL_CAREERS_URL,vars.SCHOOL_OUTLINE_URL,...String(vars.EXTERNAL_LINK_ORIGINS??'').split(',')].filter(Boolean).map(value=>new URL(value!).origin):[]});}

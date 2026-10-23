@@ -4625,6 +4625,13 @@ var import_buffer3 = __toESM(require_buffer(), 1);
 // src/browser/service.mjs
 init_globals();
 
+// public/operation-world.js
+init_globals();
+var OPERATION_WORLD_EMBED = "https://widget.operationworld.org/index.html?language=en&mode=dark&cache-mode=false";
+function operationWorldEmbed(day) {
+  return { day, items: [], source: "https://operationworld.org/", embedUrl: OPERATION_WORLD_EMBED, live: true };
+}
+
 // src/cloud/app.mjs
 init_globals();
 
@@ -5467,13 +5474,22 @@ function effectiveAssistantPreset(model, effort) {
   return assistantPreset(model, effort) ?? DEFAULT_ASSISTANT_PRESET;
 }
 
+// public/github-project-url.js
+init_globals();
+function githubProjectUrl(value) {
+  if (typeof value !== "string" || !/^https:\/\/github\.com\/[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?(?:\/[a-z\d._-]+)?\/?$/i.test(value)) return null;
+  const parsed = new URL(value), parts = parsed.pathname.split("/").filter(Boolean);
+  if (parts.some((part) => part === "." || part === "..") || parsed.pathname !== value.slice("https://github.com".length)) return null;
+  return value.replace(/\/$/, "");
+}
+
 // src/server/validation.mjs
 var fields = {
   "prayer-list": "sections",
   "accountability-draft": "entryId entryVersion previousEntryId prayerSessionId prayed repentance followThrough applications text status approvedAt",
   settings: "spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder schoolMorningStart schoolMorningEnd schoolAfternoonStart schoolAfternoonEnd timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions",
   "prayer-note": "section title text archived rotation people notes weekday weekdays nodes",
-  project: "title category notes status archived nextStep steps timeBlocks",
+  project: "title category notes status archived nextStep steps timeBlocks githubUrl",
   meal: "title notes recipe day slot ingredients steps",
   grocery: "title checked quantity notes archived",
   coursework: "title taskId text language document attachmentIds notes archived",
@@ -5573,6 +5589,11 @@ function recordData(kind, input) {
     }
   }
   if (kind === "project" && data3.nextStep !== void 0) text(data3.nextStep, 2e3);
+  if (kind === "project" && data3.githubUrl !== void 0) {
+    const url = githubProjectUrl(data3.githubUrl);
+    if (!url) throw new AppError("Use an HTTPS GitHub profile or repository URL");
+    data3.githubUrl = url;
+  }
   if (kind === "accountability-draft") {
     identifier(data3.entryId);
     version(data3.entryVersion);
@@ -5889,8 +5910,8 @@ function addMinutes(value, minutes) {
 function overlap(a, b) {
   return instant(a.start) < instant(b.end) && instant(b.start) < instant(a.end);
 }
-function mergeIntervals(intervals) {
-  const sorted = intervals.map((i) => ({ start: instant(i.start), end: instant(i.end) })).filter((i) => i.end > i.start).sort((a, b) => a.start - b.start || a.end - b.end);
+function mergeIntervals(intervals2) {
+  const sorted = intervals2.map((i) => ({ start: instant(i.start), end: instant(i.end) })).filter((i) => i.end > i.start).sort((a, b) => a.start - b.start || a.end - b.end);
   const merged = [];
   for (const item2 of sorted) {
     const last = merged.at(-1);
@@ -6029,7 +6050,12 @@ function rankSchoolTasks({ tasks = [], now, capacity = [], activeTaskId = null, 
   }
   const currentBlock = futureCapacity.find((slot) => instant(slot.start) <= current && instant(slot.end) > current);
   const latestCapacity = futureCapacity.map((s) => ({ start: instant(s.start), end: instant(s.end) }));
-  const ready = [], waiting = [];
+  const deadlineTime = new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
+  const ready = [], waiting = [], priorities = /* @__PURE__ */ new Map();
+  const comparePriority = (a, b) => {
+    const left = priorities.get(a.id), right = priorities.get(b.id);
+    return left.group - right.group || b.score - a.score || left.deadline.localeCompare(right.deadline) || String(a.id).localeCompare(String(b.id));
+  };
   for (const task of tasks) {
     if (["complete", "completed", "submitted", "cancelled", "archived"].includes(task.status)) continue;
     const dependencyIds = (task.dependencies ?? []).filter((id) => !["complete", "completed", "submitted"].includes(all.get(id)?.status));
@@ -6055,7 +6081,10 @@ function rankSchoolTasks({ tasks = [], now, capacity = [], activeTaskId = null, 
     const imminent = hoursToDue !== null ? hoursToDue >= 0 && hoursToDue <= 48 : dueDay !== null && dueDay >= date3 && dueDay <= addDays(date3, 2);
     const reviewCategory = ["review", "practice", "coop", "preparation"].includes(task.category);
     const reviewDue = reviewCategory && (task.reviewDueAt ? instant(task.reviewDueAt) <= current : ageDays >= 3);
-    const score = (dueToday ? 2e4 : overdue ? 3e3 : 0) + (riskMinutes ? 800 + Math.min(riskMinutes, 600) : 0) + (imminent ? 8e3 + Math.max(0, 48 - (hoursToDue ?? 48)) * 10 : 0) + (due !== null ? Math.max(0, 500 - Math.max(0, hoursToDue)) : 0) + (reviewDue ? 700 : 0) + Math.min(ageDays * 20, 500) + (task.category === "coop" ? 80 : 0) + (task.difficulty ?? 3) * 25;
+    const daysRemaining = due !== null ? (due - current) / 864e5 : dueDay !== null ? (Date.parse(dueDay) - Date.parse(date3)) / 864e5 : null;
+    const difficulty = Number.isFinite(task.difficulty) ? Math.max(1, Math.min(5, task.difficulty)) : 3;
+    const difficultyWeight = 0.625 + difficulty * 0.125;
+    const score = daysRemaining === null || remaining === null ? 0 : remaining * difficultyWeight / Math.max(0.25, daysRemaining);
     const availableMinutes = currentBlock?.minutes ?? 0;
     const firstStepMinutes = task.nextStepMinutes ?? (availableMinutes < 15 && remaining !== null ? remaining : 10);
     const reason = dueToday && due === null ? "This task is due today. Confirm the cutoff time in its source." : overdue ? "The recorded due date has passed." : riskMinutes ? "Remaining effort exceeds available time before the deadline." : imminent ? "The deadline is within two days." : reviewDue ? "This review or co-op work is due for attention." : dueDay === null ? "The due date is unknown; start with the linked instructions." : "Starting now protects time before the deadline.";
@@ -6063,6 +6092,7 @@ function rankSchoolTasks({ tasks = [], now, capacity = [], activeTaskId = null, 
     const latest = capacityKnown ? latestStart({ dueAt: task.dueAt, remainingMinutes: remaining, capacity: futureCapacity, preparedCapacity: latestCapacity, now, timeZone }) : { at: null, shortfallMinutes: null };
     entry.latestStartAt = latest.at;
     entry.latestStartShortfall = latest.shortfallMinutes;
+    priorities.set(entry.id, { group: overdue ? 0 : dueDay !== null ? 1 : 2, deadline: due !== null ? localDate(due, timeZone) + "T" + deadlineTime.format(due) : dueDay !== null ? dueDay + "T99" : "9999" });
     if (entry.blocked) waiting.push(entry);
     else ready.push(entry);
   }
@@ -6073,8 +6103,9 @@ function rankSchoolTasks({ tasks = [], now, capacity = [], activeTaskId = null, 
       seen.add(id);
       const entry = [...ready, ...waiting].find((t) => t.id === id);
       if (!entry) return;
-      if (entry.score < blocked.score) {
+      if (comparePriority(entry, blocked) > 0) {
         entry.score = blocked.score;
+        priorities.set(entry.id, { ...priorities.get(blocked.id) });
         entry.reason = "Needed before " + blocked.title;
         entry.requiredFor = blocked.id;
       }
@@ -6082,7 +6113,8 @@ function rankSchoolTasks({ tasks = [], now, capacity = [], activeTaskId = null, 
     };
     blocked.dependencyIds.forEach(inherit);
   }
-  ready.sort((a, b) => b.score - a.score || String(a.id).localeCompare(String(b.id)));
+  ready.sort(comparePriority);
+  waiting.sort(comparePriority);
   const runnable = ready.filter((task) => task.fitsFirstStep && task.energyMatch);
   let next = currentBlock ? runnable[0] ?? null : null;
   const lastCategories = settings.recentDispatchCategories ?? [];
@@ -6092,7 +6124,7 @@ function rankSchoolTasks({ tasks = [], now, capacity = [], activeTaskId = null, 
     if (reserved && !deadlineDuringReview) next = { ...reserved, reason: "Protect a short review or co-op block after repeated urgent work. Deadline obligations remain visible." };
   }
   const active = ready.find((task) => task.id === activeTaskId);
-  const urgentChange = Boolean(next && active && next.id !== active.id && (next.overdue || next.riskMinutes > 0) && next.score > active.score + 1e3);
+  const urgentChange = Boolean(next && active && next.id !== active.id && (next.overdue || next.riskMinutes > 0) && comparePriority(next, active) < 0 && (priorities.get(next.id).group < priorities.get(active.id).group || next.score > active.score * 1.5));
   if (active && active.fitsFirstStep && active.energyMatch && currentBlock && !urgentChange) next = { ...active, reason: "Continue the current focused task. The background order can wait." };
   return { ranked: [...ready, ...waiting], next, alternatives: runnable.filter((task) => task.id !== next?.id).slice(0, 3), academicAllowed: true, availableBlock: currentBlock ?? null, interruptFocus: urgentChange, reason: currentBlock ? next ? next.reason : "No ready task fits the available block. Review blocked work or protect a break." : "There is no current unoccupied school block.", capacityInsufficient: ready.some((task) => task.riskMinutes > 0) };
 }
@@ -6787,12 +6819,12 @@ function undoTicket({ ledger = [], spendId, undoId, correctedAt }) {
   const undo = { id: undoId, type: "undo", spendId, correctedAt: new Date(instant(correctedAt)).toISOString() };
   return { ledger: [...ledger, undo], duplicate: false, undo };
 }
-function suggestTicketSessions({ date: date3, ledger = [], intervals = [], tickets = WEEKLY_TICKETS, timeZone = DEFAULT_TIME_ZONE }) {
+function suggestTicketSessions({ date: date3, ledger = [], intervals: intervals2 = [], tickets = WEEKLY_TICKETS, timeZone = DEFAULT_TIME_ZONE }) {
   if (![1, 2, 3, 4, 6].includes(weekday(date3))) return [];
   const balance = ticketBalance({ date: date3, ledger, tickets, timeZone });
   return balance.tickets.filter((t) => t.remainingMinutes > 0).map((ticket) => {
-    const continuous = intervals.find((i) => minutesBetween(i.start, i.end) >= ticket.remainingMinutes);
-    const partial = intervals.find((i) => minutesBetween(i.start, i.end) > 0);
+    const continuous = intervals2.find((i) => minutesBetween(i.start, i.end) >= ticket.remainingMinutes);
+    const partial = intervals2.find((i) => minutesBetween(i.start, i.end) > 0);
     return { ticketId: ticket.id, category: ticket.category, label: ticket.label, remainingMinutes: ticket.remainingMinutes, suggestedMinutes: continuous ? ticket.remainingMinutes : partial ? Math.min(ticket.remainingMinutes, minutesBetween(partial.start, partial.end)) : 0, slot: continuous ?? partial ?? null, contiguous: Boolean(continuous) };
   });
 }
@@ -6881,12 +6913,12 @@ function interpretToday({ now, date: date3, plan, calendar, school, tickets, rec
         nowAction = timed("reminder", reminder.title, { start: now, end: limit2(available.end) }, { detail: reminder.notes?.slice(0, 300) || null, reason: "This reminder is due. Use this free block.", target: routeTarget("reminders", { reminderId: reminder.id, listId: reminder.listId }), buttonLabel: "Open reminder" });
       }
       if (!nowAction && available) {
-        const intervals = [{ start: now, end: limit2(available.end) }];
-        const suggestions = suggestTicketSessions({ date: date3, ledger: rows(records["ticket-spend"]), intervals, timeZone: tz });
+        const intervals2 = [{ start: now, end: limit2(available.end) }];
+        const suggestions = suggestTicketSessions({ date: date3, ledger: rows(records["ticket-spend"]), intervals: intervals2, timeZone: tz });
         const suggestion = suggestions.find((s) => s.suggestedMinutes >= 5 && s.category !== "*" && (!["personal-project", "school-project"].includes(s.category) || projectRows.some((p) => p.category === s.category || p.eligibleCategories?.includes(s.category))));
         if (suggestion) {
           const project = projectRows.find((p) => p.id === settings.activeProjectId && (p.category === suggestion.category || p.eligibleCategories?.includes(suggestion.category))) || projectRows.find((p) => p.category === suggestion.category || p.eligibleCategories?.includes(suggestion.category));
-          const end = iso(Math.min(instant(intervals[0].end), current + suggestion.suggestedMinutes * 6e4));
+          const end = iso(Math.min(instant(intervals2[0].end), current + suggestion.suggestedMinutes * 6e4));
           nowAction = timed(project ? "project" : suggestion.category, project?.title || suggestion.label, { start: now, end }, { detail: project?.notes || null, reason: `Use the remaining ${suggestion.label.toLowerCase()} ticket in this free block.`, suggestedMinutes: suggestion.suggestedMinutes, projectId: project?.id, ticketId: suggestion.ticketId, target: routeTarget("tickets", project ? { projectId: project.id } : { ticketId: suggestion.ticketId }), buttonLabel: project ? "Open project" : "Open ticket" });
         }
       }
@@ -7097,10 +7129,10 @@ init_globals();
 function sundayRestWeeks(sourceWeeks) {
   return sourceWeeks.map((w) => {
     if (w.days?.some((d) => d.kind === "race")) return { ...w, sundayRaceConflict: true };
-    const days = w.days ?? [], sunday = days.find((d) => d.dayOffset === 6), rest = days.find((d) => d.kind === "rest" && d.dayOffset !== 6);
+    const days2 = w.days ?? [], sunday = days2.find((d) => d.dayOffset === 6), rest = days2.find((d) => d.kind === "rest" && d.dayOffset !== 6);
     if (!rest || !sunday || sunday.kind === "rest") return w;
-    const saturday = days.find((d) => d.dayOffset === 5);
-    return { ...w, days: days.map((d) => ({ ...d, originalDayOffset: d.dayOffset, dayOffset: d === rest ? 6 : d === sunday ? 5 : d === saturday ? rest.dayOffset : d.dayOffset, adaptation: "Sunday rest; source workload preserved" })).sort((a, b) => a.dayOffset - b.dayOffset) };
+    const saturday = days2.find((d) => d.dayOffset === 5);
+    return { ...w, days: days2.map((d) => ({ ...d, originalDayOffset: d.dayOffset, dayOffset: d === rest ? 6 : d === sunday ? 5 : d === saturday ? rest.dayOffset : d.dayOffset, adaptation: "Sunday rest; source workload preserved" })).sort((a, b) => a.dayOffset - b.dayOffset) };
   });
 }
 
@@ -7150,7 +7182,7 @@ function buildTrainingReference({ raceDate, sourceWeeks = [], program = "Beginne
     if (item2.source?.inconsistency) itemIssues.push(item2.source.inconsistency);
     const componentKm = (item2.components ?? []).reduce((sum, component) => sum + (Number.isFinite(component.distanceKm) ? component.distanceKm : 0), 0);
     if (item2.totalDistanceKm != null && componentKm && Math.abs(componentKm - item2.totalDistanceKm) > 0.05) itemIssues.push("The component sum disagrees with the source total. Both values are preserved.");
-    workouts.push({ ...item2, date: date3, week: sourceWeek.week, program, status: "reference-only", completed: false, automaticallyActive: false, sundayRestConflict: weekday(date3) === 0 && item2.kind !== "rest" && !(date3 === raceDate && raceExceptionConfirmed), sourceIssues: itemIssues, adaptation: null });
+    workouts.push({ ...item2, date: date3, week: sourceWeek.week, program, status: "reference-only", completed: false, automaticallyActive: false, sundayRestConflict: sundayRest && weekday(date3) === 0 && item2.kind !== "rest" && !(date3 === raceDate && raceExceptionConfirmed), sourceIssues: itemIssues, adaptation: null });
     issues.push(...itemIssues.map((issue) => `${date3}: ${issue}`));
   }
   return { raceDate, firstMonday, program, weeks: length, workouts: workouts.sort((a, b) => a.date.localeCompare(b.date)), issues, status: issues.length ? "source-review-needed" : "reference-ready", automaticCatchUp: false, secondRaceDate: null };
@@ -9656,9 +9688,9 @@ function interactiveUsage(telemetry, now = Date.now()) {
   if (!windows2.length || windows2.some((w) => !Number.isFinite(w.usedPercent) || w.usedPercent < 0 || w.usedPercent > 100 || !Number.isFinite(w.resetsAt) || w.resetsAt * 1e3 <= now)) return unknown;
   const weekly = windows2.find((w) => w.windowDurationMins === 10080);
   if (!weekly) return unknown;
-  const remaining = 100 - weekly.usedPercent, resetAt = weekly.resetsAt * 1e3, days = (resetAt - now) / 864e5, perDay = remaining / days;
+  const remaining = 100 - weekly.usedPercent, resetAt = weekly.resetsAt * 1e3, days2 = (resetAt - now) / 864e5, perDay = remaining / days2;
   const blockedUntil = Math.max(0, ...windows2.filter((w) => w.usedPercent === 100).map((w) => w.resetsAt * 1e3)) || null;
-  return { color: perDay < 10 ? "red" : "green", remaining, perDay, days, resetAt, checkedAt: telemetry.checkedAt, blockedUntil };
+  return { color: perDay < 10 ? "red" : "green", remaining, perDay, days: days2, resetAt, checkedAt: telemetry.checkedAt, blockedUntil };
 }
 
 // src/cloud/assets.mjs
@@ -11848,7 +11880,7 @@ async function deviceRoute({ store, path, req, body, config }) {
 }
 
 // src/cloud/app.mjs
-var security = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "X-Frame-Options": "DENY", "Strict-Transport-Security": "max-age=31536000", "Permissions-Policy": "camera=(), geolocation=(self), microphone=(self)", "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src 'none'; connect-src 'self'; img-src 'self' data:; font-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; worker-src 'self'; manifest-src 'self'" };
+var security = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "X-Frame-Options": "DENY", "Strict-Transport-Security": "max-age=31536000", "Permissions-Policy": "camera=(), geolocation=(self), microphone=(self)", "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src https://widget.operationworld.org; connect-src 'self'; img-src 'self' data:; font-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; worker-src 'self'; manifest-src 'self'" };
 function hardened(response2) {
   const headers = new Headers(response2.headers);
   for (const [k, val] of Object.entries(security)) if (!headers.has(k) || k !== "Content-Security-Policy") headers.set(k, val);
@@ -11919,7 +11951,7 @@ async function handle(request, env) {
     const training = (records.training?.find((r) => r.id === "baseline") ?? records.training?.[0])?.data ?? {}, source = records["training-source"]?.[0]?.data;
     let trainingPlan = { status: "source-needed", workouts: [], issues: ["A verified training source and race date are required."] };
     if (source?.sourceWeeks && training.raceDate) try {
-      trainingPlan = { ...buildTrainingReference({ raceDate: training.raceDate, sourceWeeks: source.sourceWeeks, program: source.program ?? "Beginner", raceExceptionConfirmed: training.sundayExceptionConfirmed === true, sundayRest: true }), paceProfile: source.paceProfiles?.find((p) => p.goalMinutes === training.goalMinutes), source: source.source };
+      trainingPlan = { ...buildTrainingReference({ raceDate: training.raceDate, sourceWeeks: source.sourceWeeks, program: source.program ?? "Beginner", raceExceptionConfirmed: training.sundayExceptionConfirmed === true, sundayRest: env.AUTH_MODE !== "demo" }), paceProfile: source.paceProfiles?.find((p) => p.goalMinutes === training.goalMinutes), source: source.source };
     } catch {
       trainingPlan = { status: "source-review-needed", workouts: [], issues: ["The source table needs review."] };
     }
@@ -12120,14 +12152,14 @@ var LocalObjects = class {
 
 // demo/scenarios.mjs
 init_globals();
-var DEMO_IDS = Object.freeze({ task: "demo-task-outline", secondTask: "demo-task-reading", unknownTask: "demo-task-date-unverified", document: "11111111-1111-4111-8111-111111111111", thread: "demo-chat-planning", secondThread: "demo-chat-learning" });
+var DEMO_IDS = Object.freeze({ task: "demo-task-outline", secondTask: "demo-task-reading", unknownTask: "demo-task-date-unverified", modelTask: "demo-task-model-comparison", diagramTask: "demo-task-watershed-diagram", document: "11111111-1111-4111-8111-111111111111", thread: "demo-chat-planning", secondThread: "demo-chat-learning" });
 var STORY_DAY = "2026-10-06";
 var STORY_NOW = "2026-10-06T14:00:00.000Z";
 var record2 = (kind, id, data3) => ({ kind, id, version: 1, createdAt: STORY_NOW, updatedAt: STORY_NOW, data: data3 });
 function scenarioRecords() {
   return {
     course: [record2("course", "demo-course-design", { code: "DES 210", title: "Systems design", policyText: "Fictional course: explain concepts and plan your own work. Do not submit generated graded work." }), record2("course", "demo-course-environment", { code: "ENV 120", title: "Environmental systems" })],
-    task: [record2("task", DEMO_IDS.task, { title: "Map the feedback loop", courseId: "demo-course-design", status: "todo", dueAt: "2026-10-08T20:00:00Z", estimatedMinutes: 60, remainingMinutes: 60, nextStep: "List the system inputs and sketch one feedback loop.", nextStepMinutes: 10, sourceUrl: "/demo/sources/assignment.html", source: { sourceUrl: "/demo/sources/assignment.html" }, notes: "Use the fictional instruction page; the final diagram format is not specified." }), record2("task", DEMO_IDS.secondTask, { title: "Read the watershed example", courseId: "demo-course-environment", status: "todo", dueDate: "2026-10-09", estimatedMinutes: 25, remainingMinutes: 25, nextStep: "Read the source and note two questions.", nextStepMinutes: 10, sourceUrl: "/demo/sources/reading.html" }), record2("task", DEMO_IDS.unknownTask, { title: "Check the workshop reflection deadline", courseId: "demo-course-design", status: "todo", estimatedMinutes: 20, remainingMinutes: 20, nextStep: "Check the announced deadline before planning the reflection.", sourceUrl: "/demo/sources/announcement.html", notes: "Deadline not verified. The fictional announcement supplies no date." })],
+    task: [record2("task", DEMO_IDS.task, { title: "Map the feedback loop", courseId: "demo-course-design", status: "todo", dueAt: "2026-10-08T20:00:00Z", estimatedMinutes: 60, remainingMinutes: 60, difficulty: 3, nextStep: "List the system inputs and sketch one feedback loop.", nextStepMinutes: 10, sourceUrl: "/demo/sources/assignment.html", source: { sourceUrl: "/demo/sources/assignment.html" }, notes: "Use the fictional instruction page; the final diagram format is not specified." }), record2("task", DEMO_IDS.secondTask, { title: "Read the watershed example", courseId: "demo-course-environment", status: "todo", dueDate: "2026-10-09", estimatedMinutes: 25, remainingMinutes: 25, difficulty: 1, nextStep: "Read the source and note two questions.", nextStepMinutes: 10, sourceUrl: "/demo/sources/reading.html" }), record2("task", DEMO_IDS.modelTask, { title: "Compare two feedback models", courseId: "demo-course-design", status: "todo", dueDate: "2026-10-11", estimatedMinutes: 240, remainingMinutes: 240, difficulty: 5, nextStep: "Choose two fictional systems and list what each model must explain.", nextStepMinutes: 10, sourceUrl: "/demo/sources/assignment.html", notes: "Authored planning exercise: four hours of remaining work, high difficulty, five calendar days away." }), record2("task", DEMO_IDS.diagramTask, { title: "Sketch the watershed diagram", courseId: "demo-course-environment", status: "todo", dueDate: "2026-10-10", estimatedMinutes: 120, remainingMinutes: 120, difficulty: 4, nextStep: "Identify the main water flows before drawing the diagram.", nextStepMinutes: 10, sourceUrl: "/demo/sources/reading.html", notes: "Authored planning exercise: two hours of remaining work, difficulty four, four calendar days away." }), record2("task", DEMO_IDS.unknownTask, { title: "Check the workshop reflection deadline", courseId: "demo-course-design", status: "todo", estimatedMinutes: 20, remainingMinutes: 20, nextStep: "Check the announced deadline before planning the reflection.", sourceUrl: "/demo/sources/announcement.html", notes: "Deadline not verified. The fictional announcement supplies no date." })],
     coursework: [record2("coursework", DEMO_IDS.document, { title: "Feedback loop working notes", taskId: DEMO_IDS.task, language: "text", text: "Start by identifying the inputs, outputs and one feedback loop.", document: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Start by identifying the inputs, outputs and one feedback loop." }] }] } })],
     spiritual: [],
     settings: [record2("settings", "preferences", { timezone: "America/Toronto", allowedCalendarIds: ["demo-school", "demo-personal"], schoolCalendarIds: ["demo-school"] })],
@@ -12146,8 +12178,135 @@ function scenarioEvents(scenario = "standard") {
 }
 function assignmentBundle(task, course) {
   if (task.id === "demo-prelab") return { task, course, stale: false, job: null, sources: [{ title: "Fictional lab instructions", url: "/demo/sources/lab.html" }], brief: { summary: "Prepare the Systems pre-lab checklist: review the lab instructions and pack safety goggles and your lab notebook before arriving in Room S-204.", sections: [{ title: "Before arriving", items: [{ text: "Read the pre-lab instructions and note one question." }, { text: "Pack safety goggles and your lab notebook." }] }], missing: [], estimatedTotalMinutes: 10, estimateReason: "Authored fictional ten-minute preparation checklist." } };
-  if (task.id !== DEMO_IDS.task) return { task, course, stale: false, job: null, sources: [{ title: "Authored fictional source", url: task.data.sourceUrl }], brief: { summary: task.id === DEMO_IDS.secondTask ? "Read the authored watershed example and bring two questions to the discussion." : "The workshop reflection is announced, but its deadline is not supplied. Keep that uncertainty visible.", sections: [{ title: "Next step", items: [{ text: task.data.nextStep }] }], missing: task.id === DEMO_IDS.unknownTask ? ["No date is supplied. Confirm the deadline from a source before planning it."] : [], estimatedTotalMinutes: task.data.estimatedMinutes, estimateReason: "Authored illustrative estimate. No real source collection or model interpretation is represented." } };
+  if (task.id !== DEMO_IDS.task) return { task, course, stale: false, job: null, sources: [{ title: "Authored fictional source", url: task.data.sourceUrl }], brief: { summary: task.id === DEMO_IDS.unknownTask ? "The workshop reflection is announced, but its deadline is not supplied. Keep that uncertainty visible." : task.id === DEMO_IDS.secondTask ? "Read the authored watershed example and bring two questions to the discussion." : task.data.nextStep, sections: [{ title: "Next step", items: [{ text: task.data.nextStep }] }], missing: task.id === DEMO_IDS.unknownTask ? ["No date is supplied. Confirm the deadline from a source before planning it."] : [], estimatedTotalMinutes: task.data.estimatedMinutes, estimateReason: "Authored illustrative estimate. No real source collection or model interpretation is represented." } };
   return { task, course, stale: false, job: null, sources: [{ title: "Fictional assignment instructions", url: "/demo/sources/assignment.html" }], brief: { summary: "Map a familiar system and explain how feedback affects it. This authored example demonstrates an instruction outline, not a completed assignment.", sections: [{ title: "Your own work", items: [{ text: "Choose a system and identify its inputs and outputs." }, { text: "Sketch a feedback loop and explain its direction." }, { text: "Check your explanation against the source instructions." }] }], missing: ["The source does not specify the final diagram format. Confirm it before submitting your own work."], estimatedTotalMinutes: 60, estimateReason: "Illustrative estimate: ten minutes to identify inputs, thirty to sketch, and twenty to review. No actual coursework or provider read is represented." } };
+}
+
+// demo/public-projects.mjs
+init_globals();
+var projects = [
+  ["demo-portfolio-lifeos", "LifeOS Open", "lifeos-open", "active"],
+  ["demo-portfolio-kitchen", "Kitchen Renovation Modeling", "Kitchen-Renovation-Modeling", "completed"],
+  ["demo-portfolio-structural-review", "Structural Review Prototype", "structural-review-prototype", "completed"],
+  ["demo-portfolio-distrofit", "DistroFit", "DistroFit", "completed"],
+  ["demo-portfolio-predictive-workload", "Predictive Workload Management System", "predictive-workload-management-system", "completed"],
+  ["demo-portfolio-computer-vision", "Computer Vision Layout Stamping System", "computer-vision-layout-stamping-system", "completed"],
+  ["demo-portfolio-multimodal-drawing", "Multimodal Drawing Review System", "multimodal-drawing-review-system", "completed"]
+];
+function publicProjectRecords() {
+  return projects.map(([id, title, repository, status]) => ({ id, data: { title, category: "personal-project", notes: "", nextStep: "", status, archived: false, githubUrl: "https://github.com/jackaI1/" + repository } }));
+}
+
+// demo/marathon-plan.mjs
+init_globals();
+var DEMO_MARATHON_GOAL_MINUTES = 240;
+var MILES_TO_KM = 1.609344;
+var km = (miles) => Math.round(miles * MILES_TO_KM * 1e3) / 1e3;
+var days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+var HANSONS_BEGINNER_SOURCE = Object.freeze({
+  id: "hansons-public-beginner-marathon",
+  title: "Hansons Coaching Services \xB7 Beginner Marathon",
+  url: "https://hansons-running.com/content/training-plans",
+  documentUrl: "https://s3.us-central-1.wasabisys.com/hansons/Beginner_Marathon_-_new.pdf",
+  sha256: "f31f97ef885bef2dacc2f5053bb0fbad8758d724b8cb857c9cb30fd590086beb",
+  checkedOn: "2026-10-22",
+  verification: "All six PDF pages rendered locally and visually inspected; schedule on pages 1\u20135, pace key on page 6.",
+  originalUnits: "miles, with metric interval distances where printed",
+  attribution: "Numerical workout reference from the free Hansons Beginner Marathon plan. The fictional demo runner and goal are LifeOS examples."
+});
+var dailyMiles = [
+  [0, 2, 0, 3, 0, 3, 4],
+  [0, 2, 0, 3, 3, 3, 4],
+  [0, 4, 0, 4, 4, 4, 5],
+  [0, 5, 0, 3, 3, 5, 4],
+  [0, 5, 0, 4, 5, 4, 6],
+  [4, 9, 0, 7, 4, 8, 8],
+  [4, 8, 0, 7, 4, 6, 10],
+  [6, 8, 0, 7, 5, 6, 10],
+  [5, 8, 0, 10, 6, 5, 15],
+  [7, 8, 0, 10, 5, 8, 10],
+  [5, 10.5, 0, 10, 5, 8, 16],
+  [5, 11, 0, 11, 5, 8, 10],
+  [7, 10.5, 0, 11, 6, 6, 16],
+  [5, 10, 0, 11, 5, 8, 10],
+  [7, 10.5, 0, 12, 6, 6, 16],
+  [5, 11, 0, 12, 5, 8, 10],
+  [7, 10.5, 0, 12, 6, 6, 8],
+  [5, 5, 0, 6, 5, 3, 26.2]
+];
+var weeklyMiles = [12, 15, 21, 20, 24, 40, 39, 42, 49, 48, 54.5, 50, 56.5, 49, 57.5, 51, 49.5, 50.2];
+var intervals = {
+  6: [12, 400, "m", 400, "m"],
+  7: [8, 600, "m", 400, "m"],
+  8: [6, 800, "m", 400, "m"],
+  9: [5, 1e3, "m", 400, "m"],
+  10: [4, 1200, "m", 400, "m"],
+  11: [6, 1, "mi", 400, "m"],
+  12: [4, 1.5, "mi", 800, "m"],
+  13: [3, 2, "mi", 800, "m"],
+  14: [2, 3, "mi", 1, "mi"],
+  15: [3, 2, "mi", 800, "m"],
+  16: [4, 1.5, "mi", 800, "m"],
+  17: [6, 1, "mi", 400, "m"]
+};
+var intervalKm = (distance, units) => units === "mi" ? km(distance) : distance / 1e3;
+var pageFor = (week) => week <= 4 ? 1 : week <= 8 ? 2 : week <= 12 ? 3 : week <= 16 ? 4 : 5;
+function workout(week, dayOffset, miles) {
+  const source = {
+    ...HANSONS_BEGINNER_SOURCE,
+    location: `PDF page ${pageFor(week)}, week ${week}, ${days[dayOffset]}`,
+    page: pageFor(week),
+    visuallyVerified: true
+  };
+  const item2 = { dayOffset, units: "km", sourceDistanceMiles: miles, totalDistanceKm: km(miles), components: [], source };
+  if (miles === 0) return { ...item2, kind: "rest", description: week === 18 ? "Rest" : "Rest or optional cross-training" };
+  if (week === 18 && dayOffset === 6) return { ...item2, kind: "race", description: "Fictional marathon race day", raceDistanceKm: 42.195, components: [{ kind: "race", distanceKm: km(miles) }], distanceNote: "The source prints the rounded marathon distance of 26.2 miles; the race distance is 42.195 km." };
+  if (week >= 6 && week <= 17 && dayOffset === 1) {
+    const [repetitions, distance, unit, recovery, recoveryUnit] = intervals[week];
+    const kind2 = week <= 10 ? "speed" : "strength", repeatDistanceKm = intervalKm(distance, unit), recoveryDistanceKm = intervalKm(recovery, recoveryUnit);
+    const paceBasis = kind2 === "speed" ? "5k\u201310k race pace" : "Marathon goal pace minus 10 seconds per mile";
+    source.inconsistency = "Printed session mileage is rounded. Recovery after the final repetition is unspecified; both component alternatives are retained.";
+    return { ...item2, kind: kind2, requiresWarmupCooldown: true, paceBasis, description: `${repetitions} \xD7 ${distance} ${unit} with ${recovery} ${recoveryUnit} jog recoveries`, components: [
+      { kind: "warmup", distanceKm: km(1.5), sourceDistanceMiles: 1.5 },
+      { kind: kind2, repetitions, repeatDistanceKm, distanceKm: Math.round(repetitions * repeatDistanceKm * 1e3) / 1e3, paceBasis },
+      { kind: "recovery", repeatDistanceKm: recoveryDistanceKm, repetitions: null, distanceKm: null, options: [repetitions - 1, repetitions].map((count) => ({ repetitions: count, distanceKm: Math.round(count * recoveryDistanceKm * 1e3) / 1e3 })) },
+      { kind: "cooldown", distanceKm: km(1.5), sourceDistanceMiles: 1.5 }
+    ] };
+  }
+  if (week >= 6 && week <= 17 && dayOffset === 3) return { ...item2, kind: "tempo", requiresWarmupCooldown: true, paceBasis: "Marathon goal pace", description: `${miles - 2} mi at marathon goal pace, plus warm-up and cooldown`, components: [
+    { kind: "warmup", distanceKm: km(1), sourceDistanceMiles: 1 },
+    { kind: "tempo", distanceKm: km(miles - 2), sourceDistanceMiles: miles - 2, paceBasis: "Marathon goal pace" },
+    { kind: "cooldown", distanceKm: km(1), sourceDistanceMiles: 1 }
+  ] };
+  const kind = dayOffset === 6 && week >= 7 && week <= 16 ? "long" : "easy";
+  return { ...item2, kind, description: `${miles} mi ${kind} run`, components: [{ kind, distanceKm: km(miles), sourceDistanceMiles: miles }] };
+}
+function createDemoMarathonSource() {
+  return {
+    schemaVersion: 1,
+    program: "Beginner",
+    source: { ...HANSONS_BEGINNER_SOURCE },
+    sourceWeeks: dailyMiles.map((row, index) => ({
+      week: index + 1,
+      printedWeeklyTotal: `${weeklyMiles[index]} mi`,
+      printedWeeklyTotalMiles: weeklyMiles[index],
+      printedWeeklyTotalKm: km(weeklyMiles[index]),
+      computedTotalKm: km(row.reduce((sum, miles) => sum + miles, 0)),
+      days: row.map((miles, dayOffset) => workout(index + 1, dayOffset, miles))
+    })),
+    // The PDF requires a separate pace calculator. An aspirational demo finish
+    // time does not establish an easy, long, or 5k pace for a real runner.
+    paceProfiles: [],
+    notes: [
+      "Official 18-week numerical reference. Monday-to-Sunday layout retained, including Sunday long runs and the final race.",
+      "Display distances convert the printed mile totals to kilometres; original miles and interval units remain available.",
+      "Interval recovery count and rounded source mileage remain explicit source limitations. No pace prescription or completion is invented."
+    ],
+    personalized: false,
+    automaticCatchUp: false,
+    completed: false,
+    adaptation: null
+  };
 }
 
 // src/local/workspace.ts
@@ -12157,7 +12316,10 @@ var DEMO_NAME = "Alex Morgan";
 var DEMO_EMAIL = "alex@example.invalid";
 async function makeWorkspace(db, { demo = true, now = /* @__PURE__ */ new Date(), owner = DEMO_EMAIL, readAsset: load = readFile } = {}) {
   db.exec(await load("src/cloud/schema.sql", "utf8"));
-  if (await db.prepare("SELECT value FROM meta WHERE key='local-initialized'").first()) return;
+  if (await db.prepare("SELECT value FROM meta WHERE key='local-initialized'").first()) {
+    if (demo) await refreshDemoExamples(db, now);
+    return;
+  }
   const date3 = lifeosDay(now.getTime(), "America/Toronto"), stamp = now.toISOString(), objects = new LocalObjects(db, owner);
   const rec = async (kind, id, data3) => db.prepare("INSERT INTO records VALUES(?,?,?,?,?,?)").bind(kind, id, JSON.stringify(data3), 1, stamp, stamp).run();
   if (!demo) {
@@ -12168,39 +12330,33 @@ async function makeWorkspace(db, { demo = true, now = /* @__PURE__ */ new Date()
   const delta = Date.parse(date3 + "T12:00Z") - Date.parse(STORY_DAY + "T12:00Z");
   const shift = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(v) ? new Date(Date.parse(v.length === 10 ? v + "T12:00Z" : v) + delta).toISOString().slice(0, v.length === 10 ? 10 : 24) : Array.isArray(v) ? v.map(shift) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, shift(x)])) : v;
   for (const [kind, rows3] of Object.entries(scenarioRecords()))
-    for (const row of rows3) await rec(kind, row.id, shift(kind === "settings" ? { timezone: "America/Toronto" } : kind === "task" ? { ...row.data, difficulty: 3 } : row.data));
+    for (const row of rows3) await rec(kind, row.id, shift(kind === "settings" ? { timezone: "America/Toronto" } : kind === "task" ? { ...row.data, difficulty: row.data.difficulty ?? 3 } : row.data));
   for (const event of scenarioEvents("overlap")) await rec("calendar-event", event.id, shift({ ...event, start: { dateTime: event.start }, end: { dateTime: event.end }, courseId: event.calendarId === "demo-school" ? "demo-course-design" : void 0 }));
   await rec("task", "demo-prelab", { title: "Systems pre-lab checklist", sourceUrl: "/demo/sources/lab.html", courseId: "demo-course-design", dueDate: date3, estimatedMinutes: 10, remainingMinutes: 10, difficulty: 2, status: "todo", nextStep: "Pack safety goggles and your lab notebook, then check the pre-lab instructions." });
-  for (const row of (await db.prepare("SELECT * FROM records WHERE kind='task'").all()).results) {
-    const task = { ...row, id: String(row.id), data: JSON.parse(row.data) }, courseRow = await db.prepare("SELECT * FROM records WHERE kind='course' AND id=?").bind(task.data.courseId).first(), course = { ...courseRow, data: JSON.parse(courseRow.data) }, sourceText = task.id === "demo-prelab" ? "Fictional lab instructions: complete the pre-lab checklist, pack safety goggles and your lab notebook, and arrive in Room S-204." : "Fictional instructions: identify the inputs and outputs of one familiar system, draw a feedback loop, and explain your reasoning in your own words.";
-    await rec("material", "demo-instructions-" + task.id, { title: "Fictional assignment instructions", courseId: task.data.courseId, taskId: task.id, text: sourceText, url: task.data.sourceUrl, coverage: "full-text" });
-    const materials = (await db.prepare("SELECT * FROM records WHERE kind='material'").all()).results.map((r) => ({ ...r, data: JSON.parse(r.data) })), sources = assignmentSources(task, materials);
-    const sourceHash = sha(JSON.stringify({ title: task.data.title, dueDate: task.data.dueDate, dueAt: task.data.dueAt, sources: sources.map(({ version: version2, ...v }) => v) }));
-    const brief = assignmentBundle(task, course).brief;
-    await rec("assignment-brief", task.id, { ...brief, summary: "Mock outline: " + brief.summary, sourceHash, generatedAt: stamp });
-  }
+  await assignmentExamples(db, stamp, rec);
   await rec("calendar-event", "demo-lab", { title: "Systems lab", calendarId: "demo-school", start: { dateTime: new Date(now.getTime() + 10 * 6e4).toISOString() }, end: { dateTime: new Date(now.getTime() + 70 * 6e4).toISOString() }, location: "Room S-204", description: "Bring safety goggles and your lab notebook. Complete the pre-lab checklist before arriving." });
   await rec("profile", "local-user", { name: DEMO_NAME, fictional: true });
   await rec("learning-note", "demo-feedback", { type: "concept", courseId: "demo-course-design", title: "Feedback loop", text: "A feedback loop returns information about a system output to influence future inputs.", status: "learning", linkedIds: [], studyItemIds: [], authority: "owner-study-note" });
   await rec("private-note-folder", "demo-folder", { title: "Class notes" });
   await rec("private-note", "demo-note", { title: "Systems vocabulary", folderId: "demo-folder", imageIds: [], text: "A system is a set of interacting parts. Feedback uses an output to influence an input.", document: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "A system is a set of interacting parts. Feedback uses an output to influence an input." }] }] }, pinned: true });
-  await rec("private-friend", "demo-maya", { name: "Maya Chen", text: "Fictional study group partner. Ask about the community garden.", memories: [], schedule: { frequency: "weekly", weekday: 2 }, dueDay: date3, archived: false });
+  await rec("private-friend", "demo-maya", { name: "John Doe", text: "Fictional study group partner. Ask about the community garden.", memories: [], schedule: { frequency: "weekly", weekday: 2 }, dueDay: date3, archived: false });
   await rec("private-journal-template", "demo-template", { name: "Daily reflection", questions: [{ id: "highlight", prompt: "What did you learn today?" }, { id: "next", prompt: "What would you like to try tomorrow?" }] });
   await rec("private-journal", "demo-journal", { day: date3, title: "A small step forward", templateId: "demo-template", templateName: "Daily reflection", answers: [{ id: "highlight", prompt: "What did you learn today?", text: "Fictional entry: sketching one loop made a complex system easier to explain." }, { id: "next", prompt: "What would you like to try tomorrow?", text: "Bring two questions to the study group." }] });
-  await rec("devotional", date3, { date: date3, passage: "Psalm 23", bookId: "psalms", chapter: 23, type: "standard", points: ["Notice something good.", "Consider the context.", "Reflect on kindness.", "Name a human need.", "Choose one practical act.", "Listen with care.", "Take a quiet moment."], complete: false, archiveStatus: "not-needed" });
-  await rec("prayer-note", "demo-prayer", { section: "daily-others", title: "For the community", text: "Pray for kindness and those in need.", weekdays: [], archived: false });
+  await rec("devotional", date3, { date: date3, passage: "Psalm 23", bookId: "psalms", chapter: 23, type: "standard", points: Array(7).fill(""), complete: false, archiveStatus: "not-needed" });
+  for (const row of prayerExamples()) await rec("prayer-note", row.id, row.data);
   await rec("reminder-list", "personal", { title: "Personal", type: "list", order: 0, pinned: true, archived: false });
   await rec("reminder-list", "demo-groceries", { title: "Groceries", type: "grocery", order: 1, staples: [{ title: "Rolled oats", section: "Pantry" }, { title: "Red lentils", section: "Pantry" }], archived: false });
   await rec("reminder", "demo-oats", { title: "Rolled oats", listId: "demo-groceries", completed: false, notes: "1 bag", tags: [], subtasks: [], priority: 0, flagged: false, section: "Pantry", order: 0, archived: false });
   await rec("reminder", "demo-lentils", { title: "Red lentils", listId: "demo-groceries", completed: false, notes: "1 pack", tags: [], subtasks: [], priority: 0, flagged: false, section: "Pantry", order: 1, archived: false });
   await rec("meal", "demo-recipe", { title: "Lentil garden soup", slot: "recipe", steps: [{ text: "Simmer rinsed red lentils, carrots and chopped tomato in vegetable stock.", minutes: 20 }, { text: "Season to taste and serve with bread.", minutes: null }], recipe: "Simmer rinsed red lentils, carrots and chopped tomato in vegetable stock for 20 minutes. Season to taste. Serve with bread.", ingredients: ["1 cup red lentils", "2 carrots", "1 tomato", "3 cups vegetable stock"], notes: "Fictional recipe. Adjust ingredients to your needs." });
-  await rec("project", "demo-project", { title: "Build a balcony planter", category: "personal-project", notes: "Design a small self-watering planter from reusable materials.", nextStep: "Sketch the container and water reservoir.", status: "active", archived: false });
+  await rec("project", "demo-project", { title: "Build a balcony planter", category: "personal-project", notes: "Design a small self-watering planter from reusable materials.", nextStep: "Sketch the container and water reservoir.", status: "active", archived: true });
+  for (const row of publicProjectRecords()) await rec("project", row.id, row.data);
   await rec("coop-role", "demo-role", { title: "Community design intern", employer: "Example Studio", status: "researching", notes: "Fictional opportunity for exploring a portfolio.", sourceUrl: "https://example.invalid/opportunities", draftText: "", archived: false });
   await rec("coop-profile", "owner", { name: DEMO_NAME, interests: ["Community design", "Practical systems"], locationPreferences: ["Fictional city"], resume: { sourceId: "fictional-resume", name: "Authored fictional resume", text: "Alex Morgan \u2014 fictional student. Experience: designed a balcony planter prototype and explained feedback loops in a peer study group.", sourceUrl: "https://example.invalid/resume", importedAt: stamp } });
   await rec("finance-config", "budget", { diningWeekly: 6e3, diningWantsWeekly: 2e3, shoppingMonthly: 8e3, bigQuarterly: 18e3, quarterAnchor: date3.slice(0, 4) + "-01-01", balanceAsOf: date3.slice(0, 7) + "-01", balances: { needs: 2e5, wants: 1e5, giving: 2e4, medical: 0 }, horizon: Number(date3.slice(0, 4)) + 1 + "-04-30", givingMonthly: [{ name: "Community fund", amountCents: 2e3 }], medicalOutsideBudget: true, reconciledThrough: date3 });
   await rec("finance-transaction", "demo-lunch", { date: date3, description: "Fictional campus lunch", amountCents: 1250, category: "dining", account: "Demo account", ledger: { needs: 500, wants: 750, giving: 0, medical: 0 }, source: "manual" });
-  await rec("training", "baseline", { raceDate: new Date(now.getTime() + 84 * 864e5).toISOString().slice(0, 10), goalMinutes: 150, notes: "Fictional fitness plan; edit for your own ability." });
-  await rec("reminder", "demo-maya-contact", { title: "Check in with Maya Chen", listId: "personal", dueDate: date3, completed: false, notes: "Fictional weekly check-in", tags: [], subtasks: [], priority: 1, flagged: false, order: 0, archived: false });
+  await rec("training", "baseline", demoTraining(date3));
+  await rec("reminder", "demo-maya-contact", { title: "Check in with John Doe", listId: "personal", dueDate: date3, completed: false, notes: "Fictional weekly check-in", tags: [], subtasks: [], priority: 1, flagged: false, order: 0, archived: false });
   const lectureId = "lc-" + sha("demo-course-design").slice(0, 16) + "-fictional";
   const start = new Date(now.getTime() - 36e5).toISOString();
   await rec("lecture-permission", "demo-course-design", { courseId: "demo-course-design", state: "approved-by-owner-confirmation", confirmedAt: stamp });
@@ -12228,7 +12384,7 @@ async function makeWorkspace(db, { demo = true, now = /* @__PURE__ */ new Date()
   await rec("lecture-source", lectureId + "-s-slides", { lectureId, fileId: slidesId, title: "Feedback loops \u2014 fictional slides", mimeType: "application/pdf", size: slides.length, modifiedTime: stamp, md5: slidesMeta.md5Checksum, role: "slides", timing: "unmapped", durationMs: null });
   await rec("lecture-course-source", "demo-course-design-slides", { courseId: "demo-course-design", fileId: slidesId, title: "Feedback loops \u2014 fictional slides", mimeType: "application/pdf", size: slides.length, modifiedTime: stamp, md5: slidesMeta.md5Checksum, role: "slides", timing: "unmapped", durationMs: null, fromDay: date3, throughDay: date3 });
   await rec("course-lesson", "demo-course-design-lesson-intro", { courseId: "demo-course-design", title: "Feedback loops", sourceIds: ["demo-course-design-slides"], pageRange: { from: 1, through: 2 } });
-  await rec("training-source", "fictional-plan", { program: "Beginner", source: { title: "Fictional gentle activity reference" }, sourceWeeks: Array.from({ length: 13 }, (_, i) => ({ week: i + 1, days: [{ dayOffset: 0, kind: "easy", units: "km", totalDistanceKm: 2, description: "Fictional easy walk or run", source: { location: "Fictional reference table", visuallyVerified: true } }, { dayOffset: 6, kind: "rest", description: "Rest", source: { location: "Fictional reference table", visuallyVerified: true } }] })) });
+  await rec("training-source", "fictional-plan", createDemoMarathonSource());
   const image = await load("public/demo-landscape.jpg");
   const imageUrl = "data:image/jpeg;base64," + image.toString("base64"), photo = JSON.stringify({ image: imageUrl, thumbnail: imageUrl, width: 640, height: 360 });
   for (const [key2, value] of [["demo-photo", photo], ["demo-photo-thumb", JSON.stringify({ thumbnail: imageUrl })]]) {
@@ -12237,7 +12393,91 @@ async function makeWorkspace(db, { demo = true, now = /* @__PURE__ */ new Date()
   }
   await rec("private-daily-photo", "demo-photo", { day: date3, caption: "Fictional landscape illustration \u2014 a quiet afternoon.", objectKey: "demo-photo", thumbnailKey: "demo-photo-thumb", width: 640, height: 360 });
   await db.prepare("INSERT INTO meta VALUES(?,?)").bind("release-catalogue", JSON.stringify({ releases: [{ releaseId: "beta-0000000000000001", title: "Fictional local release", summary: "Mock release for reviewing the update workflow. No deployment is performed.", version: "0.1.0", betaUrl: "#settings", canPromote: true, canDeployBeta: true, canRollback: true }], current: { production: null, beta: "beta-0000000000000001" }, betaUrl: "#settings" })).run();
+  await db.prepare("INSERT INTO meta VALUES(?,?)").bind("demo-content-revision", DEMO_REVISION).run();
   await db.prepare("INSERT INTO meta VALUES(?,?)").bind("local-initialized", "true").run();
+}
+var DEMO_REVISION = "2026-10-22-content-v2";
+function demoTraining(date3) {
+  const start = /* @__PURE__ */ new Date(date3 + "T12:00Z");
+  start.setUTCDate(start.getUTCDate() - (start.getUTCDay() + 6) % 7 + 17 * 7 + 6);
+  return { raceDate: start.toISOString().slice(0, 10), goalMinutes: DEMO_MARATHON_GOAL_MINUTES, notes: "Hansons Beginner Marathon \xB7 18 weeks. Example goal: 4 hours. Keep the published workout days and mileage; adjust to your own training history." };
+}
+function prayerExamples() {
+  return [
+    ["demo-thanks", "thanksgiving", "Gratitude", "Give thanks for daily provision, friendship and opportunities to learn."],
+    ["demo-repentance", "repentance", "Patience and honesty", "Ask for help to speak kindly, admit mistakes and make things right."],
+    ["demo-prayer", "daily-others", "For the community", "Pray for neighbours who need shelter, food, safety or companionship."],
+    ["demo-daily-bread", "daily-bread", "Wisdom for today", "Ask for focus in work and study, rest, and wisdom in everyday decisions."],
+    ["demo-regular", "regular-others", "Family and friends", "Pray for good health, encouragement and support for those caring for others."],
+    ["demo-spontaneous", "spontaneous-others", "People facing hardship", "Remember people affected by conflict, disasters or unexpected loss."]
+  ].map(([id, section, title, text4]) => ({ id, data: { section, title, text: text4, weekdays: [], archived: false } }));
+}
+async function assignmentExamples(db, stamp, rec, refresh = false) {
+  const known = /* @__PURE__ */ new Set([...scenarioRecords().task.map((r) => r.id), "demo-prelab"]);
+  const tasks = (await db.prepare("SELECT * FROM records WHERE kind='task'").all()).results.filter((r) => known.has(r.id)).map((r) => ({ ...r, id: String(r.id), version: Number(r.version), data: JSON.parse(r.data) }));
+  for (const task of tasks) {
+    const id = "demo-instructions-" + task.id;
+    if (await db.prepare("SELECT id FROM records WHERE kind='material' AND id=?").bind(id).first()) continue;
+    await rec("material", id, { title: "Fictional assignment instructions", courseId: task.data.courseId, taskId: task.id, text: task.id === "demo-prelab" ? "Fictional lab instructions: complete the pre-lab checklist, pack safety goggles and your lab notebook, and arrive in Room S-204." : "Fictional instructions: identify the inputs and outputs of one familiar system, draw a feedback loop, and explain your reasoning in your own words.", url: task.data.sourceUrl, coverage: "full-text" });
+  }
+  const materials = (await db.prepare("SELECT * FROM records WHERE kind='material' ORDER BY updated_at DESC,id").all()).results.map((r) => ({ ...r, id: String(r.id), version: Number(r.version), data: JSON.parse(r.data) }));
+  if (refresh && materials.some((r) => r.version > 1)) return;
+  for (const task of tasks) {
+    const old = await db.prepare("SELECT version FROM records WHERE kind='assignment-brief' AND id=?").bind(task.id).first();
+    if (refresh && (old?.version > 1 || task.version > 1 && !await db.prepare("SELECT id FROM _demo_seed_originals WHERE revision=? AND kind='task' AND id=?").bind(DEMO_REVISION, task.id).first())) continue;
+    const c = await db.prepare("SELECT * FROM records WHERE kind='course' AND id=?").bind(task.data.courseId).first();
+    if (!c) continue;
+    const sources = assignmentSources(task, materials), sourceHash = sha(JSON.stringify({ title: task.data.title, dueDate: task.data.dueDate, dueAt: task.data.dueAt, sources: sources.map(({ version: version2, ...v }) => v) })), brief = assignmentBundle(task, { ...c, data: JSON.parse(c.data) }).brief;
+    await rec("assignment-brief", task.id, { ...brief, summary: "Mock outline: " + brief.summary, sourceHash, generatedAt: stamp });
+  }
+}
+async function refreshDemoExamples(db, now) {
+  if (await db.prepare("SELECT value FROM meta WHERE key='demo-content-revision' AND value=?").bind(DEMO_REVISION).first()) return;
+  const profile = await db.prepare("SELECT * FROM records WHERE kind='profile' AND id='local-user'").first();
+  if (!profile || JSON.parse(profile.data).fictional !== true) return;
+  const date3 = lifeosDay(Date.parse(profile.created_at), "America/Toronto"), stamp = now.toISOString(), delta = Date.parse(date3 + "T12:00Z") - Date.parse(STORY_DAY + "T12:00Z");
+  const shift = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(v) ? new Date(Date.parse(v.length === 10 ? v + "T12:00Z" : v) + delta).toISOString().slice(0, v.length === 10 ? 10 : 24) : Array.isArray(v) ? v.map(shift) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, shift(x)])) : v;
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    db.exec("CREATE TABLE IF NOT EXISTS _demo_seed_originals(revision TEXT,kind TEXT,id TEXT,data TEXT,version INTEGER,created_at TEXT,updated_at TEXT,PRIMARY KEY(revision,kind,id))");
+    const get = async (kind, id) => db.prepare("SELECT * FROM records WHERE kind=? AND id=?").bind(kind, id).first();
+    const put = async (kind, id, data3) => {
+      if (await db.prepare("SELECT id FROM retired_records WHERE kind=? AND id=?").bind(kind, id).first()) return;
+      const old = await get(kind, id);
+      if (old) {
+        if (old.version !== 1 || old.data === JSON.stringify(data3)) return;
+        await db.prepare("INSERT OR IGNORE INTO _demo_seed_originals VALUES(?,?,?,?,?,?,?)").bind(DEMO_REVISION, kind, id, old.data, old.version, old.created_at, old.updated_at).run();
+        await db.prepare("UPDATE records SET data=?,version=version+1,updated_at=? WHERE kind=? AND id=? AND version=1").bind(JSON.stringify(data3), stamp, kind, id).run();
+      } else await db.prepare("INSERT INTO records VALUES(?,?,?,?,?,?)").bind(kind, id, JSON.stringify(data3), 1, stamp, stamp).run();
+    };
+    for (const row of scenarioRecords().task) {
+      const old = await get("task", row.id);
+      if (!old || JSON.parse(old.data).title === row.data.title) await put("task", row.id, shift({ ...row.data, difficulty: row.data.difficulty ?? 3 }));
+    }
+    const friend = await get("private-friend", "demo-maya");
+    if (friend && JSON.parse(friend.data).name === "Maya Chen") await put("private-friend", "demo-maya", { ...JSON.parse(friend.data), name: "John Doe" });
+    const contact = await get("reminder", "demo-maya-contact");
+    if (contact && JSON.parse(contact.data).title === "Check in with Maya Chen") await put("reminder", "demo-maya-contact", { ...JSON.parse(contact.data), title: "Check in with John Doe" });
+    const oldPoints = ["Notice something good.", "Consider the context.", "Reflect on kindness.", "Name a human need.", "Choose one practical act.", "Listen with care.", "Take a quiet moment."];
+    for (const r of (await db.prepare("SELECT * FROM records WHERE kind='devotional'").all()).results) {
+      const d = JSON.parse(r.data);
+      if (JSON.stringify(d.points) === JSON.stringify(oldPoints) && d.complete === false) await put("devotional", r.id, { ...d, points: Array(7).fill("") });
+    }
+    const legacy = await get("project", "demo-project");
+    if (legacy && JSON.parse(legacy.data).title === "Build a balcony planter") await put("project", "demo-project", { ...JSON.parse(legacy.data), archived: true });
+    for (const row of publicProjectRecords()) if (!await get("project", row.id)) await put("project", row.id, row.data);
+    for (const row of prayerExamples()) if (!await get("prayer-note", row.id)) await put("prayer-note", row.id, row.data);
+    const baseline = await get("training", "baseline");
+    if (baseline && JSON.parse(baseline.data).notes === "Fictional fitness plan; edit for your own ability.") await put("training", "baseline", demoTraining(date3));
+    const source = await get("training-source", "fictional-plan");
+    if (source && JSON.parse(source.data).source?.title === "Fictional gentle activity reference") await put("training-source", "fictional-plan", createDemoMarathonSource());
+    await assignmentExamples(db, stamp, put, true);
+    await db.prepare("INSERT OR REPLACE INTO meta VALUES(?,?)").bind("demo-content-revision", DEMO_REVISION).run();
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
 }
 
 // src/local/services.ts
@@ -12543,7 +12783,7 @@ async function createBrowserService({ SQL: SQL2, origin: origin2, bytes: bytes2,
   return { db, csrf, close: () => db.close(), async fetch(request) {
     const url = new URL(request.url);
     if (url.origin !== origin2) return Response.json({ error: "Browser workspace origin denied" }, { status: 403 });
-    if (url.pathname === "/api/operation-world") return Response.json({ day: url.searchParams.get("day"), items: [{ title: "Community reflection", text: "Remember people who need kindness, shelter and peace." }], source: null, checkedAt: (/* @__PURE__ */ new Date()).toISOString(), mock: true });
+    if (url.pathname === "/api/operation-world") return Response.json(operationWorldEmbed(url.searchParams.get("day")));
     if (url.pathname === "/auth/google" || url.pathname.startsWith("/api/worker/")) return Response.json({ error: "This workspace stays in this browser." }, { status: 403 });
     let response2 = await app_default.fetch(request, env);
     if (response2.ok && !["GET", "HEAD"].includes(request.method)) await drainJobs(db, env);
@@ -12654,7 +12894,7 @@ async function operate(message) {
       const before = service.db.exec("SELECT total_changes() AS count")[0].values[0][0];
       const response2 = await service.fetch(request), body = await response2.arrayBuffer();
       const changed2 = service.db.exec("SELECT total_changes() AS count")[0].values[0][0] !== before;
-      if (!saved || changed2) await writeWorkspace(storage, service.db.export());
+      if (!saved || before > 0 || changed2) await writeWorkspace(storage, service.db.export());
       return { type: "response", status: response2.status, statusText: response2.statusText, headers: [...response2.headers], body };
     } finally {
       service.close();

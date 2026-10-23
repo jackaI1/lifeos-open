@@ -49,6 +49,6 @@ export async function mount(root,ctx){
  const runs=el('details',{class:'panel section-spacer'},el('summary',{},'Recorded runs'),historyHost);
  if(!weeks.length)full.hidden=true;
  if(matching)await keepContext();
- replace(root,heading('Exercise'),dayHost,draftHost,weekHost,context,full,runs);renderDay();renderWeek();renderRuns();renderDrafts();
+ replace(root,heading('Exercise'),plan.source?.url==='https://hansons-running.com/content/training-plans'?el('p',{class:'save-meta training-source'},el('a',{href:plan.source.url,target:'_blank',rel:'noopener noreferrer'},plan.source.title),plan.weeks?' · '+plan.weeks+' weeks':''):null,dayHost,draftHost,weekHost,context,full,runs);renderDay();renderWeek();renderRuns();renderDrafts();
  return {dirty:()=>dirty||savingContext||runLog.dirty(),async beforeLeave(){await routeChange;await saveChain;if(dirty&&!durable){toast('Download your training notes before leaving. This device could not retain them.');return false;}return runLog.beforeLeave();},async update(){await runLog.reconcile();if(!disposed){renderDay();renderWeek();renderRuns();}},destroy(){disposed=true;runLog.destroy();}};
 }
