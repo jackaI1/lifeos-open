@@ -4,25 +4,29 @@ const paths={clock:'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0 M12 6v6l4 2',pause:
 export function controlIcon(name){const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');for(const[k,v]of Object.entries({viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.6,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true'}))svg.setAttribute(k,v);const p=document.createElementNS(svg.namespaceURI,'path');p.setAttribute('d',paths[name]??paths.help);svg.append(p);return svg;}
 
 export function compactDisclosure({label,icon='help',content,portal=false,onActivate=null,canOpen=()=>true}){
- let hovered=false,hoverDismissed=false,activationPoint=null;
+ let hovered=false,hoverDismissed=false,activationPoint=null,hoverClose=null;
  const trigger=button(controlIcon(icon),e=>onActivate?onActivate(e):hovered?show():toggle(),'quiet icon-button'),popup=el('div',{class:'compact-popover',hidden:true,role:'note',id:'detail-'+crypto.randomUUID()}),node=el('span',{class:'compact-disclosure'},trigger,popup);
  trigger.setAttribute('aria-label',label);trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-controls',popup.id);
  const paint=()=>{popup.replaceChildren();const value=typeof content==='function'?content():content;popup.append(value instanceof Node?value:document.createTextNode(value??''));};
- function show(){if(!canOpen())return;paint();if(portal){document.body.append(popup);Object.assign(popup.style,{position:'fixed',zIndex:1000,right:'auto',bottom:'auto',left:'12px',top:'12px',maxHeight:Math.max(100,(window.visualViewport?.height??innerHeight)-24)+'px'});}popup.hidden=false;popup.style.transform='';const box=popup.getBoundingClientRect(),width=window.visualViewport?.width??window.innerWidth;
+ function cancelHoverClose(){clearTimeout(hoverClose);hoverClose=null;}
+ function show(){cancelHoverClose();if(!canOpen())return;paint();if(portal){document.body.append(popup);Object.assign(popup.style,{position:'fixed',zIndex:1000,right:'auto',bottom:'auto',left:'12px',top:'12px',maxHeight:Math.max(100,(window.visualViewport?.height??innerHeight)-24)+'px'});}popup.hidden=false;popup.style.transform='';const box=popup.getBoundingClientRect(),width=window.visualViewport?.width??window.innerWidth;
   if(portal){const anchor=trigger.getBoundingClientRect(),v=window.visualViewport,top=v?.offsetTop??0,left=v?.offsetLeft??0,height=v?.height??innerHeight;popup.style.left=Math.max(left+12,Math.min(anchor.right-box.width,left+width-box.width-12))+'px';const above=anchor.top-box.height-6;popup.style.top=Math.max(top+12,Math.min(above>=top+12?above:anchor.bottom+6,top+height-box.height-12))+'px';}
   else{const shift=box.left<12?12-box.left:box.right>width-12?width-12-box.right:0;if(shift)popup.style.transform=`translateX(${shift}px)`;}trigger.setAttribute('aria-expanded','true');if(portal&&trigger.matches(':focus-visible'))popup.querySelector('select,input,button')?.focus({preventScroll:true});}
 
- function hide(){popup.hidden=true;trigger.setAttribute('aria-expanded','false');}
+ function hide(){cancelHoverClose();popup.hidden=true;trigger.setAttribute('aria-expanded','false');}
  function toggle(){popup.hidden?show():hide();}
  // Closing an occluding panel can expose this control to a stationary pointer.
  // Preserve deliberate hover, but wait for real movement after an outside click.
  const stationary=e=>activationPoint&&e.clientX===activationPoint.x&&e.clientY===activationPoint.y;
- node.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse'){hovered=true;if(!hoverDismissed&&!stationary(e))show();}});
+ node.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse'){cancelHoverClose();hovered=true;if(!hoverDismissed&&!stationary(e))show();}});
  node.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&hovered&&!hoverDismissed&&!stationary(e)){activationPoint=null;if(popup.hidden)show();}});
- node.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!popup.contains(e.relatedTarget)){hovered=false;hoverDismissed=false;activationPoint=null;hide();}});if(portal)popup.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!node.contains(e.relatedTarget)){hovered=false;hoverDismissed=false;activationPoint=null;hide();}});
+ // A portal is separated from its trigger by a small layout gap. Allow the
+ // pointer to cross it in either direction without discarding the open panel.
+ const leave=e=>{if(e.pointerType!=='mouse'||node.contains(e.relatedTarget)||popup.contains(e.relatedTarget))return;hovered=false;hoverDismissed=false;activationPoint=null;cancelHoverClose();if(portal)hoverClose=setTimeout(()=>{hoverClose=null;if(!popup.contains(document.activeElement))hide();},300);else hide();};
+ node.addEventListener('pointerleave',leave);if(portal){popup.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse'){cancelHoverClose();hovered=true;}});popup.addEventListener('pointerleave',leave);}
  node.addEventListener('focusout',e=>{if(!node.contains(e.relatedTarget)&&!popup.contains(e.relatedTarget))hide();});if(!portal)trigger.addEventListener('focus',()=>{if(trigger.matches(':focus-visible'))show();});if(portal)popup.addEventListener('focusout',e=>{if(!node.contains(e.relatedTarget)&&!popup.contains(e.relatedTarget))hide();});
  const outside=e=>{if(!node.contains(e.target)&&!popup.contains(e.target)){activationPoint=e.pointerType==='mouse'&&Number.isFinite(e.clientX)&&Number.isFinite(e.clientY)?{x:e.clientX,y:e.clientY}:null;hide();}},key=e=>{if(e.key==='Escape'){const open=!popup.hidden;if(open)hoverDismissed=true;hide();if(portal&&open)trigger.focus({preventScroll:true});}};const moved=e=>{if(activationPoint&&e.pointerType==='mouse'&&Number.isFinite(e.clientX)&&Number.isFinite(e.clientY)&&!stationary(e))activationPoint=null;};document.addEventListener('pointerdown',outside);document.addEventListener('pointermove',moved,{passive:true});document.addEventListener('keydown',key);if(portal)window.addEventListener('resize',hide);
- return {node,trigger,hide,show,toggle,refresh:()=>{if(!popup.hidden)paint();},destroy:()=>{document.removeEventListener('pointerdown',outside);document.removeEventListener('pointermove',moved);document.removeEventListener('keydown',key);if(portal){window.removeEventListener('resize',hide);popup.remove();}}};
+ return {node,trigger,hide,show,toggle,refresh:()=>{if(!popup.hidden)paint();},destroy:()=>{hide();document.removeEventListener('pointerdown',outside);document.removeEventListener('pointermove',moved);document.removeEventListener('keydown',key);if(portal){window.removeEventListener('resize',hide);popup.remove();}}};
 }
 export function helpControl(text,label='Help'){return compactDisclosure({label,content:text});}
 
