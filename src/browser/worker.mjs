@@ -28,7 +28,9 @@ async function operate(message){
    const response=await service.fetch(request),body=await response.arrayBuffer();
    const changed=service.db.exec('SELECT total_changes() AS count')[0].values[0][0]!==before;
    // Acknowledge mutations only after IndexedDB commits, including binary objects.
-   if(!saved||changed)await writeWorkspace(storage,service.db.export());
+   // total_changes starts at zero when a saved SQLite image is opened. Seed
+   // upgrades run during service creation, before the request counter above.
+   if(!saved||before>0||changed)await writeWorkspace(storage,service.db.export());
    return {type:'response',status:response.status,statusText:response.statusText,headers:[...response.headers],body};
   }finally{service.close();}
  });

@@ -48,7 +48,7 @@ export function buildTrainingReference({ raceDate, sourceWeeks = [], program = '
     if (item.source?.inconsistency) itemIssues.push(item.source.inconsistency);
     const componentKm = (item.components ?? []).reduce((sum, component) => sum + (Number.isFinite(component.distanceKm) ? component.distanceKm : 0), 0);
     if (item.totalDistanceKm != null && componentKm && Math.abs(componentKm - item.totalDistanceKm) > 0.05) itemIssues.push('The component sum disagrees with the source total. Both values are preserved.');
-    workouts.push({ ...item, date, week: sourceWeek.week, program, status: 'reference-only', completed: false, automaticallyActive: false, sundayRestConflict: weekday(date) === 0 && item.kind !== 'rest' && !(date === raceDate && raceExceptionConfirmed), sourceIssues: itemIssues, adaptation: null });
+    workouts.push({ ...item, date, week: sourceWeek.week, program, status: 'reference-only', completed: false, automaticallyActive: false, sundayRestConflict: sundayRest && weekday(date) === 0 && item.kind !== 'rest' && !(date === raceDate && raceExceptionConfirmed), sourceIssues: itemIssues, adaptation: null });
     issues.push(...itemIssues.map(issue => `${date}: ${issue}`));
   }
   return { raceDate, firstMonday, program, weeks: length, workouts: workouts.sort((a, b) => a.date.localeCompare(b.date)), issues, status: issues.length ? 'source-review-needed' : 'reference-ready', automaticCatchUp: false, secondRaceDate: null };
