@@ -1,11 +1,23 @@
-import test from 'node:test';import assert from 'node:assert/strict';
-import {build} from 'esbuild';
-import {createRequire} from 'node:module';
-const require=createRequire(import.meta.url);
-const {Miniflare}=await import(require.resolve('miniflare',{paths:[process.env.LIFEOS_WORKER_TOOLCHAIN??process.cwd()]}));
-import {writeFile,mkdir} from 'node:fs/promises';
-test('real Workers SQLite supports atomic storage bounds, batches and blobs',async()=>{
- const built=await build({stdin:{contents:`import {DurableObject} from 'cloudflare:workers';import {HostedDatabase} from './src/hosted/database.ts';export class Probe extends DurableObject{async fetch(){const d=new HostedDatabase(this.ctx.storage);d.exec('CREATE TABLE IF NOT EXISTS sample(id TEXT PRIMARY KEY, value BLOB);');await d.prepare('INSERT INTO sample VALUES(?,?)').bind('a',new Uint8Array([1,2,3])).run();const initial=this.ctx.storage.sql.databaseSize;d.maxBytes=initial;let denied=false;try{await d.prepare('INSERT INTO sample VALUES(?,?)').bind('big',new Uint8Array(100000)).run();}catch{denied=true;}const rows=await d.prepare('SELECT * FROM sample').all();return Response.json({typed:rows.results.every(r=>r.value instanceof Uint8Array),denied,rows:rows.results.map(r=>({id:r.id,bytes:Array.from(new Uint8Array(r.value))})),size:this.ctx.storage.sql.databaseSize,initial});}}export default{fetch(r,e){return e.PROBE.get(e.PROBE.idFromName('one')).fetch(r);}}`,resolveDir:process.cwd()},bundle:true,format:'esm',platform:'neutral',external:['cloudflare:workers'],write:false});
- const mf=new Miniflare({workers:[{config:{name:'probe',type:'worker',compatibilityDate:'2026-09-07',manifest:{mainModule:'index.js',modules:{'index.js':{type:'esm',contents:built.outputFiles[0].text}}},env:{PROBE:{type:'durable-object',worker:'probe',exportName:'Probe'}},exports:{Probe:{type:'durable-object',storage:'sqlite'}}}}]});
- try{const url=await mf.ready;await mkdir('.runtime/hosted',{recursive:true});await writeFile('.runtime/hosted/runtime-ownership.json',JSON.stringify({owner:'hosted storage test',pid:process.pid,origin:String(url),cleanup:'Miniflare.dispose in finally'}));const r=await mf.dispatchFetch('http://localhost/');assert.equal(r.status,200);const b=await r.json();assert.equal(b.typed,true);assert.equal(b.denied,true);assert.deepEqual(b.rows,[{id:'a',bytes:[1,2,3]}]);assert.equal(b.size,b.initial);}finally{await mf.dispose();}
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createHostedRuntime} from './hosted-test-runtime.mjs';
+// Replaces the retired hosted-SQLite fixture: the public host now has no storage.
+// Standalone/private database and authentication tests remain separate and intact.
+test('Cloudflare transport serves static assets and rejects writes without a session',async()=>{
+ const runtime=await createHostedRuntime();const {mf,origin,parent,blocked}=runtime;
+ try{
+  for(const path of ['/','/index.html','/demo-bootstrap.js','/vendor/browser-demo/client.mjs','/vendor/browser-demo/worker.mjs','/vendor/browser-demo/sql-wasm.wasm','/demo-lecture.wav']){
+   const response=await mf.dispatchFetch(origin+path);assert.equal(response.status,200,path);assert.equal(response.headers.get('set-cookie'),null,path);
+   assert.ok(response.headers.get('content-security-policy')?.includes('frame-ancestors '+parent),path);assert.equal(response.headers.get('x-content-type-options'),'nosniff',path);
+   if(path==='/'||path==='/index.html')assert.match(await response.text(),/src="\/demo-bootstrap\.js"/);else await response.body?.cancel();
+  }
+  for(const path of ['/api','/api/session','/api/bootstrap','/api/private-notes/example','/api/uploads','/api/jobs','/auth/google'])for(const method of ['GET','POST','PUT','DELETE','PATCH']){
+   const response=await mf.dispatchFetch(origin+path,{method,...(method==='GET'?{}:{body:'VISITOR-CONTENT-MUST-NOT-BE-STORED'})});assert.ok(response.status>=400,method+' '+path);assert.equal(response.headers.get('set-cookie'),null);await response.body?.cancel();
+  }
+  for(const path of ['/','/index.html','/demo-bootstrap.js','/vendor/browser-demo/sql-wasm.wasm'])for(const method of ['POST','PUT','DELETE']){
+   const response=await mf.dispatchFetch(origin+path,{method,body:'VISITOR-UPLOAD'});assert.ok([403,404,405].includes(response.status),method+' '+path+' '+response.status);assert.equal(response.headers.get('set-cookie'),null);await response.body?.cancel();
+   const unchanged=await mf.dispatchFetch(origin+path);assert.equal(unchanged.status,200,'Write must not alter authored asset');await unchanged.body?.cancel();
+  }
+  assert.deepEqual(blocked,[],'Static host must not invoke an external integration');
+ }finally{await runtime.dispose();}
 });
