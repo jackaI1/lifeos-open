@@ -12997,12 +12997,12 @@ var serial = Promise.resolve();
 async function readAsset(name) {
   const path = assets.get(name);
   if (!path) throw Error("Unknown browser demo asset");
-  const response2 = await nativeFetch(new URL(path, origin), { credentials: "omit", cache: "force-cache" });
+  const response2 = await nativeFetch(new URL(path, origin), { credentials: "same-origin", cache: "force-cache" });
   if (!response2.ok) throw Error("The example assets could not load. Reload to retry.");
   return import_buffer3.Buffer.from(await response2.arrayBuffer());
 }
 async function initialize() {
-  const wasm = await nativeFetch(new URL("./sql-wasm.wasm", self.location.href), { credentials: "omit", cache: "force-cache" });
+  const wasm = await nativeFetch(new URL("./sql-wasm.wasm", self.location.href), { credentials: "same-origin", cache: "force-cache" });
   if (!wasm.ok) throw Error("The browser database engine could not load.");
   SQL = await (0, import_sql_wasm.default)({ wasmBinary: await wasm.arrayBuffer() });
   storage = await openWorkspaceDatabase();
