@@ -18,3 +18,10 @@ export async function syncInk(p){await button(p,'Saved on this device').click();
 export async function waitInk(p,predicate){await syncInk(p);const deadline=Date.now()+8000;let value;do{value=await ink(p);if(predicate(value))return value;await p.waitForTimeout(150);}while(Date.now()<deadline);assert.ok(predicate(value),'Saved ink did not reach the expected state');}
 
 export async function darkInk(p){return p.locator('canvas.lecture-canvas').evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let count=0;for(let i=0;i<d.length;i+=4)if(d[i]<80&&d[i+1]<100&&d[i+2]<130)count++;return count;});}
+
+// Compact lecture layouts expose secondary controls through the More sheet.
+export async function clickLectureTool(p,name){
+ const control=p.getByRole('button',{name,exact:true});
+ if(!await control.isVisible())await button(p,'More').click();
+ await p.getByRole('button',{name,exact:true}).click();
+}

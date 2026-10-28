@@ -1,3 +1,5 @@
+import {notificationWidgets} from '../notification-widgets.js';
+import {currentScheduleDetails,selectScheduleRow} from '../schedule-presentation.js';
 import {friendWidget} from '../friend-widget.js';
 import {openApplication} from '../application-detail.js';
 import {scheduleLocation} from '../schedule-location.js';
@@ -12,7 +14,7 @@ import {smallSteps} from '../devotional-accountability.js';
 
 import {shiftDay,chronologicalCards,swipeDays} from '../day-navigation.js';
 
-import {el,replace,append,button,panel,formatTime,compactTime,formatDate,busy,showResult,field,modal,safeLink,toast} from '../ui.js';
+import {el,replace,append,button,panel,formatTime,compactTime,formatDate,getDisplayTimeZone,deadlineUrgency,busy,showResult,field,modal,safeLink,toast} from '../ui.js';
 
 import {targetHash,targetLabel,routeQuery} from '../targets.js';
 
@@ -21,8 +23,8 @@ import {targetHash,targetLabel,routeQuery} from '../targets.js';
 export async function mount(root,ctx){
  if(routeQuery().has('assistant'))return mountAssistant(root,ctx,'today');
 
- const friendReminders=friendWidget(ctx);
- let disposed=false,timer,countdown,view=ctx.state.bootstrap.today||{},schedule=view,selectedDay=view.date||ctx.date(),scheduleToken=0,selectionEpoch=0,scheduleLoading=false,scheduleError=false,cardOffset=0,scheduleEditing=false;const scheduleHost=el('div',{class:'today-schedule-column'});const scheduleDetails=[];const cardDetails=[];let releaseApplicationFit=()=>{},releaseReminderFit=()=>{};
+ const friendReminders=friendWidget(ctx),dayOptionsHost=el('div',{class:'today-day-options'});let notifications=null,selectedCard=null,scrollSelection=false;
+ let disposed=false,timer,countdown,displayTimer,displayUpdate=()=>{},view=ctx.state.bootstrap.today||{},schedule=view,selectedDay=view.date||ctx.date(),scheduleToken=0,selectionEpoch=0,scheduleLoading=false,scheduleError=false,cardOffset=0,scheduleEditing=false;const scheduleHost=el('div',{class:'today-schedule-column'});const scheduleDetails=[];const cardDetails=[];let releaseApplicationFit=()=>{},releaseReminderFit=()=>{};
 
  const date=()=>view.date||ctx.date();
  const canOpen=target=>target&&(target.route==='today'||!ctx.capabilities?.targetRoutes||ctx.capabilities.targetRoutes.includes(target.route));
@@ -41,7 +43,7 @@ export async function mount(root,ctx){
 
   if(!event)return modal('Commitment unavailable',el('p',{},'This event is no longer in the saved calendar window. Refresh Today to check it.'));
 
-  modal(event.title||'Calendar commitment',el('div',{class:'form-stack'},el('p',{},`${formatDate(event.start)} · ${range(event)}`),event.location?el('p',{},event.location):null,event.dayNotice?el('p',{},'This is a date-only school notice. It does not supply a class time or cancel the normal routine.'):null,el('p',{class:'muted'},[...new Set(event.sources?.map(s=>sourceName(s.calendarId))||[])].join(' · ')),safeLink(event.htmlLink,'Open original event'),ctx.state.session?.mode?button('Edit event',()=>editEvent((()=>{const record=ctx.records('calendar-event').find(r=>r.id===id);return {...record,data:{...record.data,start:event.start,end:event.end}};})()),'quiet'):null,ctx.state.session?.mode?button('Delete event',()=>deleteEvent(ctx.records('calendar-event').find(r=>r.id===id)),'quiet'):null));
+  modal(event.title||'Calendar commitment',el('div',{class:'form-stack'},el('p',{},`${formatDate(event.start)}, ${range(event)}`),event.location?el('p',{},event.location):null,event.dayNotice?el('p',{},'This is a date-only school notice. It does not supply a class time or cancel the normal routine.'):null,el('p',{class:'muted'},[...new Set(event.sources?.map(s=>sourceName(s.calendarId))||[])].join(', ')),safeLink(event.htmlLink,'Open original event'),ctx.state.session?.mode?button('Edit event',()=>editEvent((()=>{const record=ctx.records('calendar-event').find(r=>r.id===id);return {...record,data:{...record.data,start:event.start,end:event.end}};})()),'quiet'):null,ctx.state.session?.mode?button('Delete event',()=>deleteEvent(ctx.records('calendar-event').find(r=>r.id===id)),'quiet'):null));
 
  }
 
@@ -51,7 +53,7 @@ export async function mount(root,ctx){
 
   const items=[...(view.calendarConflicts||[]),...(view.sourceConflicts||[])];
 
-  modal('Review commitments',el('div',{class:'form-stack'},...items.map(c=>el('section',{},el('h3',{},c.kind==='source-disagreement'?'School feed disagreement':'Overlapping commitments'),el('p',{},c.reason),...c.events.map(e=>el('article',{class:'practice-row'},el('h3',{},e.title||'Untitled event'),el('p',{},`${formatDate(e.start)} · ${range(e)}`),e.location?el('p',{},e.location):null,el('p',{class:'muted'},`${[...new Set(e.sources?.map(s=>sourceName(s.calendarId))||[])].join(' · ')}${e.status==='cancelled'?' · Cancelled':''}`),safeLink(e.htmlLink,'Open original event'))),el('p',{class:'muted'},c.kind==='source-disagreement'?'Compare both versions with the course timetable. Confirm the correct time in the source or report the discrepancy in Support. LifeOS keeps both versions reserved.':'Review the original events and decide which commitment to attend. LifeOS will not change these calendars.'))),...(view.calendar?.errors||[]).map(e=>el('p',{},`Calendar time could not be read: ${e.reason}`)),...(!items.length&&!view.calendar?.errors?.length?[el('p',{},'No overlapping commitments or school feed disagreements remain in this day.')]:[])));
+  modal('Review commitments',el('div',{class:'form-stack'},...items.map(c=>el('section',{},el('h3',{},c.kind==='source-disagreement'?'School feed disagreement':'Overlapping commitments'),el('p',{},c.reason),...c.events.map(e=>el('article',{class:'practice-row'},el('h3',{},e.title||'Untitled event'),el('p',{},`${formatDate(e.start)}, ${range(e)}`),e.location?el('p',{},e.location):null,el('p',{class:'muted'},`${[...new Set(e.sources?.map(s=>sourceName(s.calendarId))||[])].join(', ')}${e.status==='cancelled'?', Cancelled':''}`),safeLink(e.htmlLink,'Open original event'))),el('p',{class:'muted'},c.kind==='source-disagreement'?'Compare both versions with the course timetable. Confirm the correct time in the source or report the discrepancy in Support. LifeOS keeps both versions reserved.':'Review the original events and decide which commitment to attend. LifeOS will not change these calendars.'))),...(view.calendar?.errors||[]).map(e=>el('p',{},`Calendar time could not be read: ${e.reason}`)),...(!items.length&&!view.calendar?.errors?.length?[el('p',{},'No overlapping commitments or school feed disagreements remain in this day.')]:[])));
 
  }
 
@@ -95,28 +97,29 @@ export async function mount(root,ctx){
 
  const returnToday=selectedDay!==view.date?button('Today',()=>loadDay(view.date),'text-button compact'):null;if(returnToday){returnToday.setAttribute('aria-label','Return schedule to today');returnToday.setAttribute('data-schedule-focus','today');}
  const navigation=el('div',{class:'day-navigation'},prev,el('div',{class:'today-schedule-date'},el('strong',{'data-schedule-focus':'date',tabindex:'-1'},formatDate(selectedDay,true)),returnToday),next);
- if(scheduleLoading||scheduleError){const retry=button('Retry',()=>changeDay(0),'quiet');retry.setAttribute('data-schedule-focus','retry');replaceSchedule(friendReminders.node,el('section',{class:'today-review panel','aria-labelledby':'day-review-title','aria-busy':String(scheduleLoading)},el('div',{class:'panel-heading'},el('h2',{id:'day-review-title'},'Full Schedule')),navigation,scheduleLoading?el('p',{role:'status'},'Loading schedule…'):el('div',{role:'alert'},el('p',{},'Schedule unavailable for '+formatDate(selectedDay,true)+'.'),retry)));return;}
+ if(scheduleLoading||scheduleError){const retry=button('Retry',()=>changeDay(0),'quiet');retry.setAttribute('data-schedule-focus','retry');replaceSchedule(el('section',{class:'today-review panel','aria-labelledby':'day-review-title','aria-busy':String(scheduleLoading)},el('div',{class:'panel-heading'},el('h2',{id:'day-review-title'},'Full Schedule')),navigation,scheduleLoading?el('p',{role:'status'},'Loading schedule…'):el('div',{role:'alert'},el('p',{},'Schedule unavailable for '+formatDate(selectedDay,true)+'.'),retry)));return;}
  const context={day:schedule.date,schedule,token:scheduleToken,selection:selectionEpoch};
 
  const toggle=ctx.capabilities?.scheduleEditing===false?null:button(scheduleEditing?'Done':'Edit',()=>{scheduleEditing=!scheduleEditing;renderSchedule();},'quiet compact');toggle?.setAttribute('aria-pressed',String(scheduleEditing));
 
- const timeline=el('ol',{class:'day-story'+(scheduleEditing?' editing':'')});
+ const timeline=el('ol',{class:'day-story'+(scheduleEditing?' editing':'')});let period=0;
 
  for(const [index,item] of (schedule.timeline??[]).entries()){
 
+  const hour=Number(timeValue(item.start).split(':')[0]),nextPeriod=item.allDay?0:hour>=17?2:hour>=12?1:0;if(nextPeriod>period){period=nextPeriod;timeline.append(el('li',{class:'schedule-period','aria-hidden':'true'},period===1?'Afternoon':'Evening'));}
   const intent=entryIntent(item,context);
 
   const clock=el('div',{class:'schedule-clock'});
 
   if(scheduleEditing){for(const key of ['start','end'].filter(k=>item[k])){const input=el('input',{type:'time',value:timeValue(item[key]),'aria-label':(key==='start'?'Start':'End')+' time for '+item.title,class:'schedule-time'});input.onchange=()=>busy(input,async()=>{const changed=replaceTime(item[key],input.value),values={[key]:changed};if(key==='start'&&item.end)values.end=new Date(Date.parse(item.end)+Date.parse(changed)-Date.parse(item.start)).toISOString();await saveCorrection(intent,values,false,input);});clock.append(input);}}
 
-  else{const detail=compactDisclosure({label:range(item),content:range(item)});detail.trigger.replaceChildren(el('time',{datetime:item.start},compactTime(item.start)));detail.trigger.classList.add('schedule-clock-button');detail.node.classList.add('popover-from-start');scheduleDetails.push(detail);clock.append(detail.node);}
+  else{const detail=compactDisclosure({label:range(item),content:range(item)});detail.trigger.replaceChildren(el('time',{datetime:item.start},compactTime(item.start).replace(/[ap]$/,'')));detail.trigger.classList.add('schedule-clock-button');detail.node.classList.add('popover-from-start');scheduleDetails.push(detail);clock.append(detail.node);}
 
   const extra=item.detail&&item.kind!=='calendar'?helpControl(item.detail,'Details for '+item.title):null;if(extra)scheduleDetails.push(extra);
   const title=!scheduleEditing&&canOpen(item.target)?button(item.title,()=>{if(currentSchedule(context))open(item.target);},'text-button schedule-title'):item.title;
   const calendarEvent=item.target?.eventId?(schedule.calendar?.events??[]).find(e=>e.id===item.target.eventId):null;
   const location=scheduleLocation(calendarEvent,schedule.timeline);
-  const row=el('li',{class:'story-item story-'+item.state+(item.kind==='presence'?' story-presence':''),'aria-current':item.state==='current'?'time':null},clock,el('div',{class:'schedule-body'},el('div',{class:'schedule-title-row'},el('h3',{},title),extra?.node),el('span',{class:'sr-only'},item.state==='past-plan'?'Planned, not confirmed':item.state==='planned'?'Planned':item.state)),location);
+  const row=el('li',{class:'story-item story-'+item.state+(item.kind==='presence'?' story-presence':''),'aria-current':item.state==='current'?'time':null,'data-schedule-id':item.id,'data-schedule-start':item.start,'data-schedule-kind':item.kind},clock,el('div',{class:'schedule-body'},el('div',{class:'schedule-title-row'},el('h3',{},title),item.state==='current'?null:extra?.node),currentScheduleDetails(item,view,ctx),el('span',{class:'sr-only'},item.state==='past-plan'?'Planned, not confirmed':item.state==='planned'?'Planned':item.state)),location);
 
 
   if(scheduleEditing){const handle=button(lineIcon('drag'),()=>{},'quiet icon-button schedule-drag'),trash=button(lineIcon('trash'),e=>removeEntry(intent,e.currentTarget),'text-button icon-button schedule-trash');handle.setAttribute('aria-label','Drag to reorder '+item.title+'. Arrow keys move it.');trash.setAttribute('aria-label','Remove '+item.title);handle.onkeydown=e=>{if(['ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();void moveEntry(intent,index+(e.key==='ArrowUp'?-1:1),handle);}};row.append(handle,trash);dragSchedule(handle,row,timeline,to=>{void moveEntry(intent,to,handle);});swipeDays(row,d=>{if(d>0)removeEntry(intent,row);});}timeline.append(row);
@@ -127,9 +130,9 @@ export async function mount(root,ctx){
 
  const pastPrayer=schedule.spiritualPracticesEnabled===true&&ctx.capabilities?.spiritualCompletion!==false&&selectedDay<view.date&&schedule.spiritual?.prayer?.complete!==true;
  const undatedPrayer=selectedDay<view.date&&schedule.spiritual?.prayer?.complete===true&&!schedule.spiritual.prayer.completedAt;
- const prayerStatus=pastPrayer?button('Mark prayer completed',e=>busy(e.currentTarget,()=>markPastPrayerComplete(context,e.currentTarget)),'text-button'):undatedPrayer?el('p',{class:'save-meta'},'Prayer completed · Time not recorded'):null;
- replaceSchedule(friendReminders.node,el('section',{class:'today-review panel','aria-labelledby':'day-review-title'},el('div',{class:'panel-heading'},el('h2',{id:'day-review-title'},'Full Schedule'),ctx.state.session?.mode?button('Add event',()=>editEvent(),'quiet compact'):null,toggle),navigation,prayerStatus,timeline,hidden.length?el('details',{open:scheduleEditing},el('summary',{},'Hidden entries'),hidden.map(r=>{const intent=entryIntent({id:r.data.entryId},context,true);return button('Restore '+(r.data.source?.kind||'entry'),e=>busy(e.currentTarget,()=>saveCorrection(intent,{...intent.original,hidden:false},false,e.currentTarget)),'quiet compact');})):null));if(!scheduleEditing)swipeDays(scheduleHost.querySelector('.today-review'),changeDay);
- if(selectedDay===view.date&&ctx.capabilities?.replan!==false)scheduleHost.append(dayOptions(context));
+ const prayerStatus=pastPrayer?button('Mark prayer completed',e=>busy(e.currentTarget,()=>markPastPrayerComplete(context,e.currentTarget)),'text-button'):undatedPrayer?el('p',{class:'save-meta'},'Prayer completed, Time not recorded'):null;
+ replaceSchedule(el('section',{class:'today-review panel','aria-labelledby':'day-review-title'},el('div',{class:'panel-heading'},el('h2',{id:'day-review-title'},'Schedule'),ctx.state.session?.mode?button('Add event',()=>editEvent(),'quiet compact'):null,toggle),navigation,prayerStatus,timeline,hidden.length?el('details',{open:scheduleEditing},el('summary',{},'Hidden entries'),hidden.map(r=>{const intent=entryIntent({id:r.data.entryId},context,true);return button('Restore '+(r.data.source?.kind||'entry'),e=>busy(e.currentTarget,()=>saveCorrection(intent,{...intent.original,hidden:false},false,e.currentTarget)),'quiet compact');})):null));if(!scheduleEditing)swipeDays(scheduleHost.querySelector('.today-review'),changeDay);
+ replace(dayOptionsHost,selectedDay===view.date&&ctx.capabilities?.replan!==false?dayOptions(context):null);
 
  }
 
@@ -140,7 +143,7 @@ export async function mount(root,ctx){
 
 
 
- function render(){clearInterval(countdown);cardDetails.splice(0).forEach(d=>d.destroy());
+ function render(){notifications?.destroy();clearInterval(countdown);cardDetails.splice(0).forEach(d=>d.destroy());
 
   if(disposed)return;view=ctx.state.bootstrap.today||{};
 
@@ -150,17 +153,35 @@ export async function mount(root,ctx){
 
   const cards=chronologicalCards({...view,now:view.now||ctx.state.bootstrap.now}),index=Math.max(0,Math.min(cards.items.length-1,cards.current+cardOffset)),shown=cards.items[index];cardOffset=index-cards.current;
 
-  const prev=button(controlIcon('left'),()=>{cardOffset--;render();},'quiet icon-button'),next=button(controlIcon('right'),()=>{cardOffset++;render();},'quiet icon-button');prev.setAttribute('aria-label','Previous schedule item');next.setAttribute('aria-label','Next schedule item');prev.disabled=index===0;next.disabled=index===cards.items.length-1;
+  const prev=button(controlIcon('left'),()=>{cardOffset--;scrollSelection=true;render();},'quiet icon-button'),next=button(controlIcon('right'),()=>{cardOffset++;scrollSelection=true;render();},'quiet icon-button');prev.setAttribute('aria-label','Previous schedule item');next.setAttribute('aria-label','Next schedule item');prev.disabled=index===0;next.disabled=index===cards.items.length-1;
 
-  const why=shown.reason||shown.evidence?helpControl([shown.evidence?.rule||shown.reason,shown.evidence?.deadline?'Deadline: '+formatDate(shown.evidence.deadline)+' '+formatTime(shown.evidence.deadline):null,shown.evidence?.availableMinutes?shown.evidence.availableMinutes+' minutes before the next boundary.':null].filter(Boolean).join(' '),'Why this action'):null;if(why)cardDetails.push(why);const hero=el('section',{class:'panel today-now now-'+shown.position.toLowerCase(),'aria-label':'Now'},el('div',{class:'now-navigation'},prev,el('span',{class:'now-position'},shown.position),next,why?.node),el('h2',{},shown.title),el('p',{class:'now-duration'},[shown.target?.day&&shown.target.day!==view.date?formatDate(shown.target.day):null,shown.suggestedMinutes?shown.suggestedMinutes+' min':null,shown.start&&shown.position!=='Now'?formatTime(shown.start):null,shown.end?'Until '+formatTime(shown.end):null].filter(Boolean).join(' · ')),shown.detail?el('p',{class:'now-detail'},shown.detail):null,canOpen(shown.target)?button(shown.buttonLabel||targetLabel(shown.target),()=>open({...shown.target,day:shown.target.day||view.date}),'now-start'):null,cardOffset?button('Back to Now',()=>{cardOffset=0;render();},'text-button'):null);if(!cardOffset&&view.urgentAction)hero.append(button('Due today · '+view.urgentAction.title,()=>open(view.urgentAction.target),'quiet now-urgent'));if(!cardOffset&&view.dueReminders?.length)hero.append(el('div',{class:'now-reminders','aria-label':'Due reminders'},...view.dueReminders.map(r=>button(r.title,()=>open(r.target),'text-button now-reminder reminder-line'))));const countdownNode=el('output',{class:'now-countdown','aria-label':'Time remaining'});hero.querySelector('.now-duration').append(countdownNode);const tick=()=>{const now=Date.parse(ctx.state.bootstrap.now)+Date.now()-(ctx.state.bootstrap.receivedAt??Date.now()),seconds=Math.max(0,Math.ceil((Date.parse(shown.end)-now)/1000));countdownNode.textContent=' · '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0')+' left';};tick();countdown=setInterval(tick,1000);swipeDays(hero,d=>{cardOffset+=d;render();});if(canOpen(shown.target))hero.addEventListener('click',e=>{if(!e.target.closest?.('button,a,input,select'))open({...shown.target,day:shown.target.day||view.date});});
+  const nowDate=new Date(view.now||ctx.state.bootstrap.now||Date.now()),clockText=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:getDisplayTimeZone()}).format(nowDate),start=Date.parse(shown.start),end=Date.parse(shown.end),lit=Number.isFinite(start)&&end>start?Math.max(0,Math.min(12,Math.ceil((nowDate.valueOf()-start)/(end-start)*12))):0;
+  const displayMeta=[shown.position!=='Now'?shown.position:null,shown.target?.day&&shown.target.day!==view.date?formatDate(shown.target.day):null,shown.start&&shown.position!=='Now'?formatTime(shown.start):null,shown.end?'Until '+formatTime(shown.end):shown.suggestedMinutes?shown.suggestedMinutes+' min':null].filter(Boolean).join(', ');
+  const hero=el('section',{class:'panel today-now instrument-display now-'+shown.position.toLowerCase(),'aria-label':'Now'},
+   el('time',{class:'display-clock num',datetime:nowDate.toISOString()},clockText),
+   el('div',{class:'display-date'},new Intl.DateTimeFormat('en-CA',{weekday:'long',month:'long',day:'numeric',timeZone:'UTC'}).format(new Date(date()+'T12:00:00Z'))),
+   el('div',{class:'display-current'},el('h2',{},el('span',{class:'led'+(shown.position==='Now'?' live':'')}),canOpen(shown.target)?button(shown.title,()=>open({...shown.target,day:shown.target.day||view.date}),'text-button now-start'):shown.title),el('p',{class:'now-duration'},displayMeta),!cardOffset&&view.upcoming?el('p',{class:'display-next'},'Next: '+view.upcoming.title+' '+compactTime(view.upcoming.start).replace(/[ap]$/,'')):null),
+   el('div',{class:'display-segments','aria-label':lit+' of 12 progress segments'},...Array.from({length:12},(_,i)=>el('i',{class:i<lit?'on':''}))),
+  );
+  clearTimeout(displayTimer);
+  displayUpdate=function refreshDisplay(){
+   clearTimeout(displayTimer);if(disposed||document.hidden)return;
+   const received=ctx.state.bootstrap.receivedAt??Date.now(),elapsed=Math.max(0,Date.now()-received),currentTime=new Date(nowDate.valueOf()+elapsed);
+   const clock=hero.querySelector('.display-clock');clock.textContent=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:getDisplayTimeZone()}).format(currentTime);clock.setAttribute('datetime',currentTime.toISOString());
+   const count=Number.isFinite(start)&&end>start?Math.max(0,Math.min(12,Math.ceil((currentTime.valueOf()-start)/(end-start)*12))):0;
+   const segments=hero.querySelector('.display-segments');segments.setAttribute('aria-label',count+' of 12 progress segments');[...segments.children].forEach((segment,i)=>segment.classList.toggle('on',i<count));
+   displayTimer=setTimeout(displayUpdate,60000-currentTime.valueOf()%60000);displayTimer.unref?.();
+  };
+  displayUpdate();
+  const back=button('Now',()=>{cardOffset=0;render();},'quiet compact now-return');back.setAttribute('aria-label','Back to now');back.disabled=!cardOffset;
+  const nowKeys=el('div',{class:'now-navigation'},prev,back,next);const segments=hero.querySelector('.display-segments');hero.append(el('div',{class:'display-footer'},segments,nowKeys));const countdownNode=el('output',{class:'now-countdown','aria-label':'Time remaining'});hero.querySelector('.now-duration').append(countdownNode);const tick=()=>{const now=Date.parse(ctx.state.bootstrap.now)+Date.now()-(ctx.state.bootstrap.receivedAt??Date.now()),seconds=Math.max(0,Math.ceil((Date.parse(shown.end)-now)/1000));countdownNode.textContent=' · '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0')+' left';};tick();countdown=setInterval(tick,1000);swipeDays(hero,d=>{cardOffset+=d;scrollSelection=true;render();});
 
-  const upcoming=!cardOffset&&view.upcoming?el('div',{class:'today-upcoming'},el('span',{},'Next'),el('div',{},el('strong',{},view.upcoming.title),el('span',{class:'muted'},` · ${formatTime(view.upcoming.start)}${view.upcoming.leaveBy?' · Leave by '+formatTime(view.upcoming.leaveBy):''}`))):null;
-
-  const alerts=(view.alerts||[]).map(a=>el('article',{class:'today-alert'},el('div',{},el('h2',{},a.title),a.events?el('p',{},a.events.map(e=>`${e.title||'Untitled event'} · ${range(e)}`).join(' / ')):el('p',{},a.reason)),button(a.events?'Review':'Open',()=>open(a.target),'quiet compact')));
+  notifications=notificationWidgets((view.alerts||[]).map(a=>({title:a.title,body:a.reason||a.detail||a.events?.map(e=>`${e.title||'Untitled event'}, ${range(e)}`).join(' / '),severity:a.severity||(/blocked|unverified|overdue|failed/i.test(a.title)?'blocked':'warning'),activate:()=>open(a.target)})),{className:'today-warnings'});
+  selectedCard=cardOffset?shown:null;
 
   if(!scheduleLoading&&!scheduleError&&selectedDay===view.date)schedule=view;renderSchedule();
 
-  const notices=view.dayNotices?.length?el('details',{class:'day-notices'},el('summary',{},'School calendar notices'),view.dayNotices.map(e=>button(`${e.title} · ${formatDate(e.start)}`,()=>eventDetails(e.id),'list-button'))):null;
+  const notices=view.dayNotices?.length?el('details',{class:'day-notices'},el('summary',{},'School calendar notices'),view.dayNotices.map(e=>button(`${e.title}, ${formatDate(e.start)}`,()=>eventDetails(e.id),'list-button'))):null;
 
   const updates=panel(null);updates.setAttribute('aria-label','Updates');updates.hidden=true;
 
@@ -170,10 +191,19 @@ export async function mount(root,ctx){
 
   const application=ctx.state.bootstrap.applications?.[0],steps=correctedSteps({id:application?.id,points:[null,null,null,null,application?.answer,application?.peopleAnswer]},ctx.records('devotional-step')).map(s=>s.text).slice(0,2);const applicationButton=steps.length?button(el('span',{},...steps.map(s=>el('span',{class:'application-line'},s))),()=>openApplication(application,()=>ctx.go('devotional?day='+view.date+'&entry='+encodeURIComponent(application.id))),'text-button today-applications'):null;
 
+  const checkins=friendReminders.node;
   const photoButton=ctx.capabilities?.dailyPhotos===false?null:button(controlIcon('camera'),()=>ctx.go('photos'),'quiet icon-button today-photo-button');photoButton?.setAttribute('aria-label','Daily photos');
-  replace(root,el('div',{class:'today-dispatcher'},el('div',{class:'page-heading'},el('div',{},el('div',{class:'today-title-row'},el('h1',{},'Today'),applicationButton),el('p',{},new Intl.DateTimeFormat('en-CA',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(date()+'T12:00:00Z')))),photoButton,ctx.capabilities?.personalAssistant===false?null:assistantButton(ctx,'today')),el('div',{class:'today-layout'},el('div',{class:'today-now-column'},hero,upcoming,...alerts,updates),scheduleHost),notices));
+  const dueRows=(view.academicRanked||view.school?.ranked||ctx.records('task')).filter(t=>!['complete','completed','submitted','cancelled','archived'].includes(t.data?.status??t.status)).slice(0,4);
+  const due=el('section',{},el('h2',{},'Due'),dueRows.length?dueRows.map(t=>{const d=t.data||t,urgency=deadlineUrgency(d,view.date||ctx.date(),Date.parse(ctx.state.bootstrap.now||view.now)||Date.now());return button(el('span',{class:'today-list-row'},el('span',{},d.title),el('small',{class:urgency},d.dueAt||d.dueDate?formatDate(d.dueAt||d.dueDate):'Date unknown')),()=>ctx.go('school?brief='+encodeURIComponent(t.id||t.taskId)),'text-button today-due');}):el('p',{class:'empty'},'No saved due work.'));
+  const reminders=el('section',{},el('h2',{},'Reminders'),...(view.dueReminders||[]).map(r=>button(el('span',{class:'today-list-row'},el('span',{},r.title)),()=>open(r.target),'text-button now-reminder')),button('Add reminder',()=>ctx.go('reminders?create=1'),'section-spacer'));
+  reminders.classList.add('now-reminders');reminders.setAttribute('aria-label','Due reminders');
+  replace(root,el('div',{class:'today-dispatcher'},
+   el('div',{class:'today-layout'},el('div',{class:'today-now-column'},hero),
+    el('div',{class:'page-heading'},el('div',{},el('div',{class:'today-title-row'},el('h1',{},'Today'))),el('div',{class:'actions workspace-tools'},notifications.bell,photoButton,ctx.capabilities?.personalAssistant===false?null:assistantButton(ctx,'today'))),
+    applicationButton,scheduleHost,el('aside',{class:'today-rail'},el('div',{class:'today-lists'},due,canOpen({route:'reminders'})?reminders:null),el('div',{class:'today-rail-content'},notifications.node,checkins,dayOptionsHost,updates))),notices));
 
-  releaseApplicationFit();if(applicationButton)releaseApplicationFit=fitApplicationLines(applicationButton,steps);releaseReminderFit();const reminders=hero.querySelector('.now-reminders');if(reminders)releaseReminderFit=fitApplicationLines(reminders,view.dueReminders.map(r=>r.title),{selector:'.reminder-line',lines:1.8});
+  selectScheduleRow(scheduleHost,selectedCard,{scroll:scrollSelection});scrollSelection=false;
+  releaseApplicationFit();if(applicationButton)releaseApplicationFit=fitApplicationLines(applicationButton,steps);releaseReminderFit();
   ctx.renderWorkspaceStatus?.();
   clearTimeout(timer);
 
@@ -185,8 +215,8 @@ export async function mount(root,ctx){
 
  const query=routeQuery();if(query.get('day')&&query.get('day')!==view.date){selectedDay=query.get('day');await changeDay(0);}if(query.get('event'))eventDetails(query.get('event'));else if(query.get('detail')==='conflicts')conflicts();
 
- const visibility=()=>{if(document.hidden)clearTimeout(timer);};document.addEventListener('visibilitychange',visibility);
+ const visibility=()=>{if(document.hidden){clearTimeout(timer);clearTimeout(displayTimer);}else displayUpdate();};document.addEventListener('visibilitychange',visibility);
 
- return {update(){if(disposed)return;void friendReminders.load();render();if(selectedDay!==view.date)void loadDay(selectedDay,false);},destroy(){friendReminders.destroy();scheduleDetails.splice(0).forEach(d=>d.destroy());cardDetails.splice(0).forEach(d=>d.destroy());disposed=true;clearInterval(countdown);releaseApplicationFit();releaseReminderFit();clearTimeout(timer);document.removeEventListener('visibilitychange',visibility);}};
+ return {update(){if(disposed)return;void friendReminders.load();render();if(selectedDay!==view.date)void loadDay(selectedDay,false);},destroy(){notifications?.destroy();friendReminders.destroy();scheduleDetails.splice(0).forEach(d=>d.destroy());cardDetails.splice(0).forEach(d=>d.destroy());disposed=true;clearInterval(countdown);releaseApplicationFit();releaseReminderFit();clearTimeout(timer);clearTimeout(displayTimer);document.removeEventListener('visibilitychange',visibility);}};
 
 }
