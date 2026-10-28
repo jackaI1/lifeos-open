@@ -236,6 +236,7 @@ Exact upstream tarball URLs, hashes and byte-comparison results: [SOURCE_VERIFIC
 
 | Component | Version | License | Source and notice |
 |---|---|---|---|
+| Barlow and Barlow Semi Condensed | Regular 400, Medium 500, SemiBold 600; Semi Condensed Medium 500 and SemiBold 600 | SIL OFL-1.1 | [Barlow source](https://github.com/google/fonts/tree/main/ofl/barlow), [Semi Condensed source](https://github.com/google/fonts/tree/main/ofl/barlowsemicondensed). Self-hosted WOFF2 conversions without glyph changes. Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow). Complete terms: [Barlow OFL](public/vendor/licenses/barlow/OFL.txt), [Semi Condensed OFL](public/vendor/licenses/barlow-semi-condensed/OFL.txt). |
 | PDF.js browser module and worker | 5.6.205 | Apache-2.0 | https://github.com/mozilla/pdf.js ; [LICENSE](public/vendor/pdfjs/LICENSE). Both files are byte-identical to pdfjs-dist 5.6.205 build/pdf.mjs and build/pdf.worker.mjs. No runtime-specific modifications. Upstream package has no root NOTICE file; upstream headers and license are retained. CMap/ICC license texts are retained conservatively; their binary assets are not bundled here. |
 | KaTeX, auto-render, CSS and 60 fonts | 0.18.7 | MIT | https://github.com/KaTeX/KaTeX ; [LICENSE](public/vendor/katex/LICENSE). All 63 files byte-identical to upstream package. All bundled font files are KaTeX fonts; no Apple/system font files. |
 | marked | 18.0.13 | MIT | https://github.com/markedjs/marked ; [LICENSE](public/vendor/marked/LICENSE). Byte-identical upstream ESM. |
@@ -277,3 +278,5 @@ available under the Apache 2.0 license (https://github.com/puppeteer/puppeteer/b
 See [ASSET_PROVENANCE.md](ASSET_PROVENANCE.md) for every demo asset, icon, screenshot and font. Demo media and icons were regenerated from original geometric art, teaching text and synthesized narration. The optional narration generator uses espeak-ng 1.0.2 (GPL-3.0-or-later; https://www.npmjs.com/package/espeak-ng/v/1.0.2) as an external build tool. The compiler/synthesizer is not bundled or a runtime dependency; the output is original speech from supplied text, with no sampled voice recordings or embedded software. Preserve the GPL if redistributing the generator itself. Pillow, used only to generate art, is MIT-CMU.
 
 No uncredited Stack Overflow/blog/repository copies were found outside the explicit vendored components. UI symbols are authored CSS/inline vector shapes or Unicode characters rendered by the user’s system fonts; no third-party icon font is bundled outside KaTeX.
+
+The added row-action SVG shapes in `public/ui.js` are original geometric drawings under MIT. No third-party icon package was added.
