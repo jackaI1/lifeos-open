@@ -2,7 +2,7 @@
 
 An open-source personal workspace for scheduling, coursework, lecture notebooks and everyday records, with local SQLite and a browser-only fictional demo.
 
-https://github.com/user-attachments/assets/808622e3-4662-4989-ad14-29b746979535
+https://github.com/user-attachments/assets/f4bbea53-1975-498b-9fda-e891a588e5cd
 
 ## Overview
 
