@@ -17,14 +17,14 @@ class Element extends EventTarget {
  focus(){document.activeElement=this;}
 }
 
-function fixture(t){
+function fixture(t,options={}){
  t.mock.timers.enable({apis:['setTimeout']});
  const previous=Object.fromEntries(['Node','document','window','innerHeight'].map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]));
  const document=new EventTarget(),window=new EventTarget();
  Object.assign(document,{createElement:tag=>new Element(tag),createElementNS:(_ns,tag)=>new Element(tag),createTextNode:()=>new Element('#text'),body:new Element('body')});
  Object.assign(window,{innerWidth:1000});
  for(const [key,value] of Object.entries({Node:Element,document,window,innerHeight:800}))Object.defineProperty(globalThis,key,{value,writable:true,configurable:true});
- const slider=document.createElement('input'),control=compactDisclosure({label:'Reasoning effort',portal:true,content:()=>slider});
+ const slider=document.createElement('input'),control=compactDisclosure({label:'Reasoning effort',portal:true,content:()=>slider,...options});
  const popup=control.node.children[1];document.body.append(control.node);
  t.after(()=>{control.destroy();for(const [key,descriptor] of Object.entries(previous)){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else delete globalThis[key];}});
  return {control,popup,slider,document,window};
@@ -101,4 +101,14 @@ test('resize and destroy close portaled content and release document listeners',
  const expanded=control.trigger.getAttribute('aria-expanded');
  send(document,'pointerdown');send(document,'keydown',{key:'Escape'});send(window,'resize');
  assert.equal(control.trigger.getAttribute('aria-expanded'),expanded);
+});
+
+
+test('a retired disclosure cannot reopen or activate its callback',t=>{
+ let activated=0;const {control,popup}=fixture(t,{onActivate:()=>activated++,canOpen:()=>false});
+ send(control.trigger,'click');assert.equal(activated,1);control.destroy();send(control.trigger,'click');control.show();assert.equal(activated,1);assert.equal(popup.hidden,true);
+});
+test('a portal selection closes after its actual action callback',t=>{
+ const {control,popup,document}=fixture(t,{closeOnSelect:true});control.show();let activated=0;const action=document.createElement('button');action.closest=()=>action;action.addEventListener('click',()=>activated++);popup.append(action);
+ send(action,'click');send(popup,'click',{target:action});assert.equal(activated,1);assert.equal(popup.hidden,true);
 });

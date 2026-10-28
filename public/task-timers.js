@@ -144,6 +144,18 @@ export function createTaskTimers(ctx,{now=()=>Date.now()}={}){
   const paint=()=>{const current=[...rows.values()].filter(r=>r.data.state!=='finished'&&samePage(r)).sort((a,b)=>b.data.startedAt-a.data.startedAt),running=current.filter(r=>r.data.state==='running'),r=running[0]??current[0];value.hidden=!r;value.textContent=r?formatTimer(timerReading(r.data,now()).total):'';node.classList.toggle('active',running.length>0);node.setAttribute('aria-label',r?`Timers and time history, ${r.data.title}, ${value.textContent}${running.length?' running':' paused'}`:'Timers and time history');};
   listeners.add(paint);paint();const interval=setInterval(paint,1000);interval.unref?.();return {node,destroy:()=>{listeners.delete(paint);clearInterval(interval);}};
  }
+ function practiceControl(target,{current:check=()=>true,title='Devotional',category='Devotional'}={}){
+  target=structuredClone(target);let ended=false,pending=false,tick;
+  const current=()=>!ended&&check()===true;
+  const selected=()=>[...rows.values()].filter(r=>r.data.state!=='finished'&&r.data.target?.kind===target.kind&&r.data.target.id===target.id).sort((a,b)=>b.data.changedAt-a.data.changedAt)[0];
+  const node=button([],async()=>{if(!current()||pending)return;pending=true;node.disabled=true;
+   try{await ready;if(!current())return;const row=selected();if(row)await update(row.id,row.data.state==='running'?'pause':'resume');else await start({title,category,target},{canStart:current,resumeOnVisibility:false});}
+   catch(error){if(current())toast(error.message);}finally{pending=false;if(current()){node.disabled=false;paint();}}
+  },'quiet practice-clock');
+  function paint(){clearTimeout(tick);if(!current())return;const row=selected(),running=row?.data.state==='running';node.replaceChildren(controlIcon(running?'pause':'play'),el('output',{},row?formatTimer(timerReading(row.data,now()).total):'0:00'));node.setAttribute('aria-label',running?'Pause devotional timer':row?'Resume devotional timer':'Start devotional timer');node.setAttribute('aria-pressed',String(running));if(running){tick=setTimeout(paint,1000);tick.unref?.();}}
+  listeners.add(paint);paint();void ready.then(()=>{if(current())paint();}).catch(()=>{});
+  return {node,destroy(){ended=true;clearTimeout(tick);listeners.delete(paint);}};
+ }
  async function open(){await ready;const defaults=timerContext(ctx),title=field('Title',{value:defaults.title,placeholder:'Optional'}),category=field('Category',{value:defaults.category,placeholder:'Optional'}),mode=select('Mode',[{value:'stopwatch',label:'Stopwatch'},{value:'timer',label:'Timer'}],'stopwatch'),minutes=field('Minutes',{type:'number',min:1,max:10080,value:25});minutes.node.hidden=true;mode.input.onchange=()=>minutes.node.hidden=mode.input.value!=='timer';
   const active=el('div',{class:'timer-list'}),history=el('div',{class:'timer-history'}),body=el('div',{class:'task-timers'},active,el('details',{},el('summary',{},'New timer'),el('div',{class:'timer-setup'},mode.node,minutes.node,title.node,category.node,button('Start',e=>busy(e.currentTarget,async()=>{const n=Number(minutes.input.value);if(mode.input.value==='timer'&&(!Number.isFinite(n)||n<1||n>10080))throw Error('Choose 1 to 10080 minutes.');await start({title:title.input.value.trim()||defaults.title||'Untitled',category:category.input.value.trim()||'Other',target:defaults.target,durationMs:mode.input.value==='timer'?n*60000:0});})))),el('details',{},el('summary',{},'History'),history));
   const displays=new Map(),empty=el('p',{},'No running timers.');let visible=100,historySignature='';const tick=()=>{for(const [id,{value}]of displays){const row=rows.get(id);if(!row)continue;const t=timerReading(row.data,now());value.textContent=(t.overtime?'+':'')+formatTimer(t.display);value.classList.toggle('overtime',t.overtime);}};
@@ -158,5 +170,5 @@ export function createTaskTimers(ctx,{now=()=>Date.now()}={}){
    tick();};
   let interval;modal('Timers',body,{onclose:()=>{listeners.delete(paint);clearInterval(interval);}});body.querySelector('details').open=true;listeners.add(paint);paint();interval=setInterval(()=>{if(!document.hidden)tick();},1000);interval.unref?.();void refresh(true);
  }
- return {control,open,start,ensure,update,resumeProject,finishTarget,refresh,rows,enterRoute,leaveRoute,setVisible,checkpoint,destroy(){disposed=true;generation++;clearInterval(heartbeat);globalThis.document?.removeEventListener('visibilitychange',visibility);globalThis.window?.removeEventListener('pagehide',pagehide);listeners.clear();}};
+ return {control,practiceControl,open,start,ensure,update,resumeProject,finishTarget,refresh,rows,enterRoute,leaveRoute,setVisible,checkpoint,destroy(){disposed=true;generation++;clearInterval(heartbeat);globalThis.document?.removeEventListener('visibilitychange',visibility);globalThis.window?.removeEventListener('pagehide',pagehide);listeners.clear();}};
 }

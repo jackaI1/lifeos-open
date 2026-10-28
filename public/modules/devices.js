@@ -16,11 +16,11 @@ export async function mountDevices(root, ctx) {
         if (disposed) return;
         const view = presenceStatus(result.devices, received.items || []);
         replace(observations, el('h3', {}, 'iPhone Shortcuts'), status(view.connected ? 'Credential connected' : 'No active credential', view.connected ? 'saved' : 'unknown'),
-          view.events.length ? el('p', {}, `${presenceLabel(view.events[0])} · ${localTime(view.events[0].occurredAt)}`) : empty('No real Shortcut event has been received.'),
-          view.events.length ? el('p', { class: 'save-meta' }, `Last received ${localTime(view.events[0].receivedAt)} · Toronto time`) : null,
+          view.events.length ? el('p', {}, `${presenceLabel(view.events[0])}, ${localTime(view.events[0].occurredAt)}`) : empty('No real Shortcut event has been received.'),
+          view.events.length ? el('p', { class: 'save-meta' }, `Last received ${localTime(view.events[0].receivedAt)}, Toronto time`) : null,
           el('details', {}, el('summary', {}, 'Four automations and recent events'),
             view.automations.map(item => el('p', { class: 'save-meta' }, `${presenceLabel(item)}: ${item.latest ? localTime(item.latest.occurredAt) : 'Not seen in loaded history. This is not evidence of failure.'}`)),
-            view.events.slice(0, 12).map(item => el('p', { class: 'save-meta' }, `${presenceLabel(item)} · ${localTime(item.occurredAt)} · Accepted`))));
+            view.events.slice(0, 12).map(item => el('p', { class: 'save-meta' }, `${presenceLabel(item)}, ${localTime(item.occurredAt)}, Accepted`))));
       } catch (error) { replace(observations, errorNotice(error)); }
       replace(list, ...(result.devices?.length ? result.devices.map(device => el('div', { class: 'practice-row' },
         el('div', { class: 'row' }, el('h3', {}, device.label || 'Unnamed device'), status(device.revoked ? 'Revoked' : 'Credential active', device.revoked ? 'unknown' : 'saved')),

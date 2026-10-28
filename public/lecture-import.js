@@ -101,7 +101,7 @@ export async function openLectureSources({ ctx, id, store, addBackground, addIma
             "p",
             {},
             source.role === "recording"
-              ? "Original recording · Note timing has not been mapped"
+              ? "Original recording, Note timing has not been mapped"
               : "Original retained in Drive",
           ),
           quiet(

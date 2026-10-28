@@ -5,7 +5,7 @@ import {AppError} from '../shared/errors.mjs';
 export async function workspaceAsset(request,env){
  const url=new URL(request.url),version=String(env.RELEASE_COMMIT??''),scoped=url.pathname.match(/^\/__assets\/([a-f0-9]{40})(\/.*)$/);
  if(url.pathname.startsWith('/__assets/')){
-  if(!scoped||!/^\/[A-Za-z0-9_./-]+\.(?:js|mjs|css)$/.test(scoped[2])||scoped[2].includes('..'))throw new AppError('Not found',404);
+  if(!scoped||!/^\/[A-Za-z0-9_./-]+\.(?:js|mjs|css|woff2)$/.test(scoped[2])||scoped[2].includes('..'))throw new AppError('Not found',404);
   // These vendor modules have never changed at these paths. Open lectures and
   // chats lazy-load them after deployment. Hash tests pin each dependency pair;
   // future upgrades must use new paths, not overwrite these originals.
