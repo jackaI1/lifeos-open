@@ -8,7 +8,7 @@ export function academicCoverageIssues({courses=[],integrations=[],now=Date.now(
   if(source.kind==='deadline-conflict'&&source.status==='resolved'&&source.resolution?.evidenceUrls?.length)continue;
   const checked=Date.parse(source.lastVerifiedAt??'');
   if(source.status==='verified'&&Number.isFinite(checked)&&Number(now)-checked<=36*3600000)continue;
-  issues.push({id:'assessment:'+course.id+':'+source.url,courseId:course.id,title:(data(course).code||data(course).title)+' · '+(source.kind==='deadline-conflict'?'Conflicting deadlines':source.title+' deadlines unverified'),reason:source.reason||'This separate assignment source has not been checked. Its work may be missing from the task list.',url:source.url});
+  issues.push({id:'assessment:'+course.id+':'+source.url,courseId:course.id,title:(data(course).code||data(course).title)+', '+(source.kind==='deadline-conflict'?'Conflicting deadlines':source.title+' deadlines unverified'),reason:source.reason||'This separate assignment source has not been checked. Its work may be missing from the task list.',url:source.url});
  }
  return issues;
 }

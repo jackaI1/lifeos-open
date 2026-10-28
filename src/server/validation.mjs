@@ -1,3 +1,4 @@
+import {themeIds} from '../../public/themes.js';
 import {validatePrayerList,validatePrayerNodes} from '../../public/prayer-tree.js';
 import {validateDocument,documentText} from '../../public/document-format.js';
 import {selectedPassage} from '../../public/bible.js';
@@ -7,7 +8,7 @@ import {githubProjectUrl} from '../../public/github-project-url.js';
 const fields={
  'prayer-list':'sections',
  'accountability-draft':'entryId entryVersion previousEntryId prayerSessionId prayed repentance followThrough applications text status approvedAt',
- settings:'spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder schoolMorningStart schoolMorningEnd schoolAfternoonStart schoolAfternoonEnd timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
+ settings:'theme spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder schoolMorningStart schoolMorningEnd schoolAfternoonStart schoolAfternoonEnd timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
  'prayer-note':'section title text archived rotation people notes weekday weekdays nodes',
  project:'title category notes status archived nextStep steps timeBlocks githubUrl',meal:'title notes recipe day slot ingredients steps',grocery:'title checked quantity notes archived',
  coursework:'title taskId text language document attachmentIds notes archived',training:'weeklyKm longestKm pain injury recovery guidance raceDate goalMinutes sundayExceptionConfirmed baselineDate notes',
@@ -39,6 +40,7 @@ export function recordData(kind,input){
  if(kind==='project'&&data.githubUrl!==undefined){const url=githubProjectUrl(data.githubUrl);if(!url)throw new AppError('Use an HTTPS GitHub profile or repository URL');data.githubUrl=url;}
  if(kind==='accountability-draft'){identifier(data.entryId);version(data.entryVersion);for(const k of ['previousEntryId','prayerSessionId'])if(data[k]!=null)identifier(data[k]);for(const k of ['prayed','repentance','followThrough','applications','text'])text(data[k],22000);enumValue(data.status,['draft','approved']);if(data.approvedAt!=null&&!Number.isFinite(Date.parse(data.approvedAt)))throw new AppError('Invalid approval time');}
  if(kind==='settings'){
+  if(data.theme!==undefined)enumValue(data.theme,themeIds);
   if(data.notificationDeviceId)identifier(data.notificationDeviceId);
   if(data.textSize!==undefined)enumValue(data.textSize,['standard','large','largest']);if(data.controlDensity!==undefined)enumValue(data.controlDensity,['compact','spacious']);if(data.handedness!==undefined)enumValue(data.handedness,['left','right']);
   if(data.accountabilityDiscordUrl!==undefined&&!/^https:\/\/discord\.com\/channels\/@me\/\d+$/.test(data.accountabilityDiscordUrl))throw new AppError('Use the Discord direct-message URL');

@@ -43,7 +43,7 @@ test('GitHub projects open externally while ordinary projects keep their editor'
  }
  const previousNode=globalThis.Node,previousDocument=globalThis.document;
  globalThis.Node=Node;
- globalThis.document={createElement:tag=>new Node(tag),createTextNode:text=>new Node('#text',text)};
+ globalThis.document={createElementNS:(_namespace,tag)=>new Node(tag),createElement:tag=>new Node(tag),createTextNode:text=>new Node('#text',text)};
  try{
   const external=projectOpenControl({id:'portfolio',data:{githubUrl:profile}},()=>assert.fail('External project must use its link'));
   assert.equal(external.tagName,'a');
@@ -53,7 +53,7 @@ test('GitHub projects open externally while ordinary projects keep their editor'
   assert.equal(external.children[0].textContent,'Open');
   let opened=null;
   const internal={id:'new-user-project',data:{title:'My own project'}},button=projectOpenControl(internal,row=>{opened=row.id;});
-  assert.equal(button.tagName,'button');button.listeners.click();assert.equal(opened,'new-user-project');
+  assert.equal(button.tagName,'button');assert.equal(button.attributes['aria-label'],'Open');assert.equal(button.children[0].tagName,'svg');button.listeners.click();assert.equal(opened,'new-user-project');
   const unsafe=projectOpenControl({id:'unsafe',data:{githubUrl:'https://evil.test'}},()=>{});
   assert.equal(unsafe.tagName,'button');
  }finally{globalThis.Node=previousNode;globalThis.document=previousDocument;}

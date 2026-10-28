@@ -1,8 +1,9 @@
+import {applyTheme,cachedTheme} from './themes.js';
+applyTheme(cachedTheme());
 import {configureAssistantPresets} from './assistant-presets.js';
 import {configureExternalLinks} from './ui.js';
 import {createTaskTimers} from './task-timers.js';
 import {routesFor,routeModule} from './routes.js';
-import {locationControl} from './location-control.js';
 import {restoreLiveNoteDock} from './lecture-session.js';
 import {settleRouteTop} from './route-scroll.js';
 import {applyWorkspacePreferences} from './workspace-preferences.js';
@@ -14,18 +15,18 @@ import {nextLifeosDayAt} from './lifeos-day.js';
 import { PrivateStore, MutationOutbox } from './storage.js';
 import { FileUploads } from './uploads.js';
 import { PrayerRecovery } from './prayer-recovery.js';
-import { $, el, replace, append, button, heading, panel, empty, status, modal, toast, icon, dateToday, errorNotice, showResult, field, busy, download, getDisplayTimeZone, setDisplayTimeZone } from './ui.js';
+import { $, el, replace, append, button, heading, arrangePageControls, panel, empty, status, modal, toast, icon, dateToday, errorNotice, showResult, field, busy, download, getDisplayTimeZone, setDisplayTimeZone } from './ui.js';
 
 
 const editableFields = {
  'prayer-list':'sections',
  'accountability-draft':'entryId entryVersion previousEntryId prayerSessionId prayed repentance followThrough applications text status approvedAt',
-  settings: 'notificationDeviceId textSize controlDensity handedness hourlyPrayerReminder accountabilityDiscordUrl timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd schoolMorningStart schoolMorningEnd schoolAfternoonStart schoolAfternoonEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
+  settings: 'notificationDeviceId theme textSize controlDensity handedness hourlyPrayerReminder accountabilityDiscordUrl timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd schoolMorningStart schoolMorningEnd schoolAfternoonStart schoolAfternoonEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
   'prayer-note': 'section title text archived rotation people notes weekday weekdays nodes', project: 'title category notes status archived nextStep steps timeBlocks githubUrl', meal: 'title notes recipe day slot ingredients steps', grocery: 'title checked quantity notes archived', coursework: 'title taskId text language document attachmentIds notes archived', training: 'weeklyKm longestKm pain injury recovery guidance raceDate goalMinutes sundayExceptionConfirmed baselineDate notes', run: 'date distanceKm durationMinutes effort pain fatigue notes workoutId', 'support-thread': 'title archived model effort', 'coop-role':'title employer sourceUrl deadlineDate deadlineTime deadlineEvidence status location industry description notes draftText archived'
 };
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 const state = { session: null, bootstrap: { records: {}, jobs: [], integrations: [], today: {} }, online: false, route: null };
-const store = new PrivateStore(); let active = null; let routeToken = 0; let refreshPromise = null; let rolloverTimer;let liveLocation;
+const store = new PrivateStore(); let active = null; let routeToken = 0; let refreshPromise = null; let rolloverTimer;
 const loadedVersion=import.meta.url.match(/\/__assets\/([a-f0-9]{40})\//)?.[1];
 // An attempted navigation does not retire the page that is still on screen.
 // Each committed page keeps its own supplied root and cleanup resources.
@@ -51,13 +52,13 @@ function renderAppTools(owner=presentation){if(!context.timers)return;
  if(!host){removeControl(owner,'clock');owner.clock=context.timers.control();owner.clock.node.classList.add('task-clock-corner');owner.root.append(owner.clock.node);return;}
  if(host.classList.contains('lecture-top')||host.classList.contains('assistant-header')){removeControl(owner,'clock');owner.clock=context.timers.control();host.append(owner.clock.node);return;}
  let tools=host.querySelector(':scope > .actions, :scope > .workspace-tools');if(!tools){tools=el('div',{class:'actions workspace-tools'});host.append(tools);}for(const node of host.querySelectorAll(':scope > .icon-button, :scope > .workspace-status'))tools.append(node);
- if(!host.querySelector('.action-finder')){const find=button(controlIcon('zoom'),()=>openActionFinder(context,routesFor(state.session?.environment)),'quiet icon-button action-finder');find.setAttribute('aria-label','Find a record or page');find.title='Find · Ctrl+K';tools.append(find);}
- if(!liveLocation)liveLocation=locationControl(context);tools.append(liveLocation.node);
- removeControl(owner,'clock');owner.clock=context.timers.control();tools.append(owner.clock.node);
+ if(!host.querySelector('.action-finder')){const find=button(controlIcon('zoom'),()=>openActionFinder(context,routesFor(state.session?.environment)),'quiet icon-button action-finder');find.setAttribute('aria-label','Find a record or page');find.title='Find, Ctrl+K';tools.append(find);}
+ removeControl(owner,'clock');owner.clock=state.route==='devotional'?null:context.timers.control();if(owner.clock)tools.append(owner.clock.node);
  removeControl(owner,'update');
  if(loadedVersion&&state.session?.version!==loadedVersion){owner.update=compactDisclosure({label:'App update available',icon:'retry',content:()=>el('div',{},el('p',{},'An app update is available.'),button('Update when saved',async()=>{const pending=(await store.list('outbox:')).length;if(!livePage(owner))return;const reason=updateBlockReason({dirty:active?.dirty?.(),pending,editing:editingElement(document.activeElement)});if(reason){toast(reason);return;}location.reload();},'text-button'))});tools.append(owner.update.node);}
+ arrangePageControls(host);
 }
-function renderWorkspaceStatus(owner=presentation){if(!livePage(owner))return;removeControl(owner,'workspace');const host=owner.root.querySelector('.page-heading');if(!state.notice||!host)return;owner.workspace=compactDisclosure({label:'Workspace needs attention',icon:state.authExpired?'alert':state.online?'device':'alert',content:()=>el('div',{},el('p',{},state.notice),state.authExpired?el('a',{href:'/login',target:'_blank',rel:'noopener'},'Sign in'):button('Review saved work',()=>context.go('settings?section=recovery'),'text-button'))});owner.workspace.node.classList.add('workspace-status');(host.querySelector(':scope > .actions, :scope > .workspace-tools')||host).append(owner.workspace.node);}
+function renderWorkspaceStatus(owner=presentation){if(!livePage(owner))return;removeControl(owner,'workspace');const host=owner.root.querySelector('.page-heading');if(!state.notice||!host)return;owner.workspace=compactDisclosure({portal:true,label:'Workspace needs attention',icon:state.authExpired?'alert':state.online?'device':'alert',content:()=>el('div',{},el('p',{},state.notice),state.authExpired?el('a',{href:'/login',target:'_blank',rel:'noopener'},'Sign in'):button('Review saved work',()=>context.go('settings?section=recovery'),'text-button'))});owner.workspace.node.classList.add('workspace-status');(host.querySelector(':scope > .actions, :scope > .workspace-tools')||host).append(owner.workspace.node);arrangePageControls(host);}
 
 function armDayRollover(){clearTimeout(rolloverTimer);rolloverTimer=setTimeout(()=>{if(active?.dirty?.())notice('A new LifeOS day has started. Your open entry keeps its selected date.');void refresh({redraw:true}).catch(()=>{}).finally(armDayRollover);},Math.max(1000,nextLifeosDayAt(Date.now(),getDisplayTimeZone())-Date.now()+50));}
 const jobWatchers = new WeakMap();
@@ -161,12 +162,18 @@ const context = {
 context.uploads = new FileUploads({ store, request, action: context.action });
 const prayerRecovery = new PrayerRecovery({store,request,action:context.action,changed:()=>window.dispatchEvent(new Event('lifeos-prayer-recovered'))});
 context.retryPrayerUploads=()=>prayerRecovery.kick();
-function navLink([id, title]) { return el('a', { class: 'nav-link', href: `#${id}`, 'aria-current': state.route === id ? 'page' : null }, icon(id), title); }
+const keyLegends={today:'Today',devotional:'Devotion',prayer:'Prayer',school:'School',tickets:'Projects',exercise:'Exercise',reminders:'Remind',finances:'Money',notes:'Notes',friends:'Friends',journal:'Journal',photos:'Photos',support:'Support',settings:'Settings'};
+function navLink([id, title]) { return el('a', { class: 'nav-link', href: `#${id}`, 'aria-label':title, 'aria-current': state.route === id ? 'page' : null }, icon(id), keyLegends[id]||title); }
+function moreKey(visible){
+ const remaining=routesFor(state.session?.environment).filter(([id])=>!visible.includes(id));
+ const more=button([icon('more'),'More'],()=>modal('More',el('nav',{class:'more-links','aria-label':'More navigation'},remaining.map(item=>{const a=navLink(item);a.onclick=()=>$('#dialog').close();return a;}))),'nav-link');
+ more.setAttribute('aria-label','More navigation');if(remaining.some(([id])=>id===state.route))more.setAttribute('aria-current','page');return more;
+}
 function renderNavigation() {
-  const routes=routesFor(state.session?.environment);
-  $('#navigation').replaceChildren(...routes.map(navLink));
-  $('#mobile-navigation').replaceChildren(...routes.slice(0, 4).map(navLink), button('', () => modal('More in LifeOS', el('nav', { class: 'more-links', 'aria-label': 'More navigation' }, routes.slice(4).map(item => { const a = navLink(item); a.onclick = () => $('#dialog').close(); return a; }))), ''));
-  const more = $('#mobile-navigation').lastChild; replace(more, icon('more'), 'More'); if (routes.slice(4).some(([id]) => id === state.route)) more.setAttribute('aria-current', 'page');
+ const desktop=['today','devotional','school','exercise','reminders','finances','notes','friends'],mobile=['today','school','reminders','notes'];
+ const routes=routesFor(state.session?.environment);
+  $('#navigation').replaceChildren(...desktop.map(id=>navLink(routes.find(r=>r[0]===id))),moreKey(desktop));
+ $('#mobile-navigation').replaceChildren(...mobile.map(id=>navLink(routes.find(r=>r[0]===id))),moreKey(mobile));
 }
 async function navigate(force = false) {
   const routes=routesFor(state.session?.environment);
@@ -198,7 +205,7 @@ async function navigate(force = false) {
   if(!currentLeave()){refuse();return;}
   leavingOwner.root.replaceWith(root);leavingOwner.retired=true;presentation=owner;active=null;state.route=route;state.routeHash=destinationHash;
   observePage(owner);retirePage(leavingOwner);if(!livePage(owner))return;
-  renderNavigation();document.title=`${routes.find(([id])=>id===route)[1]} · LifeOS`;
+  renderNavigation();document.title=`${routes.find(([id])=>id===route)[1]}, LifeOS`;
   document.querySelector('#dialog')?.close();window.scrollTo({top:0,left:0,behavior:'instant'});
   try{
     await context.timers.enterRoute(destinationHash);if(!livePage(owner))return;

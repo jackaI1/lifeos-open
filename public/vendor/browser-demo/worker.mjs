@@ -4569,7 +4569,7 @@ var init_prayer_tree = __esm({
     "use strict";
     init_globals();
     init_prayer_format();
-    PRAYER_TITLES = ["Thanksgiving and Adoration", "Repentance", "Daily others", "Daily bread", "Regular others", "Spontaneous Others"];
+    PRAYER_TITLES = ["Thanksgiving and adoration", "Repentance", "Daily others", "Daily bread", "Regular others", "Spontaneous others"];
     PRAYER_IDS = ["thanksgiving", "repentance", "daily-others", "daily-bread", "regular-others", "spontaneous-others"];
   }
 });
@@ -4640,6 +4640,24 @@ init_globals();
 
 // src/server/validation.mjs
 init_globals();
+
+// public/themes.js
+init_globals();
+var themes = Object.freeze([
+  { "id": "graphite", "name": "Graphite", "chassis": "#2B2D30", "display": "#15191A", "displayInk": "#E8F0EC", "ink": "#F1F1EE", "primary": "#F6C343" },
+  { "id": "midnight", "name": "Midnight", "chassis": "#121620", "display": "#070A10", "displayInk": "#D8E4F7", "ink": "#E7EBF3", "primary": "#E8B34B" },
+  { "id": "desk", "name": "Desk", "chassis": "#E4E3DF", "display": "#1C2022", "displayInk": "#E9EFEB", "ink": "#1B1C1E", "primary": "#F2B21B" },
+  { "id": "aluminium", "name": "Aluminium", "chassis": "#CDD0D2", "display": "#050505", "displayInk": "#F4F4F4", "ink": "#141516", "primary": "#FF5E1A" },
+  { "id": "handheld", "name": "Handheld", "chassis": "#C9C7C0", "display": "#A3AC6E", "displayInk": "#22341A", "ink": "#26262B", "primary": "#A0245C" },
+  { "id": "field", "name": "Field radio", "chassis": "#383C30", "display": "#121410", "displayInk": "#F2AE3D", "ink": "#EBEAE0", "primary": "#E3A23B" },
+  { "id": "cassette", "name": "Cassette", "chassis": "#2C4561", "display": "#0E1824", "displayInk": "#E3ECF5", "ink": "#EEF3F8", "primary": "#F07B2C" },
+  { "id": "calculator", "name": "Calculator", "chassis": "#26221F", "display": "#A8AD9C", "displayInk": "#1C1F1A", "ink": "#F0ECE4", "primary": "#E3A43C" },
+  { "id": "platinum", "name": "Platinum", "chassis": "#D4D4D4", "display": "#F7F7F5", "displayInk": "#111111", "ink": "#111111", "primary": "#111111" },
+  { "id": "nightdrive", "name": "Night drive", "chassis": "#0C0C0D", "display": "#000000", "displayInk": "#FF7A3D", "ink": "#E9E4E0", "primary": "#FF7A3D" }
+]);
+var themeIds = Object.freeze(themes.map((theme) => theme.id));
+
+// src/server/validation.mjs
 init_prayer_tree();
 
 // public/document-format.js
@@ -5487,7 +5505,7 @@ function githubProjectUrl(value) {
 var fields = {
   "prayer-list": "sections",
   "accountability-draft": "entryId entryVersion previousEntryId prayerSessionId prayed repentance followThrough applications text status approvedAt",
-  settings: "spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder schoolMorningStart schoolMorningEnd schoolAfternoonStart schoolAfternoonEnd timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions",
+  settings: "theme spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder schoolMorningStart schoolMorningEnd schoolAfternoonStart schoolAfternoonEnd timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions",
   "prayer-note": "section title text archived rotation people notes weekday weekdays nodes",
   project: "title category notes status archived nextStep steps timeBlocks githubUrl",
   meal: "title notes recipe day slot ingredients steps",
@@ -5603,6 +5621,7 @@ function recordData(kind, input) {
     if (data3.approvedAt != null && !Number.isFinite(Date.parse(data3.approvedAt))) throw new AppError("Invalid approval time");
   }
   if (kind === "settings") {
+    if (data3.theme !== void 0) enumValue(data3.theme, themeIds);
     if (data3.notificationDeviceId) identifier(data3.notificationDeviceId);
     if (data3.textSize !== void 0) enumValue(data3.textSize, ["standard", "large", "largest"]);
     if (data3.controlDensity !== void 0) enumValue(data3.controlDensity, ["compact", "spacious"]);
@@ -6500,7 +6519,7 @@ function academicCoverageIssues({ courses = [], integrations = [], now = Date.no
     if (source.kind === "deadline-conflict" && source.status === "resolved" && source.resolution?.evidenceUrls?.length) continue;
     const checked = Date.parse(source.lastVerifiedAt ?? "");
     if (source.status === "verified" && Number.isFinite(checked) && Number(now) - checked <= 36 * 36e5) continue;
-    issues.push({ id: "assessment:" + course.id + ":" + source.url, courseId: course.id, title: (data(course).code || data(course).title) + " \xB7 " + (source.kind === "deadline-conflict" ? "Conflicting deadlines" : source.title + " deadlines unverified"), reason: source.reason || "This separate assignment source has not been checked. Its work may be missing from the task list.", url: source.url });
+    issues.push({ id: "assessment:" + course.id + ":" + source.url, courseId: course.id, title: (data(course).code || data(course).title) + ", " + (source.kind === "deadline-conflict" ? "Conflicting deadlines" : source.title + " deadlines unverified"), reason: source.reason || "This separate assignment source has not been checked. Its work may be missing from the task list.", url: source.url });
   }
   return issues;
 }
@@ -9698,7 +9717,7 @@ init_globals();
 async function workspaceAsset(request, env) {
   const url = new URL(request.url), version2 = String(env.RELEASE_COMMIT ?? ""), scoped = url.pathname.match(/^\/__assets\/([a-f0-9]{40})(\/.*)$/);
   if (url.pathname.startsWith("/__assets/")) {
-    if (!scoped || !/^\/[A-Za-z0-9_./-]+\.(?:js|mjs|css)$/.test(scoped[2]) || scoped[2].includes("..")) throw new AppError("Not found", 404);
+    if (!scoped || !/^\/[A-Za-z0-9_./-]+\.(?:js|mjs|css|woff2)$/.test(scoped[2]) || scoped[2].includes("..")) throw new AppError("Not found", 404);
     const pinnedVendor = ["/vendor/pdfjs/pdf.mjs", "/vendor/pdfjs/pdf.worker.mjs", "/vendor/katex/katex.mjs", "/vendor/katex/contrib/auto-render.mjs"].includes(scoped[2]);
     if (scoped[1] !== version2 && !pinnedVendor) throw new AppError("This app version has changed. Reload the page to continue.", 409, "app_version_changed");
     url.pathname = scoped[2];

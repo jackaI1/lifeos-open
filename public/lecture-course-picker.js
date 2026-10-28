@@ -8,7 +8,7 @@ export function mergeCourseDecks(saved,live){
 export function courseDeckOptions(items,query=''){
  const words=query.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
  return items.filter(r=>words.every(w=>(r.data.title+' '+(r.data.section??'')).toLocaleLowerCase().includes(w)))
-  .map(r=>({value:r.id,label:(r.data.section?r.data.section+' · ':'')+r.data.title}));
+  .map(r=>({value:r.id,label:(r.data.section?r.data.section+', ':'')+r.data.title}));
 }
 export async function openCourseDeckPicker({ctx,id,onAttach,onOther}){
  const body=el('div',{class:'form-stack'}),status=el('p',{role:'status'}),list=el('div'),search=field('Find a PDF',{type:'search',placeholder:'Title or folder'}),first=field('First slide',{type:'number',min:1,max:2000}),last=field('Last slide',{type:'number',min:1,max:2000});

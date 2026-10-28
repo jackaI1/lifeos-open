@@ -105,6 +105,7 @@ export async function mountLectures(root, ctx) {
         "Lectures",
         null,
         el("div",{class:"actions"},quiet("Academics", () => ctx.go("school")),quiet("Check readiness",()=>showLectureReadiness(ctx))),
+        courses.length+" courses",
       ),
       ...Array.from(terms, ([term, list]) =>
         panel(
@@ -177,7 +178,7 @@ async function mountCourse(root, ctx, course, store) {
   let catalog={items:[],library:null};
   try { catalog=await ctx.request('/api/lecture-lessons?course='+encodeURIComponent(course.id));await store.put('lessons:'+course.id,catalog); }
   catch { catalog=await store.get('lessons:'+course.id)??catalog; }
-  const due=el('div',{class:'lecture-review-due'});try{const reviews=await ctx.request('/api/lecture-reviews?course='+encodeURIComponent(course.id));const grouped=new Map();for(const item of reviews.items)grouped.set(item.lectureId,{title:item.lectureTitle,count:(grouped.get(item.lectureId)?.count??0)+1});for(const [lectureId,r]of grouped)due.append(el('a',{href:'#'+route(course.id,lectureId)+'&study=review'},`${r.title} · ${r.count} to review`));}catch{}
+  const due=el('div',{class:'lecture-review-due'});try{const reviews=await ctx.request('/api/lecture-reviews?course='+encodeURIComponent(course.id));const grouped=new Map();for(const item of reviews.items)grouped.set(item.lectureId,{title:item.lectureTitle,count:(grouped.get(item.lectureId)?.count??0)+1});for(const [lectureId,r]of grouped)due.append(el('a',{href:'#'+route(course.id,lectureId)+'&study=review'},`${r.title}, ${r.count} to review`));}catch{}
   const host = el("div"),
     create = button("+ Lecture", async () => {
       try {
@@ -190,7 +191,7 @@ async function mountCourse(root, ctx, course, store) {
             value:
               event?.title ||
               event?.summary ||
-              (course.data.code || "Lecture") + " · " + formatDate(now),
+              (course.data.code || "Lecture") + ", " + formatDate(now),
             maxLength: 200,
           }),
           capture = select(
@@ -270,6 +271,7 @@ async function mountCourse(root, ctx, course, store) {
       course.data.code || course.data.title,
       null,
       quiet("All courses", () => ctx.go("school?lectures=all")),
+      "Lectures",
     ),
     el("div", { class: "row" }, el("h2", {}, "Lectures"), create),
     due,host,
@@ -307,9 +309,9 @@ async function mountCourse(root, ctx, course, store) {
                 "span",
                 {},
                 formatDate(r.data.startedAt) +
-                  " · " +
+                  ", " +
                   formatTime(r.data.startedAt) +
-                  " · " +
+                  ", " +
                   (r.data.recordingStatus === "available"
                     ? "Audio saved"
                     : ["partial", "pending"].includes(r.data.recordingStatus)
@@ -317,7 +319,7 @@ async function mountCourse(root, ctx, course, store) {
                       : r.data.importedRecordingCount
                         ? "Backup recording attached"
                         : "Notes") +
-                  (r.data.endedAt ? " · " + elapsed(r.data.lastOffsetMs) : ""),
+                  (r.data.endedAt ? ", " + elapsed(r.data.lastOffsetMs) : ""),
               ),
             ),
           ),
@@ -559,7 +561,7 @@ async function mountWorkspace(root, ctx, course, id, store) {
       slides?.close();
       slides=await openSourceCrop({bytes,mimeType:source.data.mimeType,name:source.data.title,sourceId:source.id,floating:true,initialPage:selectedPage,pageRange:source.data.pageRange??remote.item.data.lessonPageRange,addBackground:addSourceBackground,addCrop:pasteCrop,openNotebook:async(context)=>{await notebook.update(l=>({...l,mode:"slides"}));sizePaper();renderPageControls();const selected=[...pages].find(([,p])=>p.page?.background?.sourceId===context?.sourceId&&p.page.background.sourcePage===context?.pageNumber);if(selected)await openPage(selected[0]);scheduleFlush();},onCurrent:context=>{currentSlideContext=context;}});
       if(dead){slides.close();return;}
-      if(sourceChoices.length>1){const choice=select('Slide deck',sourceChoices.map((r,i)=>({value:r.id,label:r.data.title+(r.data.snapshot?' · version '+(i+1):'')})),source.id);choice.input.onchange=()=>void showSlides(choice.input.value).catch(e=>toast(e.message));slides.element.querySelector('.slide-dock-content').prepend(choice.node);}
+      if(sourceChoices.length>1){const choice=select('Slide deck',sourceChoices.map((r,i)=>({value:r.id,label:r.data.title+(r.data.snapshot?', version '+(i+1):'')})),source.id);choice.input.onchange=()=>void showSlides(choice.input.value).catch(e=>toast(e.message));slides.element.querySelector('.slide-dock-content').prepend(choice.node);}
     }finally{slidesOpening=false;}
   }
   async function attachDeck(){return openCourseDeckPicker({ctx,id,onAttach:async(item)=>{sourceChoices=null;await showSlides(item.id);},onOther:()=>openLectureSources({ctx,id,store,defaultRole:'slides',addBackground:addSourceBackground,addImage:pasteCrop,onSourceChange:()=>{sourceChoices=null;}})});}
@@ -592,13 +594,27 @@ async function mountWorkspace(root, ctx, course, id, store) {
   const help=helpControl('Pencil and mouse write. Enable Draw with touch in Paper options for finger writing; otherwise one finger pans and two pinch to zoom. Scribble back and forth to erase, or use Undo. Highlight a line or circle writing to mark it.','Note tools');
   disposables.push(penOptions,highlightOptions,eraseOptions,graphOptions,paperOptions,zoomOptions,help);
   const deleteImageButton=iconButton('trash','Delete selected image',()=>void (selectionEditor?.hasSelection()?selectionEditor.deleteSelected():imageEditor?.deleteSelected()));deleteImageButton.disabled=true;
-  const tools=el('div',{class:'lecture-tools',role:'toolbar','aria-label':'Note tools'},el('div',{class:'ink-tool-group'},penButton,penOptions.node,eraserButton,eraseOptions.node,lassoButton,highlightButton,highlightOptions.node),el('div',{class:'ink-tool-group'},graphButton,graphOptions.node),el('div',{class:'ink-tool-group'},undoButton,redoButton,deleteImageButton),el('div',{class:'ink-tool-group'},listenButton,zoomOptions.node),help.node);
+  const secondaryTools=el('div',{class:'lecture-secondary-tools'},el('div',{class:'ink-tool-group'},eraseOptions.node,lassoButton,highlightButton,highlightOptions.node),el('div',{class:'ink-tool-group'},graphButton,graphOptions.node),el('div',{class:'ink-tool-group'},redoButton,deleteImageButton),el('div',{class:'ink-tool-group'},listenButton,zoomOptions.node),help.node);
+  const secondaryActions=el('div',{class:'lecture-secondary-actions'},iconButton('bookmark','Bookmark this moment',run(bookmark)),iconButton('study','Study tools',run(toggleStudy)),iconButton('camera','Take lecture photo',()=>chooseLecturePhoto(takePhoto,{camera:true})),iconButton('paste','Paste image',run(()=>pasteLecturePhoto(takePhoto))),iconButton('image','Lecture photos',run(()=>showLecturePhotos({ctx,store,id,onInsert:insertPhoto,onTutor:toggleTutor}))),quiet('Transcript',run(showTranscript)),quiet('Slides',run(()=>showSlides())),iconButton('add','Add slide deck',run(attachDeck)));
+  let moreSheet=null;
+  const moreButton=button('More',openMoreTools,'quiet compact lecture-more');moreButton.setAttribute('aria-haspopup','dialog');
+  const tools=el('div',{class:'lecture-tools',role:'toolbar','aria-label':'Note tools'},el('div',{class:'ink-tool-group lecture-primary-tools'},penButton,penOptions.node,eraserButton,undoButton),secondaryTools,moreButton);
+  function openMoreTools(){
+    if(dead||moreSheet)return;
+    const paperParent=paperOptions.node.parentNode,body=el('div',{class:'lecture-more-sheet'},secondaryTools,secondaryActions,paperOptions.node),dialog=modal('Note tools',body);
+    let restored=false;
+    const restore=()=>{if(restored)return;restored=true;for(const d of [eraseOptions,highlightOptions,graphOptions,zoomOptions,help,paperOptions])d.hide();tools.insertBefore(secondaryTools,moreButton);root.querySelector('.lecture-bottom')?.insertBefore(secondaryActions,audio);paperParent?.append(paperOptions.node);dialog.removeEventListener('close',restore);moreSheet=null;};
+    const close=()=>{restore();if(dialog.open&&dialog.contains(body))dialog.close();};moreSheet={close};dialog.addEventListener('close',restore,{once:true});
+    // End the sheet before original action callbacks open another view or shared dialog.
+    body.addEventListener('click',event=>{const b=event.target.closest?.('button');if(b&&(!b.closest('.compact-disclosure')||b.closest('.compact-popover')&&!b.closest('.ink-properties,.ink-zoom-actions')))close();},true);
+  }
+  disposables.push({destroy(){moreSheet?.close();}});
   const prevPage=iconButton('left','Previous page',run(()=>adjacentPage(-1))),nextPage=iconButton('right','Next page',run(()=>adjacentPage(1)));pageLabel.setAttribute('role','button');pageLabel.tabIndex=0;pageLabel.onclick=managePages;pageLabel.onkeydown=e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();managePages();}};
-  recordButton.classList.add('lecture-record');finishButton.classList.add('lecture-finish');
+  recordButton.classList.add('lecture-record');finishButton.classList.add('lecture-finish');paperOptions.node.classList.add('lecture-paper-options');
   replace(root,el('section',{class:'lecture-workspace'},
-    el('header',{class:'lecture-top'},quiet('‹ '+(course.data.code||'Course'),()=>ctx.go(route(course.id))),el('strong',{},remote.item.data.title),saveStatus,timer,mic,recordButton,finishButton,paperOptions.node),
+    el('header',{class:'lecture-top'},quiet('‹ '+(course.data.code||'Course'),()=>ctx.go(route(course.id))),el('strong',{title:remote.item.data.title},remote.item.data.title),saveStatus,timer,mic,recordButton,finishButton,paperOptions.node),
     microphoneNotice,tools,scroll,
-    el('div',{class:'lecture-bottom'},el('div',{class:'lecture-pages'},prevPage,pageLabel,nextPage),iconButton('bookmark','Bookmark this moment',run(bookmark)),iconButton('study','Study tools',run(toggleStudy)),iconButton('chat','Lecture Tutor',run(toggleTutor)),iconButton('camera','Take lecture photo',()=>chooseLecturePhoto(takePhoto,{camera:true})),iconButton('paste','Paste image',run(()=>pasteLecturePhoto(takePhoto))),iconButton('image','Lecture photos',run(()=>showLecturePhotos({ctx,store,id,onInsert:insertPhoto,onTutor:toggleTutor}))),quiet('Transcript',run(showTranscript)),quiet('Slides',run(()=>showSlides())),iconButton('add','Add slide deck',run(attachDeck)),audio)));
+    el('div',{class:'lecture-bottom'},el('div',{class:'lecture-pages'},prevPage,pageLabel,nextPage),iconButton('chat','Lecture Tutor',run(toggleTutor)),secondaryActions,audio)));
   document.body.classList.add("lecture-open");
   const lectureViewport=()=>{if(slides?.element)slides.element.hidden=!!studyHost&&innerWidth<1000;const v=window.visualViewport;root.style.setProperty("--lecture-viewport-height",(v?.height??innerHeight)+"px");root.style.setProperty("--lecture-viewport-top",(v?.offsetTop??0)+"px");};lectureViewport();window.visualViewport?.addEventListener("resize",lectureViewport);window.visualViewport?.addEventListener("scroll",lectureViewport);
   const chromeSizer=new ResizeObserver(()=>{const top=root.querySelector('.lecture-top').offsetHeight,bottom=root.querySelector('.lecture-bottom').offsetHeight;root.style.setProperty('--lecture-header-height',top+'px');root.style.setProperty('--lecture-footer-height',bottom+'px');});chromeSizer.observe(root.querySelector('.lecture-top'));chromeSizer.observe(root.querySelector('.lecture-bottom'));
@@ -626,7 +642,7 @@ async function mountWorkspace(root, ctx, course, id, store) {
     for(const b of tools.querySelectorAll('[data-mode]'))b.setAttribute('aria-pressed',String(b.dataset.mode==='highlight'?['unclear','unfinished'].includes(mode):b.dataset.mode===mode));
     undoButton.disabled=!locked||!undo.length;redoButton.disabled=!locked||!redo.length;
     const ordered=visibleNotebook(notebook.data);pageLabel.textContent=ordered.includes(pageId)?'Page '+(ordered.indexOf(pageId)+1):'Pages';prevPage.disabled=openingPage||ordered.indexOf(pageId)<=0;nextPage.disabled=openingPage||ordered.indexOf(pageId)>=ordered.length-1;
-    lines.checked=page.lined!==false;zoomLabel.textContent=Math.round(zoom*100)+'% · Fit';
+    lines.checked=page.lined!==false;zoomLabel.textContent=Math.round(zoom*100)+'%, Fit';
     if(!locked)saveState.update({mode:'alert',detail:'Read only. Close the other lecture tab to edit.',retry:false});
   }
   const renderer=new NotebookRenderer({canvas,paintPaper,getPage:key=>pages.get(key)?.inkLoaded?pages.get(key).page:null,needPage:ensurePage});
@@ -1046,7 +1062,7 @@ async function mountWorkspace(root, ctx, course, id, store) {
             el(
               "strong",
               {},
-              `Audio ${s.id} · ${elapsed(s.startMs)}${s.endMs != null ? " to " + elapsed(s.endMs) : ""}`,
+              `Audio ${s.id}, ${elapsed(s.startMs)}${s.endMs != null ? " to " + elapsed(s.endMs) : ""}`,
             ),
             el(
               "p",

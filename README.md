@@ -56,6 +56,10 @@ and explicit limits. Demo changes include training-plan fixtures, whole-list
 priority ranking, optional Devotional/Prayer routines, pen-first live notes,
 reachable effort controls, local-save repairs and the authored chat examples.
 
+The Instrument interface uses self-hosted Barlow fonts and ten selectable themes
+in Settings. Theme choices persist with workspace settings in both local and
+browser-only editions.
+
 ## How it works
 
 1. **Serve a loopback workspace.** [`src/local/main.ts`](src/local/main.ts)
@@ -123,9 +127,9 @@ tests run separately with `node --test src/browser/browser-service.test.mjs`
 after `node tools/build-browser-demo.mjs --test-bundle`. Run the command after
 `npm ci`; no credentials are required.
 
-The end-to-end command, `npm run test:e2e`, has 46 cases: the 21 workflows shown in the demo video,
-each at 1440 × 900 and 390 × 844, plus navigation and cold-start coverage at
-each size. The repository's release audit recorded all 46 passing, along with
+The end-to-end command, `npm run test:e2e`, has 50 cases: the 21 workflows shown in the demo video,
+each at 1440 × 900 and 390 × 844, plus navigation, cold-start and Instrument interaction coverage at
+each size. The Instrument port passed all 50 cases, including affected reruns, along with
 49/49 built-app smoke checks. These counts describe synthetic functional
 coverage, not a reliability rate or measured personal-productivity gain.
 The tests and commands are described below; live providers were not certified.
@@ -220,9 +224,9 @@ npm run test:smoke
 npm run test:e2e
 ```
 
-- Unit/API tests: 50 cases in [`test/`](test/), covering local persistence,
+- Unit/API tests: 147 cases in [`test/`](test/), covering local persistence,
   authentication, revisions, backup/restore, provider context and configuration.
-- E2E: 46 cases in [`test/e2e/`](test/e2e/), using fictional databases, fake
+- E2E: 50 cases in [`test/e2e/`](test/e2e/), using fictional databases, fake
   microphone input and a loopback provider stub. Tests assert visible results
   and persistence, and reject console/page errors or failed same-origin requests.
 - Smoke: 49 checks driven by [`tools/smoke.mjs`](tools/smoke.mjs) against the

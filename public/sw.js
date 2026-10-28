@@ -1,6 +1,6 @@
 // Never cache navigations, private API responses or identity flows. Authentication remains server-side.
-const CACHE = 'lifeos-inert-v2';
-const INERT = new Set(['/styles.css', '/icons/icon-192.png', '/manifest.webmanifest','/icons/icon-512.png','/icons/apple-touch-icon.png','/icons/maskable-512.png','/icons/favicon.png']);
+const CACHE = 'lifeos-inert-v3';
+const INERT = new Set(['/styles.css','/assistant-chat.css','/workspace-design.css','/lecture-workspace.css','/private-moments.css','/notes-friends.css','/fonts/Barlow-Regular.woff2','/fonts/Barlow-Medium.woff2','/fonts/Barlow-SemiBold.woff2','/fonts/BarlowSemiCondensed-Medium.woff2','/fonts/BarlowSemiCondensed-SemiBold.woff2', '/icons/icon-192.png', '/manifest.webmanifest','/icons/icon-512.png','/icons/apple-touch-icon.png','/icons/maskable-512.png','/icons/favicon.png']);
 self.addEventListener('install', () => {}); // Waiting updates never interrupt writing or recording.
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('lifeos-inert-') && key !== CACHE).map(key => caches.delete(key))))));
 self.addEventListener('fetch', event => {
