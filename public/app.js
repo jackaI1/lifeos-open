@@ -23,7 +23,7 @@ const editableFields = {
  task:'title courseId dueDate dueAt remainingMinutes estimatedMinutes difficulty status nextStep nextStepMinutes userNotes notes archived sourceUrl source',
  'prayer-list':'sections',
  'accountability-draft':'entryId entryVersion previousEntryId prayerSessionId prayed repentance followThrough applications text status approvedAt',
-  settings: 'notificationDeviceId theme textSize controlDensity handedness hourlyPrayerReminder accountabilityDiscordUrl timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
+  settings: 'notificationDeviceId theme customTheme textSize controlDensity handedness hourlyPrayerReminder accountabilityDiscordUrl timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
   'prayer-note': 'section title text archived rotation people notes weekday weekdays nodes', project: 'title category notes status archived nextStep steps timeBlocks githubUrl', meal: 'title notes recipe day slot ingredients steps', grocery: 'title checked quantity notes archived', coursework: 'title taskId text language document attachmentIds notes archived', training: 'weeklyKm longestKm pain injury recovery guidance raceDate goalMinutes sundayExceptionConfirmed baselineDate notes', run: 'date distanceKm durationMinutes effort pain fatigue notes workoutId', 'support-thread': 'title archived model effort', 'coop-role':'title employer sourceUrl deadlineDate deadlineTime deadlineEvidence status location industry description notes draftText archived'
 };
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
@@ -167,14 +167,16 @@ context.retryPrayerUploads=()=>prayerRecovery.kick();
 const keyLegends={today:'Today',devotional:'Devotion',prayer:'Prayer',school:'School',tickets:'Projects',exercise:'Exercise',reminders:'Remind',finances:'Money',notes:'Notes',friends:'Friends',journal:'Journal',photos:'Photos',support:'Support',settings:'Settings'};
 function navLink([id, title]) { return el('a', { class: 'nav-link', href: `#${id}`, 'aria-label':title, 'aria-current': state.route === id ? 'page' : null }, icon(id), keyLegends[id]||title); }
 function moreKey(visible){
- const remaining=routesFor(state.session?.environment).filter(([id])=>!visible.includes(id));
+ const remaining=routesFor(state.session?.environment).filter(([id])=>!visible.includes(id)&&id!=='settings');
  const more=button([icon('more'),'More'],()=>modal('More',el('nav',{class:'more-links','aria-label':'More navigation'},remaining.map(item=>{const a=navLink(item);a.onclick=()=>$('#dialog').close();return a;}))),'nav-link');
  more.setAttribute('aria-label','More navigation');if(remaining.some(([id])=>id===state.route))more.setAttribute('aria-current','page');return more;
 }
 function renderNavigation() {
- const desktop=['today','devotional','school','exercise','reminders','finances','notes','friends'],mobile=['today','school','reminders','notes'];
+ const desktop=['today','school','tickets','photos','exercise','reminders','finances','notes','friends'],mobile=['today','school','tickets','photos'];
  const routes=routesFor(state.session?.environment);
   $('#navigation').replaceChildren(...desktop.map(id=>navLink(routes.find(r=>r[0]===id))),moreKey(desktop));
+ $('#settings-navigation').replaceChildren(navLink(routes.find(r=>r[0]==='settings')));
+ $('#phone-settings-navigation').replaceChildren(navLink(routes.find(r=>r[0]==='settings')));
  $('#mobile-navigation').replaceChildren(...mobile.map(id=>navLink(routes.find(r=>r[0]===id))),moreKey(mobile));
 }
 async function navigate(force = false) {
