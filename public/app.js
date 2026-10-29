@@ -52,8 +52,10 @@ function renderAppTools(owner=presentation){if(!context.timers)return;
  if(!livePage(owner))return;
  const host=owner.root.querySelector('.page-heading, .lecture-top, .assistant-header');owner.toolsHeading=host;
  if(!host){removeControl(owner,'clock');owner.clock=context.timers.control();owner.clock.node.classList.add('task-clock-corner');owner.root.append(owner.clock.node);return;}
- if(host.classList.contains('lecture-top')||host.classList.contains('assistant-header')){removeControl(owner,'clock');owner.clock=context.timers.control();host.append(owner.clock.node);return;}
+ const phoneSettings=tools=>{if(!tools.querySelector('#phone-settings-navigation'))tools.prepend(el('nav',{id:'phone-settings-navigation','aria-label':'Phone settings'},navLink(routesFor(state.session?.environment).find(r=>r[0]==='settings'),true)));};
+ if(host.classList.contains('lecture-top')||host.classList.contains('assistant-header')){phoneSettings(host);removeControl(owner,'clock');owner.clock=context.timers.control();host.append(owner.clock.node);return;}
  let tools=host.querySelector(':scope > .actions, :scope > .workspace-tools');if(!tools){tools=el('div',{class:'actions workspace-tools'});host.append(tools);}for(const node of host.querySelectorAll(':scope > .icon-button, :scope > .workspace-status'))tools.append(node);
+ phoneSettings(tools);
  if(!host.querySelector('.action-finder')){const find=button(controlIcon('zoom'),()=>openActionFinder(context,routesFor(state.session?.environment)),'quiet icon-button action-finder');find.setAttribute('aria-label','Find a record or page');find.title='Find, Ctrl+K';tools.append(find);}
  removeControl(owner,'clock');owner.clock=state.route==='devotional'?null:context.timers.control();if(owner.clock)tools.append(owner.clock.node);
  removeControl(owner,'update');
@@ -165,7 +167,7 @@ context.uploads = new FileUploads({ store, request, action: context.action });
 const prayerRecovery = new PrayerRecovery({store,request,action:context.action,changed:()=>window.dispatchEvent(new Event('lifeos-prayer-recovered'))});
 context.retryPrayerUploads=()=>prayerRecovery.kick();
 const keyLegends={today:'Today',devotional:'Devotion',prayer:'Prayer',school:'School',tickets:'Projects',exercise:'Exercise',reminders:'Remind',finances:'Money',notes:'Notes',friends:'Friends',journal:'Journal',photos:'Photos',support:'Support',settings:'Settings'};
-function navLink([id, title]) { return el('a', { class: 'nav-link', href: `#${id}`, 'aria-label':title, 'aria-current': state.route === id ? 'page' : null }, icon(id), keyLegends[id]||title); }
+function navLink([id, title], iconOnly = false) { return el('a', { class: 'nav-link', href: `#${id}`, 'aria-label':title, 'aria-current': state.route === id ? 'page' : null }, icon(id), iconOnly ? null : keyLegends[id]||title); }
 function moreKey(visible){
  const remaining=routesFor(state.session?.environment).filter(([id])=>!visible.includes(id)&&id!=='settings');
  const more=button([icon('more'),'More'],()=>modal('More',el('nav',{class:'more-links','aria-label':'More navigation'},remaining.map(item=>{const a=navLink(item);a.onclick=()=>$('#dialog').close();return a;}))),'nav-link');
@@ -176,7 +178,6 @@ function renderNavigation() {
  const routes=routesFor(state.session?.environment);
   $('#navigation').replaceChildren(...desktop.map(id=>navLink(routes.find(r=>r[0]===id))),moreKey(desktop));
  $('#settings-navigation').replaceChildren(navLink(routes.find(r=>r[0]==='settings')));
- $('#phone-settings-navigation').replaceChildren(navLink(routes.find(r=>r[0]==='settings')));
  $('#mobile-navigation').replaceChildren(...mobile.map(id=>navLink(routes.find(r=>r[0]===id))),moreKey(mobile));
 }
 async function navigate(force = false) {
