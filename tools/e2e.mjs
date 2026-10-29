@@ -28,9 +28,16 @@ async function configured(scope,question,needles){
   await visible(p,'Synthetic stub response');assert.ok(requests.length,'No outgoing compatible request');const text=JSON.stringify(requests);for(const n of needles)assert.ok(text.includes(n),'Provider request missing context: '+n);await writeFile(join(scratch,scope+'-'+(phone?'phone':'desktop')+'-stub-context.json'),JSON.stringify(requests,null,2));}finally{if(c)await c.close();await stop(s);await new Promise(r=>stub.close(r));stubEntry.closed=true;stubEntry.portClosed=true;}
 }
 try{
- browserServer=await chromium.launchServer({headless:true,host:'127.0.0.1',env:fixtureEnvironment,executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH,args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']});browser=await chromium.connect(browserServer.wsEndpoint());
- const browserPid=browserServer.process().pid,browserPort=Number(new URL(browserServer.wsEndpoint()).port);
- owned.push({owner:'parity isolated Chromium',pid:browserPid,start:execFileSync('ps',['-p',String(browserPid),'-o','lstart='],{encoding:'utf8',env:{...process.env,TZ:'UTC'}}).trim(),startTimeZone:'UTC',cleanup:'await browser.close(); await browserServer.close() in finally',port:browserPort,closed:false});
+ const launchOptions={headless:true,env:fixtureEnvironment,executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH,args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']};
+ let browserPid,browserPort=null;
+ if(process.env.E2E_BROWSER_PIPE==='1'){
+  // Pipe transport leaves TCP ports available for the app and its synthetic provider.
+  const children=()=>execFileSync('ps',['-axo','pid=,ppid=,comm='],{encoding:'utf8'}).split('\n').map(line=>line.trim().match(/^(\d+)\s+(\d+)\s+(.+)$/)).filter(row=>row&&Number(row[2])===process.pid&&/chrome|chromium|headless_shell/i.test(row[3])).map(row=>Number(row[1]));
+  const before=new Set(children());browser=await chromium.launch(launchOptions);const created=children().filter(pid=>!before.has(pid));assert.equal(created.length,1,'exact owned Chromium child');browserPid=created[0];
+ }else{
+  browserServer=await chromium.launchServer({...launchOptions,host:'127.0.0.1'});browser=await chromium.connect(browserServer.wsEndpoint());browserPid=browserServer.process().pid;browserPort=Number(new URL(browserServer.wsEndpoint()).port);
+ }
+ owned.push({owner:'parity isolated Chromium',pid:browserPid,start:execFileSync('ps',['-p',String(browserPid),'-o','lstart='],{encoding:'utf8',env:{...process.env,TZ:'UTC'}}).trim(),startTimeZone:'UTC',cleanup:'await browser.close(); await browserServer?.close() in finally',port:browserPort,closed:false});
  await writeFile(join(scratch,'ownership-'+run+'.json'),JSON.stringify(owned,null,2));
  const specs=(await readdir('test/e2e')).filter(f=>f.endsWith('.spec.mjs')&&(!process.env.E2E_FOCUS||new RegExp(process.env.E2E_FOCUS).test(f))).sort();
  for(const phone of process.env.E2E_DESKTOP_ONLY?[false]:process.env.E2E_PHONE_ONLY?[true]:[false,true])for(const file of specs){
@@ -48,6 +55,6 @@ try{
   }
  }
 }finally{
- if(context)await context.close();await stop(server);if(browser)await browser.close();if(browserServer){await browserServer.close();const entry=owned.find(o=>o.owner==='parity isolated Chromium');if(entry){try{process.kill(entry.pid,0);entry.closed=false;}catch{entry.closed=true;}try{await fetch(`http://127.0.0.1:${entry.port}`,{signal:AbortSignal.timeout(500)});entry.portClosed=false;}catch{entry.portClosed=true;}}}await writeFile(join(scratch,'ownership-'+run+'.json'),JSON.stringify(owned,null,2));await writeFile(join(scratch,'cleanup-'+run+'.json'),JSON.stringify({browserClosed:!browser?.isConnected(),allServersClosed:owned.filter(o=>o.port).every(o=>o.closed&&o.portClosed)},null,2));
+ if(context)await context.close();await stop(server);if(browser)await browser.close();if(browserServer)await browserServer.close();const entry=owned.find(o=>o.owner==='parity isolated Chromium');if(entry){try{process.kill(entry.pid,0);entry.closed=false;}catch{entry.closed=true;}if(entry.port){try{await fetch(`http://127.0.0.1:${entry.port}`,{signal:AbortSignal.timeout(500)});entry.portClosed=false;}catch{entry.portClosed=true;}}else entry.portClosed=true;}await writeFile(join(scratch,'ownership-'+run+'.json'),JSON.stringify(owned,null,2));await writeFile(join(scratch,'cleanup-'+run+'.json'),JSON.stringify({browserClosed:!browser?.isConnected(),allServersClosed:owned.filter(o=>o.port).every(o=>o.closed&&o.portClosed)},null,2));
 }
 console.log(`${results.filter(r=>r.status==='PASS').length}/${results.length} passed.`);if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
