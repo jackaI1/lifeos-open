@@ -177,6 +177,7 @@ export async function openSourceCrop({
   sourceId = "",
   addBackground,
   floating = false,
+  initiallyHidden = false,
   addCrop,
   openNotebook,
   onCurrent,
@@ -263,7 +264,7 @@ export async function openSourceCrop({
       buttons.querySelectorAll("button").forEach((b) => (b.disabled = bulk));
     }
   }
-  const present = floating ? (title,body,options) => slideDock(title,body,options.onclose) : modal;
+  const present = floating ? (title,body,options) => slideDock(title,body,options.onclose,{hidden:initiallyHidden}) : modal;
   const dialog = present(
     name,
     el(
