@@ -561,6 +561,7 @@ async function mountWorkspace(root, ctx, course, id, store) {
       slides?.close();
       slides=await openSourceCrop({bytes,mimeType:source.data.mimeType,name:source.data.title,sourceId:source.id,floating:true,initialPage:selectedPage,pageRange:source.data.pageRange??remote.item.data.lessonPageRange,addBackground:addSourceBackground,addCrop:pasteCrop,openNotebook:async(context)=>{await notebook.update(l=>({...l,mode:"slides"}));sizePaper();renderPageControls();const selected=[...pages].find(([,p])=>p.page?.background?.sourceId===context?.sourceId&&p.page.background.sourcePage===context?.pageNumber);if(selected)await openPage(selected[0]);scheduleFlush();},onCurrent:context=>{currentSlideContext=context;}});
       if(dead){slides.close();return;}
+      slides.element.hidden=!viewActive;
       if(sourceChoices.length>1){const choice=select('Slide deck',sourceChoices.map((r,i)=>({value:r.id,label:r.data.title+(r.data.snapshot?', version '+(i+1):'')})),source.id);choice.input.onchange=()=>void showSlides(choice.input.value).catch(e=>toast(e.message));slides.element.querySelector('.slide-dock-content').prepend(choice.node);}
     }finally{slidesOpening=false;}
   }
