@@ -4598,6 +4598,19 @@ init_globals();
 
 // public/themes.js
 init_globals();
+
+// public/custom-theme.js
+init_globals();
+var keys = ["base", "name", "primary", "display", "chassis"];
+function validateCustomTheme(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key2) => !keys.includes(key2))) throw Error("Choose a valid custom theme.");
+  if (!themes.some((theme) => theme.id === value.base)) throw Error("Choose a base theme.");
+  if (typeof value.name !== "string" || !value.name.trim() || value.name.length > 40) throw Error("Use a theme name from 1 to 40 characters.");
+  for (const key2 of ["primary", "display", "chassis"]) if (typeof value[key2] !== "string" || !/^#[\da-f]{6}$/i.test(value[key2])) throw Error("Use a six-digit colour.");
+  return { base: value.base, name: value.name.trim(), primary: value.primary, display: value.display, chassis: value.chassis };
+}
+
+// public/themes.js
 var themes = Object.freeze([
   { "id": "graphite", "name": "Graphite", "chassis": "#2B2D30", "display": "#15191A", "displayInk": "#E8F0EC", "ink": "#F1F1EE", "primary": "#F6C343" },
   { "id": "midnight", "name": "Midnight", "chassis": "#121620", "display": "#070A10", "displayInk": "#D8E4F7", "ink": "#E7EBF3", "primary": "#E8B34B" },
@@ -4610,7 +4623,7 @@ var themes = Object.freeze([
   { "id": "platinum", "name": "Platinum", "chassis": "#D4D4D4", "display": "#F7F7F5", "displayInk": "#111111", "ink": "#111111", "primary": "#111111" },
   { "id": "nightdrive", "name": "Night drive", "chassis": "#0C0C0D", "display": "#000000", "displayInk": "#FF7A3D", "ink": "#E9E4E0", "primary": "#FF7A3D" }
 ]);
-var themeIds = Object.freeze(themes.map((theme) => theme.id));
+var themeIds = Object.freeze([...themes.map((theme) => theme.id), "custom"]);
 
 // src/server/validation.mjs
 init_prayer_tree();
@@ -5462,7 +5475,7 @@ var fields = {
   task: "title courseId dueDate dueAt remainingMinutes estimatedMinutes difficulty status nextStep nextStepMinutes userNotes notes archived sourceUrl source",
   "prayer-list": "sections",
   "accountability-draft": "entryId entryVersion previousEntryId prayerSessionId prayed repentance followThrough applications text status approvedAt",
-  settings: "studyReserveTimes theme spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions",
+  settings: "studyReserveTimes theme customTheme spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions",
   "prayer-note": "section title text archived rotation people notes weekday weekdays nodes",
   project: "title category notes status archived nextStep steps timeBlocks githubUrl",
   meal: "title notes recipe day slot ingredients steps",
@@ -5591,6 +5604,14 @@ function recordData(kind, input) {
       data2.studyReserveTimes.forEach(clock);
     }
     if (data2.theme !== void 0) enumValue(data2.theme, themeIds);
+    if (data2.customTheme != null) {
+      try {
+        data2.customTheme = validateCustomTheme(data2.customTheme);
+      } catch (error) {
+        throw new AppError(error.message);
+      }
+    }
+    if (data2.theme === "custom" && !data2.customTheme) throw new AppError("Save a custom theme first.");
     if (data2.notificationDeviceId) identifier(data2.notificationDeviceId);
     if (data2.textSize !== void 0) enumValue(data2.textSize, ["standard", "large", "largest"]);
     if (data2.controlDensity !== void 0) enumValue(data2.controlDensity, ["compact", "spacious"]);
@@ -8263,9 +8284,9 @@ async function deletedRoute({ store, env, config, req, path, body, deleteFile = 
     for (const row of rows3) references(JSON.parse(row.data), refs);
     ids.forEach((id2) => refs.add(id2));
     if (refs.size > 600) throw new AppError("This entry needs a larger file inventory. Nothing was deleted.", 413);
-    const files2 = /* @__PURE__ */ new Map(), keys2 = [...refs];
-    for (let i = 0; i < keys2.length; i += 40) {
-      const part = keys2.slice(i, i + 40), slots = part.map(() => "?").join(",");
+    const files2 = /* @__PURE__ */ new Map(), keys3 = [...refs];
+    for (let i = 0; i < keys3.length; i += 40) {
+      const part = keys3.slice(i, i + 40), slots = part.map(() => "?").join(",");
       for (const f of (await store.sql(`SELECT drive_id,folder_id FROM private_objects WHERE (object_key IN (${slots}) OR drive_id IN (${slots})) AND object_key NOT LIKE 'lecture-deck:%'`, ...part, ...part).all()).results) files2.set(f.drive_id, f);
     }
     const prefixes = body.kind === "lecture" ? ["lecture-page:" + body.id + "-p-", "lecture-ink:" + body.id + "-p-"] : body.kind === "prayer-session" ? ["prayer:" + body.id + ":"] : body.kind === "private-daily-photo" ? ["daily-photo:" + body.id + ":"] : body.kind === "devotional" ? ["custom-devotional:" + body.id + ":"] : [];
@@ -8488,9 +8509,9 @@ var change = (kind, id, before, data2) => {
   return { kind, id, before, after: { kind, id, data: data2, version: (before?.version ?? 0) + 1, createdAt: before?.createdAt ?? now, updatedAt: now }, auditId: crypto.randomUUID(), actor: "owner-spiritual-tools" };
 };
 async function stepCorrections(store, entryIds) {
-  const ids = [...new Set(entryIds)].filter(Boolean).slice(0, 5), keys2 = await Promise.all(ids.flatMap((id) => ["4-0", "4-1", "5-0", "5-1"].map((key2) => digest(id + ":" + key2))));
-  if (!keys2.length) return [];
-  return (await store.sql("SELECT * FROM records WHERE kind='devotional-step' AND id IN (" + keys2.map(() => "?").join(",") + ")", ...keys2).all()).results.map((r) => ({ id: r.id, kind: r.kind, data: JSON.parse(r.data), version: r.version, createdAt: r.created_at, updatedAt: r.updated_at }));
+  const ids = [...new Set(entryIds)].filter(Boolean).slice(0, 5), keys3 = await Promise.all(ids.flatMap((id) => ["4-0", "4-1", "5-0", "5-1"].map((key2) => digest(id + ":" + key2))));
+  if (!keys3.length) return [];
+  return (await store.sql("SELECT * FROM records WHERE kind='devotional-step' AND id IN (" + keys3.map(() => "?").join(",") + ")", ...keys3).all()).results.map((r) => ({ id: r.id, kind: r.kind, data: JSON.parse(r.data), version: r.version, createdAt: r.created_at, updatedAt: r.updated_at }));
 }
 async function spiritualToolsRoute({ store, req, path, body }) {
   const dates = await prayerDatesRoute({ store, req, path, body });
@@ -8766,9 +8787,9 @@ init_globals();
 // public/lecture-study.js
 init_globals();
 var types = ["bookmark", "glossary", "review", "index", "practice", "recall", "deck"];
-var keys = ["type", "label", "pageId", "strokeId", "offsetMs", "sourceId", "sourcePage", "term", "definition", "explanationId", "stage", "dueDay", "resolved", "text", "uncertain", "inkHead", "question", "answer", "hint", "evidence", "signatures", "range", "archived", "region", "previousSourceId", "attempt", "recall"];
+var keys2 = ["type", "label", "pageId", "strokeId", "offsetMs", "sourceId", "sourcePage", "term", "definition", "explanationId", "stage", "dueDay", "resolved", "text", "uncertain", "inkHead", "question", "answer", "hint", "evidence", "signatures", "range", "archived", "region", "previousSourceId", "attempt", "recall"];
 function validateStudyItem(input) {
-  if (!input || typeof input !== "object" || Array.isArray(input) || Object.keys(input).some((k) => !keys.includes(k)) || !types.includes(input.type)) throw Error("Invalid study item");
+  if (!input || typeof input !== "object" || Array.isArray(input) || Object.keys(input).some((k) => !keys2.includes(k)) || !types.includes(input.type)) throw Error("Invalid study item");
   const out = structuredClone(input);
   for (const k of ["label", "term"]) if (out[k] !== void 0 && (typeof out[k] !== "string" || out[k].length > 200)) throw Error("Keep the label under 200 characters");
   for (const k of ["definition", "text", "question", "answer", "hint", "evidence", "attempt"]) if (out[k] !== void 0 && (typeof out[k] !== "string" || out[k].length > 12e3)) throw Error("Study text exceeds its limit");
@@ -9394,7 +9415,7 @@ async function dueLectureReviews(store, courseId) {
 // src/cloud/revisions.mjs
 init_globals();
 var fields4 = { "private-journal": ["title", "answers", "templateName"], "private-note": ["title", "text", "document"], devotional: ["points", "customText", "type", "bookId", "chapter", "chapterEnd", "passage"], coursework: ["title", "text", "document", "language", "notes"], "prayer-list": ["sections"], "prayer-note": ["title", "text", "nodes", "notes", "people"], task: ["title", "nextAction", "nextStep", "nextStepMinutes", "notes", "remainingMinutes", "estimatedMinutes"], project: ["title", "notes"] };
-var pick = (data2, keys2) => Object.fromEntries(keys2.filter((k) => Object.hasOwn(data2, k)).map((k) => [k, data2[k]]));
+var pick = (data2, keys3) => Object.fromEntries(keys3.filter((k) => Object.hasOwn(data2, k)).map((k) => [k, data2[k]]));
 function restoredContent(kind, current, previous, sectionId) {
   if (!fields4[kind]) throw new AppError("Version recovery is unavailable for this record", 404);
   if (kind === "prayer-list") {
@@ -9657,7 +9678,7 @@ init_globals();
 // src/shared/assistant-contract.mjs
 init_globals();
 init_lifeos_day();
-var take = (data2, keys2) => Object.fromEntries(keys2.filter((k) => data2[k] !== void 0).map((k) => [k, data2[k]]));
+var take = (data2, keys3) => Object.fromEntries(keys3.filter((k) => data2[k] !== void 0).map((k) => [k, data2[k]]));
 var assistantScopes = ["today", "academics", "finances", "lecture"];
 var assistantOperations = { task: ["status", "remainingMinutes", "nextStep", "userNotes", "dueDate", "dueAt"], project: ["title", "notes", "status", "category"], "task-create": ["title", "courseId", "dueDate", "dueAt", "remainingMinutes", "nextStep"], preferences: ["wakeTime", "lightsOut", "quietStart", "quietEnd"], "schedule-adjust": ["day", "start", "end", "hidden"], "calendar-create": ["title", "start", "end", "location"] };
 var assistantReplySchema = { type: "object", additionalProperties: false, properties: { reply: { type: "string" }, needsInput: { type: "boolean" }, proposals: { type: "array", items: { type: "object", additionalProperties: false, properties: { operation: { type: "string", enum: Object.keys(assistantOperations) }, recordId: { type: ["string", "null"] }, expectedVersion: { type: "integer" }, fields: { type: "array", items: { type: "object", additionalProperties: false, properties: { name: { type: "string" }, value: { type: ["string", "number", "boolean", "null"] } }, required: ["name", "value"] } }, reason: { type: "string" } }, required: ["operation", "recordId", "expectedVersion", "fields", "reason"] } } }, required: ["reply", "needsInput", "proposals"] };
@@ -9887,8 +9908,8 @@ function validateProjectArtifact(artifact) {
 function sourceBinding(thread, input) {
   const source = thread?.data.preparationSnapshot, context = input?.data.job?.context?.assistant;
   if (!thread?.data.preparationOnly || thread.data.scope !== "today" || input?.data.job?.id !== input.id || context?.scope !== "today" || context?.preparationPurpose !== "starting-point" || source?.id !== thread.data.projectId || source.version !== thread.data.projectVersion || input?.data.job?.payload?.threadId !== thread.id || context?.preparationOnly !== true || context.projects?.length !== 1 || context.projects[0].id !== source.id || context.projects[0].version !== source.version) throw new AppError("Preparation source identity is unavailable", 409);
-  const captured2 = context.projects[0], keys2 = Object.keys(source).sort();
-  if (JSON.stringify(Object.keys(captured2).sort()) !== JSON.stringify(keys2) || keys2.some((key2) => JSON.stringify(source[key2]) !== JSON.stringify(captured2[key2]))) throw new AppError("Preparation source snapshot has changed", 409);
+  const captured2 = context.projects[0], keys3 = Object.keys(source).sort();
+  if (JSON.stringify(Object.keys(captured2).sort()) !== JSON.stringify(keys3) || keys3.some((key2) => JSON.stringify(source[key2]) !== JSON.stringify(captured2[key2]))) throw new AppError("Preparation source snapshot has changed", 409);
   const capturedAt = source.capturedAt ?? thread.createdAt;
   if (!Number.isFinite(Date.parse(capturedAt))) throw new AppError("Preparation capture time is unavailable", 409);
   return { projectId: source.id, projectVersion: source.version, purpose: "starting-point", capturedAt, notesTruncated: !!source.notesTruncated, inputVersion: input.version };
@@ -10291,12 +10312,12 @@ var encoder = new TextEncoder();
 var uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var invalid = () => Object.assign(Error("Choose an exact recipe, step and question."), { code: "cooking_help_invalid" });
 var limit = () => Object.assign(Error("Choose a shorter excerpt or question. Your original is unchanged."), { code: "cooking_help_limit" });
-function fields5(value, keys2) {
+function fields5(value, keys3) {
   if (!value || typeof value !== "object" || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype) throw invalid();
   const actual = Reflect.ownKeys(value);
-  if (actual.length !== keys2.length || actual.some((key2) => typeof key2 !== "string" || !keys2.includes(key2))) throw invalid();
+  if (actual.length !== keys3.length || actual.some((key2) => typeof key2 !== "string" || !keys3.includes(key2))) throw invalid();
   const captured2 = {};
-  for (const key2 of keys2) {
+  for (const key2 of keys3) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key2);
     if (!descriptor?.enumerable || !Object.hasOwn(descriptor, "value")) throw invalid();
     captured2[key2] = descriptor.value;
@@ -10362,8 +10383,8 @@ function createCookingHelpRequest(input) {
 }
 function array(value, max) {
   if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) throw invalid();
-  const keys2 = Reflect.ownKeys(value);
-  if (keys2.length !== value.length + 1 || keys2.some((key2) => key2 !== "length" && (typeof key2 !== "string" || !/^(0|[1-9]\d*)$/.test(key2))) || value.length > max) throw invalid();
+  const keys3 = Reflect.ownKeys(value);
+  if (keys3.length !== value.length + 1 || keys3.some((key2) => key2 !== "length" && (typeof key2 !== "string" || !/^(0|[1-9]\d*)$/.test(key2))) || value.length > max) throw invalid();
   const result = [];
   for (let index = 0; index < value.length; index++) {
     const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
@@ -10405,8 +10426,8 @@ var changed = () => new AppError("This original cooking request cannot start aga
 function beta(env) {
   if (env?.ENVIRONMENT !== "beta") throw denied();
 }
-function fields6(body, keys2) {
-  if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length !== keys2.length || keys2.some((k) => !Object.hasOwn(body, k))) throw new AppError("Invalid cooking request");
+function fields6(body, keys3) {
+  if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length !== keys3.length || keys3.some((k) => !Object.hasOwn(body, k))) throw new AppError("Invalid cooking request");
 }
 var freshLease = (row, owner, now) => row?.status === "running" && row.lease_owner === owner && row.lease_until > now && !row.cancel_requested;
 async function capable(store, env, credential = null) {

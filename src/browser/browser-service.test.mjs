@@ -108,3 +108,15 @@ test('authored cooking questions return completed source-bound receipts immediat
   const reopened=await json(await call(restored,'/api/cooking-help/'+last.intent.requestId));assert.deepEqual(reopened.result,last.completed.result);assert.equal(reopened.status,'completed');
  }finally{globalThis.fetch=previous;restored?.close();service.close();}
 });
+test('custom theme survives browser database reload and resets through the same settings route',async()=>{
+ const service=await createBrowserService({SQL,origin,readAsset:readFile});let restored;
+ try{
+  const custom={base:'midnight',name:'Evening',primary:'#7FA6F5',display:'#070A10',chassis:'#121620'};
+  let record=(await json(await call(service,'/api/records/settings/preferences'))).item;
+  await json(await call(service,'/api/records/settings/preferences','PUT',{mutationId:randomUUID(),version:record.version,data:{...record.data,theme:'custom',customTheme:custom}}));
+  restored=await createBrowserService({SQL,origin,bytes:service.db.export(),readAsset:()=>{throw Error('Unexpected reseeding');}});
+  record=(await json(await call(restored,'/api/records/settings/preferences'))).item;assert.equal(record.data.theme,'custom');assert.deepEqual(record.data.customTheme,custom);
+  await json(await call(restored,'/api/records/settings/preferences','PUT',{mutationId:randomUUID(),version:record.version,data:{...record.data,theme:'midnight',customTheme:null}}));
+  record=(await json(await call(restored,'/api/records/settings/preferences'))).item;assert.equal(record.data.theme,'midnight');assert.equal(record.data.customTheme,null);
+ }finally{restored?.close();service.close();}
+});

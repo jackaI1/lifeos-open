@@ -1,4 +1,5 @@
 import {themeIds} from '../../public/themes.js';
+import {validateCustomTheme} from '../../public/custom-theme.js';
 import {validatePrayerList,validatePrayerNodes} from '../../public/prayer-tree.js';
 import {validateDocument,documentText} from '../../public/document-format.js';
 import {selectedPassage} from '../../public/bible.js';
@@ -10,7 +11,7 @@ const fields={
  task:'title courseId dueDate dueAt remainingMinutes estimatedMinutes difficulty status nextStep nextStepMinutes userNotes notes archived sourceUrl source',
  'prayer-list':'sections',
  'accountability-draft':'entryId entryVersion previousEntryId prayerSessionId prayed repentance followThrough applications text status approvedAt',
- settings:'studyReserveTimes theme spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
+ settings:'studyReserveTimes theme customTheme spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
  'prayer-note':'section title text archived rotation people notes weekday weekdays nodes',
  project:'title category notes status archived nextStep steps timeBlocks githubUrl',meal:'title notes recipe day slot ingredients steps',grocery:'title checked quantity notes archived',
  coursework:'title taskId text language document attachmentIds notes archived',training:'weeklyKm longestKm pain injury recovery guidance raceDate goalMinutes sundayExceptionConfirmed baselineDate notes',
@@ -45,6 +46,8 @@ export function recordData(kind,input){
  if(kind==='settings'){
   if(data.studyReserveTimes!==undefined){if(!Array.isArray(data.studyReserveTimes)||data.studyReserveTimes.length>24)throw new AppError('Choose at most 24 reserve times');data.studyReserveTimes.forEach(clock);}
   if(data.theme!==undefined)enumValue(data.theme,themeIds);
+  if(data.customTheme!=null){try{data.customTheme=validateCustomTheme(data.customTheme);}catch(error){throw new AppError(error.message);}}
+  if(data.theme==='custom'&&!data.customTheme)throw new AppError('Save a custom theme first.');
   if(data.notificationDeviceId)identifier(data.notificationDeviceId);
   if(data.textSize!==undefined)enumValue(data.textSize,['standard','large','largest']);if(data.controlDensity!==undefined)enumValue(data.controlDensity,['compact','spacious']);if(data.handedness!==undefined)enumValue(data.handedness,['left','right']);
   if(data.accountabilityDiscordUrl!==undefined&&!/^https:\/\/discord\.com\/channels\/@me\/\d+$/.test(data.accountabilityDiscordUrl))throw new AppError('Use the Discord direct-message URL');
