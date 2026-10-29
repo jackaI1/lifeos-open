@@ -19,7 +19,7 @@ export function themeControl(ctx,{current=()=>true,getRecord=()=>ctx.records('se
   catch(error){restore();if(current())toast(error.message);return false;}
   finally{saving=false;group.setAttribute('aria-busy','false');root.removeAttribute('aria-busy');for(const b of root.querySelectorAll('button'))b.disabled=false;}
  }
- async function choose(id){if(editing||saving||id===selected)return;if(await save(id)){paint();toast('Theme saved.');}}
+ async function choose(id){if(editing||saving||id===selected)return;const keepFocus=group.contains(document.activeElement);if(await save(id)){paint();toast('Theme saved.');}if(keepFocus&&current())group.querySelector('[aria-checked=true]')?.focus();}
  function paint(){
   const custom=data().customTheme,palettes=[...themes];if(custom)palettes.push(customPalette(custom));
   const tiles=palettes.map((theme,index)=>{
