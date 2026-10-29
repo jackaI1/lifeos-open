@@ -1,7 +1,9 @@
+import {applyTimeFormat,timeFormatId} from './clock-format.js';
+export {cachedTimeFormat} from './clock-format.js';
 import {applyTheme,themeId,themes} from './themes.js';
 import {customPalette,contrastRatio} from './custom-theme.js';
 import {el,select,button,busy,toast,recordData} from './ui.js';
-export function applyWorkspacePreferences(data={},root=document.documentElement){applyTheme(data.theme,root,data.customTheme);root.dataset.textSize=data.textSize||'standard';root.dataset.controlDensity=data.controlDensity||'compact';root.dataset.handedness=data.handedness||'right';}
+export function applyWorkspacePreferences(data={},root=document.documentElement){applyTimeFormat(data.timeFormat,root);applyTheme(data.theme,root,data.customTheme);root.dataset.textSize=data.textSize||'standard';root.dataset.controlDensity=data.controlDensity||'compact';root.dataset.handedness=data.handedness||'right';}
 export function workspacePreferences(ctx){
  let record=ctx.records('settings').find(r=>r.id==='preferences');const data=record?.data??{},size=select('Text',[{value:'standard',label:'Standard'},{value:'large',label:'Larger'},{value:'largest',label:'Largest'}],data.textSize||'standard'),density=select('Controls',[{value:'compact',label:'Compact'},{value:'spacious',label:'Spacious'}],data.controlDensity||'compact'),hand=select('Writing hand',[{value:'right',label:'Right'},{value:'left',label:'Left'}],data.handedness||'right');
  return el('div',{class:'form-stack'},size.node,density.node,hand.node,button('Save display preferences',e=>busy(e.currentTarget,async()=>{record=ctx.records('settings').find(r=>r.id==='preferences');const next={...record?.data,textSize:size.input.value,controlDensity:density.input.value,handedness:hand.input.value},result=await ctx.save('settings',record||{id:'preferences',version:0},next);if(result.item){record=result.item;applyWorkspacePreferences(record.data);toast('Display preferences saved.');}else toast(result.reason);}), 'quiet'));
@@ -42,4 +44,23 @@ export function themeControl(ctx,{current=()=>true,getRecord=()=>ctx.records('se
   editor.append(notice,actions);preview();observer=new MutationObserver(()=>{if(editing&&!root.isConnected){observer.disconnect();editing=false;restore();}});observer.observe(document.body,{childList:true,subtree:true});name.focus();
  }
  paint();return root;
+}
+
+export function timeFormatControl(ctx,{current=()=>true,getRecord=()=>ctx.records('settings').find(r=>r.id==='preferences'),onSaved=()=>{},onApplied=()=>{}}={}){
+ let selected=timeFormatId(recordData(getRecord()).timeFormat),saving=false;
+ const values=['24h','12h'],group=el('div',{class:'theme-grid time-format-options',role:'radiogroup','aria-label':'Time format'}),keys=[];
+ const paint=()=>{group.setAttribute('aria-busy',String(saving));for(const [i,key]of keys.entries()){key.setAttribute('aria-checked',String(values[i]===selected));key.tabIndex=values[i]===selected?0:-1;key.disabled=saving;}};
+ async function choose(id){
+  if(!current()||saving||selected===id)return;
+  const previous=selected;selected=id;saving=true;applyTimeFormat(id);onApplied();paint();
+  try{const record=getRecord(),result=await ctx.save('settings',record||{id:'preferences',version:0},{...recordData(record),timeFormat:id});if(!result.item)throw Error(result.reason||'Time format could not be saved.');onSaved(result.item);}
+  catch(error){selected=previous;if(document.documentElement.dataset.timeFormat===id){applyTimeFormat(previous);onApplied();}if(current())toast(error.message);}
+  finally{saving=false;if(current())paint();}
+ }
+ for(const [i,id]of values.entries()){
+  const key=el('button',{type:'button',class:'theme-key',role:'radio',onclick:()=>choose(id)},i===0?'24-hour (13:30)':'12-hour (1:30 PM)');
+  key.onkeydown=e=>{const step={ArrowLeft:-1,ArrowUp:-1,ArrowRight:1,ArrowDown:1}[e.key];if(step||e.key==='Home'||e.key==='End'){e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?1:(i+step+2)%2;keys[next].focus();return choose(values[next]);}if(e.key==='Enter'||e.key===' '){e.preventDefault();return choose(id);}};
+  keys.push(key);group.append(key);
+ }
+ paint();return el('div',{class:'time-format-control'},el('h3',{},'Time format'),group);
 }

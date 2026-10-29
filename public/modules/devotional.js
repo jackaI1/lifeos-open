@@ -9,7 +9,7 @@ import {shiftDay} from '../day-navigation.js';
 import {routeQuery} from '../targets.js';
 import {autoGrowResponse} from '../auto-grow-response.js';
 import {passagePicker} from '../passage-picker.js';
-import { el, replace, append, button, heading, panel, field, select, empty, status, formatDate, modal, download, errorNotice, safeLink, toast, busy, showResult } from '../ui.js';
+import { el, replace, append, button, heading, panel, field, select, empty, status, formatDate, modal, download, errorNotice, safeLink, toast, busy, showResult ,formatDateTime} from '../ui.js';
 import { DevotionalController, PROMPTS } from '../devotional-controller.js';
 
 export async function mount(root, ctx) {
@@ -39,7 +39,7 @@ export async function mount(root, ctx) {
     if (record.conflict) renderConflict(record);
     const text = record.conflict ? 'Review conflicting versions' : event.type === 'saving' ? 'Saving to LifeOS' : event.type === 'save-error' ? 'Not saved to server' : record.dirty ? 'Draft on this device' : record.entry.updatedAt ? 'Draft saved to LifeOS' : 'Ready to write';
     paintSaveIndicator(record);saveState.textContent = text; saveState.className = `status ${record.conflict ? 'conflict' : record.dirty ? 'pending' : 'saved'}`;
-    metadata.textContent = record.entry.updatedAt ? 'Last saved '+new Date(record.entry.updatedAt).toLocaleString() : 'Your writing saves as you go.';
+    metadata.textContent = record.entry.updatedAt ? 'Last saved '+formatDateTime(record.entry.updatedAt) : 'Your writing saves as you go.';
   }});
   function values() { return { type:typeControl.input.value,customText:customEditor.value,points: inputs.map(input => input.value), ...(typeControl.input.value==='custom'?{bookId:null,chapter:null,chapterEnd:null,passage:'Custom devotional'}:{...passage.value,chapterEnd:passage.value.chapterEnd??null}), complete: completion.checked,...(practicePlan.input.value?{plan:practicePlan.input.value}:{}),context:practiceContext.input.value,schoolMinutes:Number(schoolMinutes.input.value||0),...(completion.checked&&observed.input.value?{observedAt:new Date(observed.input.value).toISOString()}:{}) }; }
   function edit() { const data = values(); if (data.type==='custom'?!data.customText.trim():data.points.some(point => !point.trim())) { completion.checked = false; data.complete = false; } controller.edit(data);if(data.complete)void ctx.timers?.finishTarget({kind:'devotional',id:currentId}).catch(()=>{}); }

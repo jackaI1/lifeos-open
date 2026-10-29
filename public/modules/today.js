@@ -113,7 +113,7 @@ export async function mount(root,ctx){
 
   if(scheduleEditing){for(const key of ['start','end'].filter(k=>item[k])){const input=el('input',{type:'time',value:timeValue(item[key]),'aria-label':(key==='start'?'Start':'End')+' time for '+item.title,class:'schedule-time'});input.onchange=()=>busy(input,async()=>{const changed=replaceTime(item[key],input.value),values={[key]:changed};if(key==='start'&&item.end)values.end=new Date(Date.parse(item.end)+Date.parse(changed)-Date.parse(item.start)).toISOString();await saveCorrection(intent,values,false,input);});clock.append(input);}}
 
-  else{const detail=compactDisclosure({label:range(item),content:range(item)});detail.trigger.replaceChildren(el('time',{datetime:item.start},compactTime(item.start).replace(/[ap]$/,'')));detail.trigger.classList.add('schedule-clock-button');detail.node.classList.add('popover-from-start');scheduleDetails.push(detail);clock.append(detail.node);}
+  else{const detail=compactDisclosure({label:range(item),content:range(item)});detail.trigger.replaceChildren(el('time',{datetime:item.start},formatTime(item.start)));detail.trigger.classList.add('schedule-clock-button');detail.node.classList.add('popover-from-start');scheduleDetails.push(detail);clock.append(detail.node);}
 
   const extra=item.detail&&item.kind!=='calendar'?helpControl(item.detail,'Details for '+item.title):null;if(extra)scheduleDetails.push(extra);
   const title=!scheduleEditing&&canOpen(item.target)?button(item.title,()=>{if(currentSchedule(context))open(item.target);},'text-button schedule-title'):item.title;
@@ -155,19 +155,19 @@ export async function mount(root,ctx){
 
   const prev=button(controlIcon('left'),()=>{cardOffset--;scrollSelection=true;render();},'quiet icon-button'),next=button(controlIcon('right'),()=>{cardOffset++;scrollSelection=true;render();},'quiet icon-button');prev.setAttribute('aria-label','Previous schedule item');next.setAttribute('aria-label','Next schedule item');prev.disabled=index===0;next.disabled=index===cards.items.length-1;
 
-  const nowDate=new Date(view.now||ctx.state.bootstrap.now||Date.now()),clockText=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:getDisplayTimeZone()}).format(nowDate),start=Date.parse(shown.start),end=Date.parse(shown.end),lit=Number.isFinite(start)&&end>start?Math.max(0,Math.min(12,Math.ceil((nowDate.valueOf()-start)/(end-start)*12))):0;
+  const nowDate=new Date(view.now||ctx.state.bootstrap.now||Date.now()),clockText=formatTime(nowDate),start=Date.parse(shown.start),end=Date.parse(shown.end),lit=Number.isFinite(start)&&end>start?Math.max(0,Math.min(12,Math.ceil((nowDate.valueOf()-start)/(end-start)*12))):0;
   const displayMeta=[shown.position!=='Now'?shown.position:null,shown.target?.day&&shown.target.day!==view.date?formatDate(shown.target.day):null,shown.start&&shown.position!=='Now'?formatTime(shown.start):null,shown.end?'Until '+formatTime(shown.end):shown.suggestedMinutes?shown.suggestedMinutes+' min':null].filter(Boolean).join(', ');
   const hero=el('section',{class:'panel today-now instrument-display now-'+shown.position.toLowerCase(),'aria-label':'Now'},
    el('time',{class:'display-clock num',datetime:nowDate.toISOString()},clockText),
    el('div',{class:'display-date'},new Intl.DateTimeFormat('en-CA',{weekday:'long',month:'long',day:'numeric',timeZone:'UTC'}).format(new Date(date()+'T12:00:00Z'))),
-   el('div',{class:'display-current'},el('h2',{},el('span',{class:'led'+(shown.position==='Now'?' live':'')}),canOpen(shown.target)?button(shown.title,()=>open({...shown.target,day:shown.target.day||view.date}),'text-button now-start'):shown.title),el('p',{class:'now-duration'},displayMeta),!cardOffset&&view.upcoming?el('p',{class:'display-next'},'Next: '+view.upcoming.title+' '+compactTime(view.upcoming.start).replace(/[ap]$/,'')):null),
+   el('div',{class:'display-current'},el('h2',{},el('span',{class:'led'+(shown.position==='Now'?' live':'')}),canOpen(shown.target)?button(shown.title,()=>open({...shown.target,day:shown.target.day||view.date}),'text-button now-start'):shown.title),el('p',{class:'now-duration'},displayMeta),!cardOffset&&view.upcoming?el('p',{class:'display-next'},'Next: '+view.upcoming.title+' '+formatTime(view.upcoming.start)):null),
    el('div',{class:'display-segments','aria-label':lit+' of 12 progress segments'},...Array.from({length:12},(_,i)=>el('i',{class:i<lit?'on':''}))),
   );
   clearTimeout(displayTimer);
   displayUpdate=function refreshDisplay(){
    clearTimeout(displayTimer);if(disposed||document.hidden)return;
    const received=ctx.state.bootstrap.receivedAt??Date.now(),elapsed=Math.max(0,Date.now()-received),currentTime=new Date(nowDate.valueOf()+elapsed);
-   const clock=hero.querySelector('.display-clock');clock.textContent=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:getDisplayTimeZone()}).format(currentTime);clock.setAttribute('datetime',currentTime.toISOString());
+   const clock=hero.querySelector('.display-clock');clock.textContent=formatTime(currentTime);clock.setAttribute('datetime',currentTime.toISOString());
    const count=Number.isFinite(start)&&end>start?Math.max(0,Math.min(12,Math.ceil((currentTime.valueOf()-start)/(end-start)*12))):0;
    const segments=hero.querySelector('.display-segments');segments.setAttribute('aria-label',count+' of 12 progress segments');[...segments.children].forEach((segment,i)=>segment.classList.toggle('on',i<count));
    displayTimer=setTimeout(displayUpdate,60000-currentTime.valueOf()%60000);displayTimer.unref?.();

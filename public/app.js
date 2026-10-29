@@ -1,12 +1,14 @@
 import {applyTheme,cachedTheme} from './themes.js';
 applyTheme(cachedTheme());
+import {applyTimeFormat} from './clock-format.js';
+applyTimeFormat(cachedTimeFormat());
 import {configureAssistantPresets} from './assistant-presets.js';
 import {configureExternalLinks} from './ui.js';
 import {createTaskTimers} from './task-timers.js';
 import {routesFor,routeModule} from './routes.js';
 import {restoreLiveNoteDock} from './lecture-session.js';
 import {settleRouteTop} from './route-scroll.js';
-import {applyWorkspacePreferences} from './workspace-preferences.js';
+import {cachedTimeFormat,applyWorkspacePreferences} from './workspace-preferences.js';
 import {openActionFinder} from './action-finder.js';
 import {updateBlockReason,editingElement} from './update-safety.js';
 import {controlIcon} from './quiet-controls.js';
@@ -23,7 +25,7 @@ const editableFields = {
  task:'title courseId dueDate dueAt remainingMinutes estimatedMinutes difficulty status nextStep nextStepMinutes userNotes notes archived sourceUrl source',
  'prayer-list':'sections',
  'accountability-draft':'entryId entryVersion previousEntryId prayerSessionId prayed repentance followThrough applications text status approvedAt',
-  settings: 'notificationDeviceId theme customTheme textSize controlDensity handedness hourlyPrayerReminder accountabilityDiscordUrl timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
+  settings: 'notificationDeviceId theme timeFormat customTheme textSize controlDensity handedness hourlyPrayerReminder accountabilityDiscordUrl timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
   'prayer-note': 'section title text archived rotation people notes weekday weekdays nodes', project: 'title category notes status archived nextStep steps timeBlocks githubUrl', meal: 'title notes recipe day slot ingredients steps', grocery: 'title checked quantity notes archived', coursework: 'title taskId text language document attachmentIds notes archived', training: 'weeklyKm longestKm pain injury recovery guidance raceDate goalMinutes sundayExceptionConfirmed baselineDate notes', run: 'date distanceKm durationMinutes effort pain fatigue notes workoutId', 'support-thread': 'title archived model effort', 'coop-role':'title employer sourceUrl deadlineDate deadlineTime deadlineEvidence status location industry description notes draftText archived'
 };
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';

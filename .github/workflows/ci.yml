@@ -19,7 +19,7 @@ jobs:
       - run: npm run privacy
       - run: npx playwright install --with-deps chromium
       - run: npm run test:smoke
-      - name: Verify lecture mount and slide suspension races
+      - name: Verify clock preference and lecture lifecycle
         run: npm run test:e2e
         env:
-          E2E_FOCUS: '^(25|26)-'
+          E2E_FOCUS: '^(25|26)-|^time-format'

@@ -329,3 +329,10 @@ main.project-help-open{display:flex;flex-direction:column;height:100dvh;min-heig
 .academic-task .task-difficulty{display:block;font-size:12px;white-space:normal}
 .settings-section-key>strong{font-weight:500}
 @media(max-width:700px){.academic-task>.workload-indicator{max-width:none;min-width:0;font-size:12px;line-height:17px}}
+
+/* Appearance keys and clock columns accommodate the complete period label. */
+.time-format-control{padding-block:16px}.time-format-control>h3{font-size:15px;font-weight:500;margin:0 0 12px}.time-format-options{grid-template-columns:repeat(2,minmax(0,1fr));max-width:400px}.time-format-options .theme-key{min-height:44px;white-space:normal}
+:root[data-time-format="12h"] .day-story:not(.editing) .story-item{grid-template-columns:90px 14px minmax(0,1fr) auto}
+:root[data-time-format="12h"] .schedule-clock-button{white-space:nowrap}
+:root[data-time-format="12h"] .today-now .display-clock{font-size:clamp(40px,6vw,64px)}
+@media(max-width:700px){:root[data-time-format="12h"] .today-now .display-clock{font-size:48px}:root[data-time-format="12h"] .day-story:not(.editing) .story-item{grid-template-columns:90px 12px minmax(0,1fr)}}

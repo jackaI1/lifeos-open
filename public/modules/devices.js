@@ -1,11 +1,11 @@
-import { append, button, busy, el, empty, errorNotice, field, getDisplayTimeZone, modal, replace, status, toast } from '../ui.js';
+import { append, button, busy, el, empty, errorNotice, field, getDisplayTimeZone, modal, replace, status, toast ,formatDateTime} from '../ui.js';
 import { presenceStatus, presenceLabel } from '../presence-status.js';
 
 // Credentials bypass drafts and the mutation outbox. A lost response requires revocation.
 export async function mountDevices(root, ctx) {
   let disposed = false, credentialInput = null;
   const list = el('div'), notice = el('div'), observations = el('section', { 'aria-label': 'iPhone Shortcuts status' });
-  const localTime = value => value ? new Date(value).toLocaleString(undefined, { timeZone: getDisplayTimeZone(), month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' }) : 'Time unavailable';
+  const localTime = value => value ? formatDateTime(value,{seconds:true}) : 'Time unavailable';
   const clearCredential = () => { if (credentialInput) credentialInput.value = ''; credentialInput = null; };
   async function refresh() {
     try {
@@ -24,7 +24,7 @@ export async function mountDevices(root, ctx) {
       } catch (error) { replace(observations, errorNotice(error)); }
       replace(list, ...(result.devices?.length ? result.devices.map(device => el('div', { class: 'practice-row' },
         el('div', { class: 'row' }, el('h3', {}, device.label || 'Unnamed device'), status(device.revoked ? 'Revoked' : 'Credential active', device.revoked ? 'unknown' : 'saved')),
-        el('p', { class: 'save-meta' }, device.createdAt ? `Created ${new Date(device.createdAt).toLocaleString()}` : 'Creation date unavailable'),
+        el('p', { class: 'save-meta' }, device.createdAt ? `Created ${formatDateTime(device.createdAt)}` : 'Creation date unavailable'),
         !device.revoked ? button('Revoke credential', event => busy(event.currentTarget, async () => { await revoke(device.id); }), 'quiet compact') : null
       )) : [empty('No device credentials. Create one on production when you are ready to set up Shortcuts.')]));
     } catch (error) { if (!disposed) replace(list, errorNotice(error)); }

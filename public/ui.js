@@ -1,3 +1,9 @@
+import {getDisplayTimeZone as displayZone,setDisplayTimeZone as setZone,formatTime as clockTime,formatDateTime as dateTime} from './clock-format.js';
+export function getDisplayTimeZone(){return displayZone();}
+export function setDisplayTimeZone(value){setZone(value);}
+export function formatTime(value,options){return clockTime(value,options);}
+export function compactTime(value,options){return clockTime(value,options);}
+export function formatDateTime(value,options){return dateTime(value,options);}
 import {anchorDialog} from './dialog-position.js';
 import {lifeosDay} from './lifeos-day.js';
 export const $ = (selector, root = document) => root.querySelector(selector);
@@ -39,22 +45,12 @@ export function sectionTabs(items,value,onChange){
 }
 export const field = (label, options = {}) => { const input = el(options.multiline ? 'textarea' : 'input', { ...options, multiline: null }); return { input, node: el('label', {}, label, input) }; };
 export const select = (label, options, value = '') => { const input = el('select', {'aria-label':label}, options.map(option => el('option', { value: option.value ?? option, selected: (option.value ?? option) === value }, option.label ?? option))); return { input, node: el('label', {}, label, input) }; };
-let displayTimeZone='America/Toronto';
-export function setDisplayTimeZone(value){new Intl.DateTimeFormat('en',{timeZone:value});displayTimeZone=value;}
-export const getDisplayTimeZone=()=>displayTimeZone;
 export function deadlineUrgency(data,today,now){
  if(data.dueAt){const delta=Date.parse(data.dueAt)-now;return delta<0?'overdue':delta<=86400000?'soon':'';}
  return data.dueDate?(data.dueDate<today?'overdue':data.dueDate===today?'soon':''):'';
 }
-export const dateToday = () => lifeosDay(Date.now(),displayTimeZone);
-export function formatDate(value, long = false) { if (!value) return 'Date unknown'; const date = new Date(value.length === 10 ? `${value}T12:00:00Z` : value); return Number.isNaN(date.valueOf()) ? 'Date unknown' : new Intl.DateTimeFormat(undefined, { month: long ? 'long' : 'short', day: 'numeric', ...(long ? { weekday: 'long', year: 'numeric' } : {}), timeZone: value.length === 10 ? 'UTC' : displayTimeZone }).format(date); }
-export function formatTime(value) { if (!value) return ''; if (/^\d{2}:\d{2}$/.test(value)) return value; const date = new Date(value); return Number.isNaN(date.valueOf()) ? '' : new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit', timeZone: displayTimeZone }).format(date); }
-export function compactTime(value){
- if(!value)return '';let hour,minute;
- if(/^\d{2}:\d{2}$/.test(value)){[hour,minute]=value.split(':').map(Number);}
- else{const date=new Date(value);if(!Number.isFinite(date.valueOf()))return '';const parts=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:displayTimeZone}).formatToParts(date);hour=Number(parts.find(p=>p.type==='hour').value);minute=Number(parts.find(p=>p.type==='minute').value);}
- return `${hour%12||12}:${String(minute).padStart(2,'0')}${hour<12?'a':'p'}`;
-}
+export const dateToday = () => lifeosDay(Date.now(),getDisplayTimeZone());
+export function formatDate(value, long = false) { if (!value) return 'Date unknown'; const date = new Date(value.length === 10 ? `${value}T12:00:00Z` : value); return Number.isNaN(date.valueOf()) ? 'Date unknown' : new Intl.DateTimeFormat(undefined, { month: long ? 'long' : 'short', day: 'numeric', ...(long ? { weekday: 'long', year: 'numeric' } : {}), timeZone: value.length === 10 ? 'UTC' : getDisplayTimeZone() }).format(date); }
 export function duration(minutes) { if (minutes == null || minutes === '' || !Number.isFinite(Number(minutes))) return 'Unknown'; const n = Math.max(0, Math.round(Number(minutes))); return n < 60 ? `${n} min` : `${Math.floor(n / 60)}h${n % 60 ? ` ${n % 60}m` : ''}`; }
 let externalOrigins=null;
 export function configureExternalLinks(origins){externalOrigins=new Set(origins);}
