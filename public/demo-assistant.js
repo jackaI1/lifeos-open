@@ -1,3 +1,4 @@
+import {formatDateTime,formatTime} from './clock-format.js';
 // Authored examples only. No model, network request or private account is used.
 const catalogue={
  today:[['move','Move a study block','Move my next study block 30 minutes later.'],['add','Add a walk','Add a 20-minute walk to my schedule.'],['fit','Would studying fit?','Would a 30-minute study session fit tomorrow?'],['time','Find some free time','When do I have time for a 20-minute break?']],
@@ -12,7 +13,7 @@ export const isDemoAssistant=session=>session?.mode==='demo'&&session?.services?
 export function demoAssistantAnswer(scope,message,context={}){
  const option=demoAssistantOptions(scope).find(o=>o.message===message);if(!option)return null;
  const answer=(reply,proposals=[])=>({reply,proposals}),tz=context.timeZone??'America/Toronto';
- const when=value=>new Intl.DateTimeFormat('en-US',{timeZone:tz,weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(value));
+ const when=value=>formatDateTime(value,{timeZone:tz,timeFormat:context.timeFormat,weekday:'short'});
  const tomorrow=context.lifeosDay?new Date(Date.parse(context.lifeosDay+'T12:00Z')+86400000).toISOString().slice(0,10):null;
  const interval=minutes=>(context.freeSlots??[]).filter(s=>option.id!=='today-fit'||!tomorrow||s.day===tomorrow).find(s=>Date.parse(s.end)-Date.parse(s.start)>=minutes*60000);
  const proposal=(operation,recordId,expectedVersion,fields,reason)=>({operation,recordId,expectedVersion,fields:Object.entries(fields).map(([name,value])=>({name,value})),reason});
@@ -30,7 +31,7 @@ export function demoAssistantAnswer(scope,message,context={}){
   if(!slot)return answer('I could not find an open window long enough in the next two days. Nothing was changed. Review Today to shorten a flexible task or choose another day.');
   const end=new Date(Date.parse(slot.start)+minutes*60000).toISOString();
   if(option.id==='today-add')return answer(`There is room for a 20-minute walk at ${when(slot.start)}. Choose Apply change to add it to this demo’s local schedule. Nothing has been added yet.`,[proposal('calendar-create',null,0,{title:'Walk',start:slot.start,end},'Use an available 20-minute window without moving existing commitments.')]);
-  return answer(`${option.id==='today-fit'?'Yes. A 30-minute session fits':'There is time for a 20-minute break'} at ${when(slot.start)} until ${new Intl.DateTimeFormat('en-US',{timeZone:tz,hour:'numeric',minute:'2-digit'}).format(new Date(end))}. This is an available window, not a booking; your schedule is unchanged.`);
+  return answer(`${option.id==='today-fit'?'Yes. A 30-minute session fits':'There is time for a 20-minute break'} at ${when(slot.start)} until ${formatTime(end,{timeZone:tz,timeFormat:context.timeFormat})}. This is an available window, not a booking; your schedule is unchanged.`);
  }
  if(scope==='academics'){
   const next=context.tasks?.find(t=>!['complete','completed','submitted','cancelled','blocked','waiting','archived'].includes(t.status)&&t.rank!==null&&!t.blocked);

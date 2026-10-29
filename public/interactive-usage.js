@@ -1,7 +1,7 @@
-import {el,button} from './ui.js';
+import {el,button,formatDateTime} from './ui.js';
 import {compactDisclosure,controlIcon} from './quiet-controls.js';
 let cached=null,fetchedAt=0,inFlight=null,lastRequest=0;
-const date=at=>new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'short'}).format(at);
+const date=at=>formatDateTime(at);
 export function usageIndicator(ctx){
  if(ctx.capabilities?.usage!==true)return {node:null,refresh:async()=>{},destroy(){}};
  let disposed=false,value=null,expiry,recheck;

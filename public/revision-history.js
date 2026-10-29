@@ -1,4 +1,4 @@
-import {el,button,replace,select,busy,toast,getDisplayTimeZone} from './ui.js';
+import {el,button,replace,select,busy,toast,getDisplayTimeZone,formatDateTime} from './ui.js';
 import {prayerListText} from './prayer-plain.js';
 
 function textOf(kind,data,section){
@@ -11,7 +11,7 @@ export function revisionHistory(ctx,{kind,id,onRestore=()=>{},canRestore=()=>tru
  function paint(){
   replace(body,...items.map(item=>{const section=kind==='prayer-list'?select('Section',current.data.sections.map(s=>({value:s.id,label:s.title}))):null;
    const preview=el('pre',{class:'revision-preview'},textOf(kind,item.data,section?.input.value));if(section)section.input.onchange=()=>{preview.textContent=textOf(kind,item.data,section.input.value);};
-   return el('details',{},el('summary',{},new Date(item.at).toLocaleString(undefined,{timeZone:getDisplayTimeZone()})+', Version '+item.version),section?.node,preview,button('Restore these '+(kind==='prayer-list'?'requests':'words'),e=>busy(e.currentTarget,async()=>{
+   return el('details',{},el('summary',{},formatDateTime(item.at)+', Version '+item.version),section?.node,preview,button('Restore these '+(kind==='prayer-list'?'requests':'words'),e=>busy(e.currentTarget,async()=>{
     if(!canRestore()){toast('Save or leave your current edits before restoring.');return;}
     if(!confirm('Restore this content? Current completion, dates and other sections will be preserved.'))return;
     const result=await ctx.request(`/api/revisions/${kind}/${encodeURIComponent(id)}`,{method:'POST',body:{mutationId:crypto.randomUUID(),auditId:item.id,version:current.version,...(section?{sectionId:section.input.value}:{})}});

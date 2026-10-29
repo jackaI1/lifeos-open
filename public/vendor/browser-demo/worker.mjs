@@ -5475,7 +5475,7 @@ var fields = {
   task: "title courseId dueDate dueAt remainingMinutes estimatedMinutes difficulty status nextStep nextStepMinutes userNotes notes archived sourceUrl source",
   "prayer-list": "sections",
   "accountability-draft": "entryId entryVersion previousEntryId prayerSessionId prayed repentance followThrough applications text status approvedAt",
-  settings: "studyReserveTimes theme customTheme spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions",
+  settings: "studyReserveTimes theme timeFormat customTheme spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions",
   "prayer-note": "section title text archived rotation people notes weekday weekdays nodes",
   project: "title category notes status archived nextStep steps timeBlocks githubUrl",
   meal: "title notes recipe day slot ingredients steps",
@@ -5603,6 +5603,7 @@ function recordData(kind, input) {
       if (!Array.isArray(data2.studyReserveTimes) || data2.studyReserveTimes.length > 24) throw new AppError("Choose at most 24 reserve times");
       data2.studyReserveTimes.forEach(clock);
     }
+    if (data2.timeFormat !== void 0) enumValue(data2.timeFormat, ["24h", "12h"]);
     if (data2.theme !== void 0) enumValue(data2.theme, themeIds);
     if (data2.customTheme != null) {
       try {
@@ -12253,6 +12254,49 @@ init_globals();
 
 // public/demo-assistant.js
 init_globals();
+
+// public/clock-format.js
+init_globals();
+var zone2 = "America/Toronto";
+var format = "24h";
+var timeFormatId = (value) => value === "12h" ? "12h" : "24h";
+function parseClockTime(value) {
+  const match = typeof value === "string" && /^(\d{1,2}):(\d{2})(?:\s*([ap])\.?m\.?)?$/i.exec(value.trim());
+  if (!match) return null;
+  let hour = Number(match[1]);
+  const minute = Number(match[2]), period = match[3]?.toLowerCase();
+  if (minute > 59 || (period ? hour < 1 || hour > 12 : hour > 23)) return null;
+  if (period) hour = hour % 12 + (period === "p" ? 12 : 0);
+  return String(hour).padStart(2, "0") + ":" + String(minute).padStart(2, "0");
+}
+function formatTime(value, { timeZone = zone2, seconds = false, timeFormat = format } = {}) {
+  if (value == null || value === "") return "";
+  let h, m, s = 0;
+  if (typeof value === "string" && /^\d{1,2}:\d{2}(?::\d{2})?$/.test(value)) {
+    const clock3 = parseClockTime(value.split(":").slice(0, 2).join(":"));
+    if (!clock3) return "";
+    [h, m] = clock3.split(":").map(Number);
+    s = Number(value.split(":")[2] ?? 0);
+    if (s > 59) return "";
+  } else {
+    const date3 = new Date(value);
+    if (!Number.isFinite(date3.valueOf())) return "";
+    const parts = new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).formatToParts(date3), part = (type) => Number(parts.find((p) => p.type === type).value);
+    h = part("hour");
+    m = part("minute");
+    s = part("second");
+  }
+  const clock2 = (timeFormatId(timeFormat) === "12h" ? String(h % 12 || 12) : String(h).padStart(2, "0")) + ":" + String(m).padStart(2, "0") + (seconds ? ":" + String(s).padStart(2, "0") : "");
+  return clock2 + (timeFormatId(timeFormat) === "12h" ? h < 12 ? " AM" : " PM" : "");
+}
+function formatDateTime(value, { timeZone = zone2, seconds = false, timeFormat = format, ...options } = {}) {
+  if (value == null || value === "") return "";
+  const date3 = new Date(value);
+  if (!Number.isFinite(date3.valueOf())) return "";
+  return new Intl.DateTimeFormat(void 0, { year: "numeric", month: "short", day: "numeric", ...options, timeZone }).format(date3) + ", " + formatTime(date3, { timeZone, seconds, timeFormat });
+}
+
+// public/demo-assistant.js
 var catalogue = {
   today: [["move", "Move a study block", "Move my next study block 30 minutes later."], ["add", "Add a walk", "Add a 20-minute walk to my schedule."], ["fit", "Would studying fit?", "Would a 30-minute study session fit tomorrow?"], ["time", "Find some free time", "When do I have time for a 20-minute break?"]],
   academics: [["priority", "Choose what to work on", "What should I work on first, and why?"], ["lab", "Prepare for the lab", "What should I bring to my next lab?"], ["start", "Make the first step smaller", "Break my next assignment into three small steps."]],
@@ -12268,7 +12312,7 @@ function demoAssistantAnswer(scope, message, context = {}) {
   const option = demoAssistantOptions(scope).find((o) => o.message === message);
   if (!option) return null;
   const answer = (reply, proposals = []) => ({ reply, proposals }), tz = context.timeZone ?? "America/Toronto";
-  const when = (value) => new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
+  const when = (value) => formatDateTime(value, { timeZone: tz, timeFormat: context.timeFormat, weekday: "short" });
   const tomorrow = context.lifeosDay ? new Date(Date.parse(context.lifeosDay + "T12:00Z") + 864e5).toISOString().slice(0, 10) : null;
   const interval = (minutes) => (context.freeSlots ?? []).filter((s) => option.id !== "today-fit" || !tomorrow || s.day === tomorrow).find((s) => Date.parse(s.end) - Date.parse(s.start) >= minutes * 6e4);
   const proposal = (operation, recordId, expectedVersion, fields7, reason) => ({ operation, recordId, expectedVersion, fields: Object.entries(fields7).map(([name, value]) => ({ name, value })), reason });
@@ -12286,7 +12330,7 @@ function demoAssistantAnswer(scope, message, context = {}) {
     if (!slot) return answer("I could not find an open window long enough in the next two days. Nothing was changed. Review Today to shorten a flexible task or choose another day.");
     const end = new Date(Date.parse(slot.start) + minutes * 6e4).toISOString();
     if (option.id === "today-add") return answer(`There is room for a 20-minute walk at ${when(slot.start)}. Choose Apply change to add it to this demo\u2019s local schedule. Nothing has been added yet.`, [proposal("calendar-create", null, 0, { title: "Walk", start: slot.start, end }, "Use an available 20-minute window without moving existing commitments.")]);
-    return answer(`${option.id === "today-fit" ? "Yes. A 30-minute session fits" : "There is time for a 20-minute break"} at ${when(slot.start)} until ${new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit" }).format(new Date(end))}. This is an available window, not a booking; your schedule is unchanged.`);
+    return answer(`${option.id === "today-fit" ? "Yes. A 30-minute session fits" : "There is time for a 20-minute break"} at ${when(slot.start)} until ${formatTime(end, { timeZone: tz, timeFormat: context.timeFormat })}. This is an available window, not a booking; your schedule is unchanged.`);
   }
   if (scope === "academics") {
     const next = context.tasks?.find((t) => !["complete", "completed", "submitted", "cancelled", "blocked", "waiting", "archived"].includes(t.status) && t.rank !== null && !t.blocked);
@@ -12458,7 +12502,7 @@ async function drainJobs(db, env) {
             return buildToday({ now, date: date3, records, events, settings });
           });
           const finance = scope === "finances" ? await financeSnapshot(new CloudStore(db), day) : null;
-          const context2 = { ...assistantContext({ scope: "today", records, now, days: days2 }), timeZone: timezone, freeSlots: demoAvailableSlots(days2, now), diningCard: finance?.summary?.cards.find((c) => c.id === "dining") };
+          const context2 = { ...assistantContext({ scope: "today", records, now, days: days2 }), timeZone: timezone, timeFormat: records.settings.find((r) => r.id === "preferences")?.data.timeFormat ?? "24h", freeSlots: demoAvailableSlots(days2, now), diningCard: finance?.summary?.cards.find((c) => c.id === "dining") };
           for (const task of context2.tasks) {
             const raw = records.task.find((r) => r.id === task.id)?.data;
             task.blocked = !!raw?.blocked || (raw?.dependencies ?? []).some((id) => !["complete", "completed", "submitted"].includes(records.task.find((r) => r.id === id)?.data.status));

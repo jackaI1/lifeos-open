@@ -11,7 +11,7 @@ const fields={
  task:'title courseId dueDate dueAt remainingMinutes estimatedMinutes difficulty status nextStep nextStepMinutes userNotes notes archived sourceUrl source',
  'prayer-list':'sections',
  'accountability-draft':'entryId entryVersion previousEntryId prayerSessionId prayed repentance followThrough applications text status approvedAt',
- settings:'studyReserveTimes theme customTheme spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
+ settings:'studyReserveTimes theme timeFormat customTheme spiritualPracticesEnabled notificationDeviceId textSize controlDensity handedness accountabilityDiscordUrl hourlyPrayerReminder timezone wakeTime lightsOut prayerWakeLock quietStart quietEnd lateRounding schoolStart schoolEnd morningCommuteMinutes eveningCommuteMinutes breakfastMinutes lunchPrepMinutes dinnerMinutes fridayTravelMinutes fridayBedtime saturdayWakeTime prayerCampusLocation devotionalCampusLocation locationLabels readingPlan exceptions',
  'prayer-note':'section title text archived rotation people notes weekday weekdays nodes',
  project:'title category notes status archived nextStep steps timeBlocks githubUrl',meal:'title notes recipe day slot ingredients steps',grocery:'title checked quantity notes archived',
  coursework:'title taskId text language document attachmentIds notes archived',training:'weeklyKm longestKm pain injury recovery guidance raceDate goalMinutes sundayExceptionConfirmed baselineDate notes',
@@ -45,6 +45,7 @@ export function recordData(kind,input){
  if(kind==='accountability-draft'){identifier(data.entryId);version(data.entryVersion);for(const k of ['previousEntryId','prayerSessionId'])if(data[k]!=null)identifier(data[k]);for(const k of ['prayed','repentance','followThrough','applications','text'])text(data[k],22000);enumValue(data.status,['draft','approved']);if(data.approvedAt!=null&&!Number.isFinite(Date.parse(data.approvedAt)))throw new AppError('Invalid approval time');}
  if(kind==='settings'){
   if(data.studyReserveTimes!==undefined){if(!Array.isArray(data.studyReserveTimes)||data.studyReserveTimes.length>24)throw new AppError('Choose at most 24 reserve times');data.studyReserveTimes.forEach(clock);}
+  if(data.timeFormat!==undefined)enumValue(data.timeFormat,['24h','12h']);
   if(data.theme!==undefined)enumValue(data.theme,themeIds);
   if(data.customTheme!=null){try{data.customTheme=validateCustomTheme(data.customTheme);}catch(error){throw new AppError(error.message);}}
   if(data.theme==='custom'&&!data.customTheme)throw new AppError('Save a custom theme first.');
