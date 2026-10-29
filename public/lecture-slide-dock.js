@@ -18,7 +18,7 @@ export function slideDock(title, body, onclose, options={}) {
   const resize = el('span', {class: 'slide-dock-resize', role: 'button', tabindex: 0,
     'aria-label': 'Resize '+label+'. Use arrow keys to resize.'});
   const resizeLeft=el('span',{class:'slide-dock-resize slide-dock-resize-left',role:'button',tabindex:0,'aria-label':'Resize '+label+' from left. Use arrow keys to resize.'});
-  const host = el('aside', {class: 'lecture-slide-dock', 'aria-label': title},
+  const host = el('aside', {class: 'lecture-slide-dock', 'aria-label': title, hidden:options.hidden},
     el('div', {class: 'slide-dock-header'}, move,
       el('button', {type:'button',onclick:()=>void close(),class:'quiet icon-button','aria-label':'Close '+label},controlIcon('close'))), body, resizeLeft, resize);
   body.classList.add('slide-dock-content');if(options.className)host.classList.add(options.className);

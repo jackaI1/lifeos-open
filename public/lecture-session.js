@@ -19,9 +19,28 @@ export async function syncLectureState(ctx,store,id,intent){
 export function queueLectureSync(value){try{const list=JSON.parse(localStorage.getItem('lifeos-note-sync')||'[]').filter(v=>v.id!==value.id);list.push(value);localStorage.setItem('lifeos-note-sync',JSON.stringify(list));}catch{}}
 export function rememberLiveNote(value){descriptor=value;try{if(value)localStorage.setItem(marker,JSON.stringify(value));else localStorage.removeItem(marker);}catch{}paint();}
 function paint(){dock?.remove();dock=null;if(!descriptor||!context)return;const value=descriptor,edit=button(controlIcon('pen'),()=>context.go('school?lectures='+encodeURIComponent(value.courseId)+'&lecture='+encodeURIComponent(value.id)),'quiet icon-button'),finish=button(controlIcon('check'),()=>void confirmLectureFinish({finish:()=>finishRemembered(value)}).catch(e=>toast(e.message)),'quiet icon-button');edit.setAttribute('aria-label','Edit Live Note');finish.setAttribute('aria-label','Finish Live Note');dock=el('aside',{class:'live-note-mini','aria-label':'Live Note'},el('span',{},'Live Note'),edit,finish);document.body.append(dock);}
-async function finishRemembered(value){const live=sessions.get(value.id+(value.phone?':phone':''));if(live){await live.api.finish();return;}const store=await new LectureStorage(value.storeName).open();await store.put('finish-intent:'+value.id,{at:new Date().toISOString()});queueLectureSync(value);rememberLiveNote(null);const f=getLectureFinisher(context,store,value.id);await f.resume();}
+async function finishRemembered(value){const live=sessions.get(value.id+(value.phone?':phone':''));if(live){await live.ready;await live.api.finish();return;}const store=await new LectureStorage(value.storeName).open();await store.put('finish-intent:'+value.id,{at:new Date().toISOString()});queueLectureSync(value);rememberLiveNote(null);const f=getLectureFinisher(context,store,value.id);await f.resume();}
 export async function syncPendingLecturePause(ctx,store,id){if(!await store.get('pause-intent:'+id))return;const device=(await store.get('lecture-device'))?.id;if(!device)return;await ctx.request('/api/lectures/'+id+'/capture',{method:'POST',body:{operation:'pause',deviceId:device,mutationId:crypto.randomUUID()}});await store.remove('pause-intent:'+id);}
-async function resumePause(){if(!descriptor)return;const value=descriptor,live=sessions.get(value.id);if(live){await live.api.syncPause?.();return;}const store=await new LectureStorage(value.storeName).open();try{await syncPendingLecturePause(context,store,value.id);}finally{store.close();}}
+async function resumePause(){if(!descriptor)return;const value=descriptor,live=sessions.get(value.id);if(live){await live.ready;await live.api.syncPause?.();return;}const store=await new LectureStorage(value.storeName).open();try{await syncPendingLecturePause(context,store,value.id);}finally{store.close();}}
 export function restoreLiveNoteDock(ctx){context=ctx;void resumeSync().catch(()=>{});window.addEventListener('online',()=>{void resumeSync().catch(()=>{});void resumePause().catch(()=>{});});document.addEventListener('visibilitychange',()=>{if(!document.hidden)void resumePause().catch(()=>{});});try{descriptor=JSON.parse(localStorage.getItem(marker)||'null');}catch{}void resumePause().catch(()=>{});paint();}
 async function resumeSync(){let list=[];try{list=JSON.parse(localStorage.getItem('lifeos-note-sync')||'[]');}catch{}for(const value of list){if(restoring.has(value.id)||sessions.has(value.id))continue;restoring.add(value.id);const store=await new LectureStorage(value.storeName).open();const f=getLectureFinisher(context,store,value.id);await f.resume();}}
-export async function persistentLecture(root,ctx,course,id,store,mount,phone=false){context=ctx;const key=id+(phone?':phone':'');let session=sessions.get(key);if(session){store.close();root.replaceChildren(session.host);session.api.resumeView?.();}else{const host=el('div',{class:'live-note-host'});root.replaceChildren(host);const api=await mount(host,ctx,course,id,store);session={host,api};sessions.set(key,session);}if(!session.api.finished?.())rememberLiveNote({id,courseId:course.id,storeName:session.api.storeName,phone});return {dirty:()=>session.api.dirty(),beforeLeave:()=>session.api.beforeLeave(),destroy(){session.api.suspendView?.();session.host.remove();}};}
+export async function persistentLecture(root,ctx,course,id,store,mount,phone=false){
+ if(!root.isConnected){store.close();return {destroy(){}};}
+ context=ctx;const key=id+(phone?':phone':'');let session=sessions.get(key);const reused=!!session;
+ if(session)store.close();
+ else{
+  session={host:el('div',{class:'live-note-host'}),api:null,owner:null};
+  // Publish the pending mount before another route can request this lecture.
+  sessions.set(key,session);
+  session.ready=Promise.resolve().then(()=>mount(session.host,ctx,course,id,store)).then(api=>session.api=api).catch(error=>{if(sessions.get(key)===session)sessions.delete(key);store.close();throw error;});
+ }
+ const owner={root};session.owner=owner;
+ root.replaceChildren(session.host);
+ await session.ready;
+ // A retired route may finish after a newer route has adopted the same host.
+ if(session.owner===owner){
+  if(!root.isConnected)session.api.suspendView?.();else if(reused)session.api.resumeView?.();
+ }
+ if(!session.api.finished?.())rememberLiveNote({id,courseId:course.id,storeName:session.api.storeName,phone});
+ return {dirty:()=>session.api.dirty(),beforeLeave:()=>session.api.beforeLeave(),destroy(){if(session.owner!==owner)return;session.api.suspendView?.();session.host.remove();session.owner=null;}};
+}
