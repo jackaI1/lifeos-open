@@ -106,7 +106,7 @@ export async function mount(root,ctx){
 
  for(const [index,item] of (schedule.timeline??[]).entries()){
 
-  const hour=Number(timeValue(item.start).split(':')[0]),nextPeriod=item.allDay?0:hour>=17?2:hour>=12?1:0;if(nextPeriod>period){period=nextPeriod;timeline.append(el('li',{class:'schedule-period','aria-hidden':'true'},period===1?'Afternoon':'Evening'));}
+  const hour=Number.isFinite(Date.parse(item.start))?Number(timeValue(item.start).split(':')[0]):NaN,nextPeriod=item.allDay?0:hour>=17?2:hour>=12?1:0;if(nextPeriod>period){period=nextPeriod;timeline.append(el('li',{class:'schedule-period','aria-hidden':'true'},period===1?'Afternoon':'Evening'));}
   const intent=entryIntent(item,context);
 
   const clock=el('div',{class:'schedule-clock'});
