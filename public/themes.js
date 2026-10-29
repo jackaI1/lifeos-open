@@ -23,9 +23,9 @@ export function applyTheme(value,root=globalThis.document?.documentElement,custo
  if(root){root.dataset.theme=id;root.dataset.baseTheme=palette.base||id;for(const key of overrides)root.style?.removeProperty('--'+key);
   if(id==='custom'){
    const base=themes.find(theme=>theme.id===palette.base),vars={primary:palette.primary,'primary-ink':palette.primaryInk};
-   if(palette.primary.toLowerCase()!==base.primary.toLowerCase())vars.blue=palette.primary;
+   if(palette.primary.toLowerCase()!==base.primary.toLowerCase()||palette.chassis.toLowerCase()!==base.chassis.toLowerCase())vars.blue=palette.linkInk;
    if(palette.display.toLowerCase()!==base.display.toLowerCase())Object.assign(vars,{display:palette.display,'display-ink':palette.displayInk,'display-dim':palette.displayInk,'display-meta':palette.displayInk});
-   if(palette.chassis.toLowerCase()!==base.chassis.toLowerCase())Object.assign(vars,{chassis:palette.chassis,plate:palette.chassis,seam:`color-mix(in srgb,${palette.ink} 24%,${palette.chassis})`,ink:palette.ink,dim:palette.ink,faint:palette.ink,key:`color-mix(in srgb,${palette.ink} 9%,${palette.chassis})`,'key-hi':`color-mix(in srgb,${palette.ink} 18%,${palette.chassis})`,'key-lo':palette.chassis,'key-ink':palette.ink,recess:palette.chassis});
+   if(palette.chassis.toLowerCase()!==base.chassis.toLowerCase())Object.assign(vars,{chassis:palette.chassis,plate:palette.chassis,seam:`color-mix(in srgb,${palette.ink} 24%,${palette.chassis})`,ink:palette.ink,dim:palette.ink,faint:palette.ink,key:palette.key,'key-hi':`color-mix(in srgb,${palette.ink} 18%,${palette.chassis})`,'key-lo':palette.chassis,'key-ink':palette.ink,recess:palette.chassis});
    for(const [key,color]of Object.entries(vars))root.style?.setProperty('--'+key,color);
   }
  }

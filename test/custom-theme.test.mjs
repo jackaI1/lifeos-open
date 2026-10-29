@@ -7,7 +7,7 @@ const custom={base:'midnight',name:'Custom',primary:'#7FA6F5',display:'#fafafa',
 test('custom colours correct text contrast on display, chassis and primary',()=>{
  for(const bg of ['#ffffff','#777777','#000000','#ff00ff','#808000']){
   const p=customPalette({...custom,display:bg,chassis:bg,primary:bg});
-  for(const [ink,surface] of [[p.displayInk,p.display],[p.ink,p.chassis],[p.primaryInk,p.primary]])assert.ok(contrastRatio(ink,surface)>=4.5);
+  for(const [ink,surface] of [[p.displayInk,p.display],[p.ink,p.chassis],[p.primaryInk,p.primary],[p.ink,p.key],[p.linkInk,p.chassis]])assert.ok(contrastRatio(ink,surface)>=4.5);
  }
 });
 test('custom theme validates bounded names, base themes and literal colours',()=>{
