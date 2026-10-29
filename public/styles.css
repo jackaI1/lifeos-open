@@ -142,3 +142,6 @@ button.theme-key{position:relative;min-width:0;min-height:88px;padding:12px 8px 
 @media(max-width:700px){#phone-settings-navigation{display:flex;flex:none;margin-inline-end:auto}#phone-settings-navigation .nav-link{width:44px;height:44px;min-height:44px;padding:12px;gap:0}#phone-settings-navigation .nav-link svg{width:20px;height:20px}}
 
 :root[data-theme=custom] :is(.instrument-display,.page-display) a{color:var(--display-ink)}
+
+:root[data-theme=custom] .display-segments i.on{background:var(--primary)}
+:root[data-theme=custom] :is(.nav-link,#mobile-navigation>a)[aria-current=page]::after{background:var(--primary);box-shadow:0 0 6px color-mix(in srgb,var(--primary) 53%,transparent)}
