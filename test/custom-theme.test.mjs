@@ -28,3 +28,8 @@ test('Node settings persist, rename and reset a custom theme without losing pref
   await save({theme:'midnight',customTheme:null});assert.equal(record.data.theme,'midnight');assert.equal(record.data.customTheme,null);assert.equal(record.data.wakeTime,wake);
  }finally{app.close();}
 });
+test('opening a custom draft keeps unedited base surfaces and accent links',async()=>{
+ const {applyTheme}=await import('../public/themes.js');const values=new Map(),root={dataset:{},style:{removeProperty:key=>values.delete(key),setProperty:(key,value)=>values.set(key,value)}};
+ applyTheme('custom',root,{base:'midnight',name:'Custom',primary:'#E8B34B',display:'#070A10',chassis:'#121620'},{persist:false});
+ for(const key of ['--plate','--key','--blue','--display-dim'])assert.equal(values.has(key),false,'Unedited primitive must inherit the base palette: '+key);
+});

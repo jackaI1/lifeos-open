@@ -22,7 +22,10 @@ export function applyTheme(value,root=globalThis.document?.documentElement,custo
  if(id==='custom'){try{palette=customPalette(custom);}catch{id='graphite';palette=themes[0];}}
  if(root){root.dataset.theme=id;root.dataset.baseTheme=palette.base||id;for(const key of overrides)root.style?.removeProperty('--'+key);
   if(id==='custom'){
-   const vars={chassis:palette.chassis,plate:palette.chassis,seam:`color-mix(in srgb,${palette.ink} 24%,${palette.chassis})`,display:palette.display,'display-ink':palette.displayInk,'display-dim':palette.displayInk,'display-meta':palette.displayInk,ink:palette.ink,dim:palette.ink,faint:palette.ink,key:`color-mix(in srgb,${palette.ink} 9%,${palette.chassis})`,'key-hi':`color-mix(in srgb,${palette.ink} 18%,${palette.chassis})`,'key-lo':palette.chassis,'key-ink':palette.ink,primary:palette.primary,'primary-ink':palette.primaryInk,blue:palette.primary,recess:palette.chassis};
+   const base=themes.find(theme=>theme.id===palette.base),vars={primary:palette.primary,'primary-ink':palette.primaryInk};
+   if(palette.primary.toLowerCase()!==base.primary.toLowerCase())vars.blue=palette.primary;
+   if(palette.display.toLowerCase()!==base.display.toLowerCase())Object.assign(vars,{display:palette.display,'display-ink':palette.displayInk,'display-dim':palette.displayInk,'display-meta':palette.displayInk});
+   if(palette.chassis.toLowerCase()!==base.chassis.toLowerCase())Object.assign(vars,{chassis:palette.chassis,plate:palette.chassis,seam:`color-mix(in srgb,${palette.ink} 24%,${palette.chassis})`,ink:palette.ink,dim:palette.ink,faint:palette.ink,key:`color-mix(in srgb,${palette.ink} 9%,${palette.chassis})`,'key-hi':`color-mix(in srgb,${palette.ink} 18%,${palette.chassis})`,'key-lo':palette.chassis,'key-ink':palette.ink,recess:palette.chassis});
    for(const [key,color]of Object.entries(vars))root.style?.setProperty('--'+key,color);
   }
  }
