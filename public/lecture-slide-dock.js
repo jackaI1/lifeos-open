@@ -54,7 +54,7 @@ export function slideDock(title, body, onclose, options={}) {
       if(resizing)box=resizeDock(box,dx,dy,resizing,{width:innerWidth,height:innerHeight});else{box.x+=dx;box.y+=dy;}layout();
     });
   }
-  const stopDismiss=dismissOnOutside(host,()=>close(),{enabled:()=>!closed&&!document.querySelector('#dialog')?.open});
+  const stopDismiss=dismissOnOutside(host,()=>close(),{enabled:()=>!closed&&!host.hidden&&!document.querySelector('#dialog')?.open});
   let closing=false;
   async function close(force=false) { if(closed||closing&&!force)return;closing=true;try{if(!force&&options.beforeClose&&!await options.beforeClose())return;if(closed)return;closed=true;stopDismiss();window.removeEventListener('resize',layout);window.visualViewport?.removeEventListener('resize',layout);host.remove();onclose?.();}finally{closing=false;} }
   gesture(move,false);gesture(resize,'right');gesture(resizeLeft,'left');window.addEventListener('resize',layout);window.visualViewport?.addEventListener('resize',layout);
