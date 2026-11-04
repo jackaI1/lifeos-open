@@ -1,0 +1,20 @@
+[Unit]
+Description=LifeOS SQLite snapshot with rotation
+Documentation=https://github.com/jackaI1/lifeos-open/blob/main/docs/self-host-linux.md
+After=lifeos.service
+
+[Service]
+Type=oneshot
+User=lifeos
+Group=lifeos
+EnvironmentFile=/etc/lifeos/lifeos.env
+ExecStart=/opt/lifeos/bin/backup.sh
+Nice=10
+IOSchedulingClass=idle
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ReadWritePaths=/var/lib/lifeos /var/backups/lifeos
+UMask=0077

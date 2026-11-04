@@ -333,6 +333,13 @@ THIRD_PARTY_NOTICES.md        dependency and bundled-asset terms
   `ghcr.io/jackai1/lifeos-open` on `v*` tags. Static checks live in
   [`test/docker.test.mjs`](test/docker.test.mjs).
 
+- **Linux, Bash and systemd** — first-class self-hosting on Linux: an idempotent installer, a hardened
+  `lifeos.service`, a daily SQLite backup timer with rotation, atomic upgrades with automatic
+  rollback, and an uninstaller. ShellCheck and an Ubuntu 22.04/24.04 systemd container test run in CI.
+  Guide: [docs/self-host-linux.md](docs/self-host-linux.md). Code: [`deploy/linux/`](deploy/linux/)
+  (`install.sh`, `update.sh`, `backup.sh`, `uninstall.sh`, `systemd/`, `test/e2e.sh`);
+  workflow: [`.github/workflows/linux-deploy.yml`](.github/workflows/linux-deploy.yml).
+
 ## License
 
 MIT; see [`LICENSE`](LICENSE). Bundled libraries/assets and dependencies retain
