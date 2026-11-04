@@ -1,15 +1,65 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync, mkdtempSync, rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {DatabaseSync} from 'node:sqlite';
 import {inflateRawSync} from 'node:zlib';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {buildSolutionZip, solutionFiles, ZIP_NAME, SOLUTION_NAME} from '../flow/pack.ts';
-import {MANAGED_FIELDS, STATUS_LABELS} from '../src/mapping.ts';
+import {MANAGED_FIELDS, STATUS_LABELS, toDesiredItem} from '../src/mapping.ts';
+import {readLifeos} from '../src/lifeos-source.ts';
+import {runReminderQueries} from './flow-expressions.ts';
 
 const flowDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'flow');
 const definition = JSON.parse(readFileSync(join(flowDir, 'definition.json'), 'utf8'));
 const raw = readFileSync(join(flowDir, 'definition.json'), 'utf8');
+
+test('mixed dated and undated tasks keep tomorrow reminders without formatting blanks', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'm365-reminders-'));
+  try {
+    const path = join(dir, 'workspace.sqlite');
+    const db = new DatabaseSync(path);
+    try {
+      db.exec('CREATE TABLE records(kind TEXT, id TEXT, data TEXT)');
+      const put = db.prepare("INSERT INTO records VALUES('task', ?, ?)");
+      const tasks = [
+        {id: 'undated', dueDate: null},
+        {id: 'tomorrow', dueDate: '2026-11-05'},
+        // 00:30 UTC on Nov 6 is still Nov 5 in Toronto.
+        {id: 'timed-tomorrow', dueAt: '2026-11-06T00:30:00Z'},
+        {id: 'today', dueDate: '2026-11-04'},
+        {id: 'later', dueDate: '2026-11-06'},
+      ];
+      for (const task of tasks) put.run(task.id, JSON.stringify({...task, title: task.id, status: 'todo'}));
+    } finally {
+      db.close();
+    }
+    const snapshot = readLifeos(path);
+    const rows = snapshot.tasks.map((task) => toDesiredItem(task, snapshot.timeZone).fields);
+    assert.equal(rows.find((row) => row.LifeOSId === 'undated')?.DueDate, null);
+    // Also cover blank/missing columns from SharePoint's connector response.
+    rows.push({LifeOSId: 'missing'}, {LifeOSId: 'empty', DueDate: ''});
+    const result = runReminderQueries(definition, rows, '2026-11-05');
+    assert.deepEqual(result.dueItems.map((row) => row.LifeOSId).sort(), ['timed-tomorrow', 'tomorrow']);
+    assert.equal(result.formattedDates.length, 4, 'only the four dated tasks reach formatDateTime');
+  } finally {
+    rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+test('empty and entirely undated lists produce no reminders or date formatting', () => {
+  for (const rows of [[], [{DueDate: null}, {}, {DueDate: ''}]]) {
+    assert.deepEqual(runReminderQueries(definition, rows, '2026-11-05'), {dueItems: [], formattedDates: []});
+  }
+});
+
+test('the offline expression runner rejects the original unsafe null formatting', () => {
+  const unsafe = structuredClone(definition);
+  unsafe.actions.Keep_items_due_tomorrow.inputs.from = "@outputs('Get_open_tasks')?['body/value']";
+  unsafe.actions.Keep_items_due_tomorrow.inputs.where = "@equals(formatDateTime(item()?['DueDate'], 'yyyy-MM-dd'), outputs('Tomorrow'))";
+  assert.throws(() => runReminderQueries(unsafe, [{DueDate: null}], '2026-11-05'), /requires a timestamp string/);
+});
 
 /** Reads the central directory of a ZIP into name → contents. */
 function unzip(buffer: Buffer): Record<string, string> {

@@ -76,16 +76,29 @@
         "authentication": "@parameters('$authentication')"
       }
     },
-    "Keep_items_due_tomorrow": {
+    "Keep_items_with_due_dates": {
       "type": "Query",
       "runAfter": {
         "Get_open_tasks": [
           "Succeeded"
         ]
       },
-      "description": "DueDate is a date-only column stored as midnight UTC; formatting it without converting the zone gives the calendar date LifeOS wrote.",
+      "description": "Undated tasks stay in SharePoint, but null, missing and empty DueDate values must be removed in a separate action before formatDateTime runs.",
       "inputs": {
         "from": "@outputs('Get_open_tasks')?['body/value']",
+        "where": "@not(empty(item()?['DueDate']))"
+      }
+    },
+    "Keep_items_due_tomorrow": {
+      "type": "Query",
+      "runAfter": {
+        "Keep_items_with_due_dates": [
+          "Succeeded"
+        ]
+      },
+      "description": "Only dated items reach this action. DueDate is a date-only column stored as midnight UTC; formatting it without converting the zone gives the calendar date LifeOS wrote.",
+      "inputs": {
+        "from": "@body('Keep_items_with_due_dates')",
         "where": "@equals(formatDateTime(item()?['DueDate'], 'yyyy-MM-dd'), outputs('Tomorrow'))"
       }
     },
