@@ -4,10 +4,10 @@ I built a personal workspace because I wanted my schedule, coursework and lectur
 
 ## Overview
 
-Classes, deadlines and notes are easier to lose track of when they live in
+I wanted to keep track of classes, deadlines and notes without leaving them in
 separate places. LifeOS puts them together: I can see today's commitments, plan
 coursework and keep lecture slides, handwriting and audio on the same timeline.
-It also keeps records such as budgets, photos and journal entries.
+I can also keep records such as budgets, photos and journal entries.
 
 This is the public edition of my personal project. It starts with fictional
 courses, contacts and records, with no private workspace history. Try the
