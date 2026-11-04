@@ -1,0 +1,160 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "$connections": {
+      "defaultValue": {},
+      "type": "Object"
+    },
+    "$authentication": {
+      "defaultValue": {},
+      "type": "SecureObject"
+    }
+  },
+  "triggers": {
+    "Every_morning": {
+      "type": "Recurrence",
+      "recurrence": {
+        "frequency": "Day",
+        "interval": 1,
+        "schedule": {
+          "hours": [
+            "8"
+          ],
+          "minutes": [
+            0
+          ]
+        },
+        "timeZone": "Eastern Standard Time"
+      },
+      "metadata": {
+        "operationMetadataId": "6f1b1a52-0d6c-4c0e-9b1d-0a1f6a000001"
+      }
+    }
+  },
+  "actions": {
+    "Settings": {
+      "type": "Compose",
+      "runAfter": {},
+      "description": "The only values to edit after import.",
+      "inputs": {
+        "siteUrl": "https://YOUR-TENANT.sharepoint.com/sites/YOUR-SITE",
+        "listName": "LifeOS Tasks",
+        "recipientEmail": "you@example.com",
+        "timeZone": "Eastern Standard Time"
+      }
+    },
+    "Tomorrow": {
+      "type": "Compose",
+      "runAfter": {
+        "Settings": [
+          "Succeeded"
+        ]
+      },
+      "description": "Calendar date of tomorrow in the configured time zone, as yyyy-MM-dd.",
+      "inputs": "@formatDateTime(addDays(convertTimeZone(utcNow(), 'UTC', outputs('Settings')?['timeZone']), 1), 'yyyy-MM-dd')"
+    },
+    "Get_open_tasks": {
+      "type": "OpenApiConnection",
+      "runAfter": {
+        "Tomorrow": [
+          "Succeeded"
+        ]
+      },
+      "inputs": {
+        "host": {
+          "connectionName": "shared_sharepointonline",
+          "operationId": "GetItems",
+          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+        },
+        "parameters": {
+          "dataset": "@outputs('Settings')?['siteUrl']",
+          "table": "@outputs('Settings')?['listName']",
+          "$filter": "Status ne 'Completed' and Status ne 'Archived'",
+          "$top": 500
+        },
+        "authentication": "@parameters('$authentication')"
+      }
+    },
+    "Keep_items_due_tomorrow": {
+      "type": "Query",
+      "runAfter": {
+        "Get_open_tasks": [
+          "Succeeded"
+        ]
+      },
+      "description": "DueDate is a date-only column stored as midnight UTC; formatting it without converting the zone gives the calendar date LifeOS wrote.",
+      "inputs": {
+        "from": "@outputs('Get_open_tasks')?['body/value']",
+        "where": "@equals(formatDateTime(item()?['DueDate'], 'yyyy-MM-dd'), outputs('Tomorrow'))"
+      }
+    },
+    "Any_due_tomorrow": {
+      "type": "If",
+      "runAfter": {
+        "Keep_items_due_tomorrow": [
+          "Succeeded"
+        ]
+      },
+      "expression": {
+        "greater": [
+          "@length(body('Keep_items_due_tomorrow'))",
+          0
+        ]
+      },
+      "actions": {
+        "For_each_due_item": {
+          "type": "Foreach",
+          "foreach": "@body('Keep_items_due_tomorrow')",
+          "runAfter": {},
+          "actions": {
+            "Teams_reminder": {
+              "type": "OpenApiConnection",
+              "runAfter": {},
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
+                },
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Chat with Flow bot",
+                  "body/recipient": "@outputs('Settings')?['recipientEmail']",
+                  "body/messageBody": "<p><b>Due tomorrow:</b> @{items('For_each_due_item')?['Title']}</p><p>Course: @{coalesce(items('For_each_due_item')?['Course'], 'none')}<br>Due: @{if(empty(items('For_each_due_item')?['DueAt']), outputs('Tomorrow'), formatDateTime(convertTimeZone(items('For_each_due_item')?['DueAt'], 'UTC', outputs('Settings')?['timeZone']), 'MMM d, h:mm tt'))}<br>Status: @{items('For_each_due_item')?['Status']?['Value']}</p>"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Outlook_reminder": {
+              "type": "OpenApiConnection",
+              "runAfter": {
+                "Teams_reminder": [
+                  "Succeeded",
+                  "Failed"
+                ]
+              },
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_office365",
+                  "operationId": "SendEmailV2",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                },
+                "parameters": {
+                  "emailMessage/To": "@outputs('Settings')?['recipientEmail']",
+                  "emailMessage/Subject": "Due tomorrow: @{items('For_each_due_item')?['Title']}",
+                  "emailMessage/Body": "<p><b>Due tomorrow:</b> @{items('For_each_due_item')?['Title']}</p><p>Course: @{coalesce(items('For_each_due_item')?['Course'], 'none')}<br>Due: @{if(empty(items('For_each_due_item')?['DueAt']), outputs('Tomorrow'), formatDateTime(convertTimeZone(items('For_each_due_item')?['DueAt'], 'UTC', outputs('Settings')?['timeZone']), 'MMM d, h:mm tt'))}<br>Status: @{items('For_each_due_item')?['Status']?['Value']}</p>",
+                  "emailMessage/Importance": "Normal"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "actions": {}
+      }
+    }
+  }
+}

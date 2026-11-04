@@ -20,6 +20,7 @@
   },
   "include": [
     "src/local/**/*.ts",
-    "src/hosted/**/*.ts"
+    "src/hosted/**/*.ts",
+    "integrations/**/*.ts"
   ]
 }
