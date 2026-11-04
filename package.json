@@ -11,6 +11,7 @@
     "start": "node --env-file-if-exists=.env build/server.mjs",
     "build": "node tools/build.mjs",
     "test": "node --test test/*.test.mjs integrations/m365/test/*.test.ts",
+    "test:whisper": "node --test test/whisper-inference.integration.mjs",
     "lint": "eslint src public demo tools test integrations",
     "typecheck": "tsc --noEmit",
     "test:smoke": "node tools/smoke.mjs",

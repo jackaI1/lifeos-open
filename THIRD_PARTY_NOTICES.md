@@ -280,3 +280,15 @@ See [ASSET_PROVENANCE.md](ASSET_PROVENANCE.md) for every demo asset, icon, scree
 No uncredited Stack Overflow/blog/repository copies were found outside the explicit vendored components. UI symbols are authored CSS/inline vector shapes or Unicode characters rendered by the user’s system fonts; no third-party icon font is bundled outside KaTeX.
 
 The added row-action SVG shapes in `public/ui.js` are original geometric drawings under MIT. No third-party icon package was added.
+
+## Optional local Whisper dependencies
+
+The opt-in Python environment is installed from
+`tools/whisper/requirements.lock`; model weights and Python packages are not
+bundled in this repository. Upstream code and model terms apply:
+[faster-whisper](https://github.com/SYSTRAN/faster-whisper),
+[CTranslate2](https://github.com/OpenNMT/CTranslate2),
+[PyAV](https://github.com/PyAV-Org/PyAV), and
+[OpenAI Whisper models](https://github.com/openai/whisper).
+The public-domain historical audio fixture is documented separately in
+`test/fixtures/whisper/README.md` and `ASSET_PROVENANCE.md`.

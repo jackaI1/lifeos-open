@@ -1,6 +1,6 @@
 # Asset provenance
 
-All first-party assets below are original fictional demo material, licensed under the project MIT LICENSE. No real photos, recordings, data, Apple/system font files or model weights are included. KaTeX fonts retain their upstream MIT copyright/license. Self-hosted Barlow fonts retain their SIL OFL 1.1 copyright/license. CSS system-font names refer to the user’s installed fonts and do not distribute font files.
+All first-party demo assets below are original fictional material, licensed under the project MIT LICENSE. The separately documented public-domain Whisper test clip is historical speech. No private photos, recordings or data, Apple/system font files or model weights are included. KaTeX fonts retain their upstream MIT copyright/license. Self-hosted Barlow fonts retain their SIL OFL 1.1 copyright/license. CSS system-font names refer to the user’s installed fonts and do not distribute font files.
 
 Art and slides: `python tools/generate-demo-art.py` using Pillow. Narration: install the optional external `espeak-ng@1.0.2` generator in a temporary folder and run `node tools/generate-demo-audio.mjs /path/to/espeak-ng/dist/espeak-ng.js`. The supplied prose is authored fictional teaching text. eSpeak uses formant synthesis; no system voice or sampled speech is incorporated. Screenshots: `npm run test:smoke` in an isolated fictional demo. See THIRD_PARTY_NOTICES.md for generator and library terms.
 
@@ -87,3 +87,12 @@ Art and slides: `python tools/generate-demo-art.py` using Pillow. Narration: ins
 | public/vendor/katex/fonts/KaTeX_Typewriter-Regular.ttf | MIT | KaTeX 0.18.7 upstream font; byte-verified | `f01f3e87d9c6a61c0c081ceb577abd864eb00a612f7ac1620dd6915fad2ef5aa` |
 | public/vendor/katex/fonts/KaTeX_Typewriter-Regular.woff | MIT | KaTeX 0.18.7 upstream font; byte-verified | `e14fed02b1aba7ce9f5afd5844b5d0321b22351febc720e0de8b8723527609f7` |
 | public/vendor/katex/fonts/KaTeX_Typewriter-Regular.woff2 | MIT | KaTeX 0.18.7 upstream font; byte-verified | `71d517d67827787cfabdf186914cc3358eda539e37931941f2b2fd4a21f68c0b` |
+
+## Public-domain Whisper test audio
+
+`test/fixtures/whisper/jfk.wav` is an 11-second excerpt of President John F.
+Kennedy's 1961 inaugural address, a U.S. federal government recording in the
+public domain in the United States. Exact pinned source, checksum, historical
+text and recording-rights references are in
+[`test/fixtures/whisper/README.md`](test/fixtures/whisper/README.md).
+This is public historical speech, not a personal lecture or private recording.

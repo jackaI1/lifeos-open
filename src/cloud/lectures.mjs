@@ -1,4 +1,5 @@
 import {lecturePhotoRoute} from './lecture-photos.mjs';
+import {requestTranscription, transcriptionState} from './lecture-transcription.mjs';
 import {lectureCaptureRoute} from './lecture-capture.mjs';
 import {snapshotDeck} from './lecture-deck.mjs';
 import {lectureStudyRoute} from './lecture-study.mjs';
@@ -230,6 +231,8 @@ export async function lectureRoute({
   const inkPath=path.match(/^\/api\/lectures\/([-\w]+)\/pages\/(\d{4})\/ink(?:\/(base|chunks)(?:\/(\d+))?)?$/);
   if(inkPath){const lecture=await store.get('lecture',v.identifier(inkPath[1]));if(!lecture)throw new AppError('Lecture not found',404);return lectureInkRoute({store,env,config,req,lecture,pageId:inkPath[2],part:inkPath[3],sequence:inkPath[4],json,change,writeObject});}
   const photoPath=path.match(/^\/api\/lectures\/([-\w]+)\/photos(?:\/([-\w]+))?$/);if(photoPath){const lecture=await store.get('lecture',v.identifier(photoPath[1]));if(!lecture)throw new AppError('Lecture not found',404);return lecturePhotoRoute({store,env,config,req,lecture,part:photoPath[2],json,change,writeObject});}
+  const transcriptPath = path.match(/^\/api\/lectures\/([-\w]+)\/transcribe$/);
+  if (transcriptPath) return requestTranscription({store, env, req, id: transcriptPath[1], json});
   const m = path.match(
     /^\/api\/lectures\/([-\w]+)(?:\/(pages|clips|sources)\/([-\w]+)(?:\/(\d+))?)?$/,
   );
@@ -260,6 +263,7 @@ export async function lectureRoute({
     return response({
       item: lecture,
       transcript:(await store.get('lecture-transcript',id))?.data??null,
+      transcription: await transcriptionState(store, env, id),
       pages,
       clips,
       permission:
