@@ -112,10 +112,18 @@ without a deadline in the shared list; the reminder workflow skips them and keep
 the reminders for tasks due tomorrow. A live tenant
 connection still needs its own check.
 
-The public demo can optionally collect a small set of usage events after a
-visitor agrees. The [analytics guide](docs/analytics.md) explains setup and what
-is sent. It stays off until the public build has valid identifiers configured;
-the standalone workspace does not load analytics.
+I want to know which demo screens people try and whether they go on to add
+something. The public demo can use Google Analytics 4 (GA4), which counts visits
+and actions, through Google Tag Manager (GTM), which controls the reporting tags.
+It waits for the visitor's permission and sends fixed categories rather than
+task titles, notes or spending amounts. It stays off until I configure the public
+build; the standalone workspace does not load it.
+
+I can run `npm run analytics:check` after `npm ci` to check the reporting setup
+without a Google account. It walks through fictional task and budget changes,
+checks the saved tag configuration and prints the resulting counts. The
+[analytics guide](docs/analytics.md) explains the local report, live setup and
+how I can compare a screen visit with a later action.
 
 For a browser-only build or hosting the fictional demo, see
 [HOSTED_DEMO.md](HOSTED_DEMO.md). These options are separate from the private

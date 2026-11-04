@@ -30,6 +30,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - name: Replay fictional usage through the exported analytics configuration
+        run: npm run analytics:check
       - name: Verify committed React bundle matches its source
         run: test -z "$(git status --porcelain -- public/react)" || { git status --short -- public/react; exit 1; }
       - run: npm test

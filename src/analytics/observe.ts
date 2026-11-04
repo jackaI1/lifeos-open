@@ -33,9 +33,13 @@ type FetchLike = (input: any, init?: any) => Promise<{ ok: boolean }>;
 /** Wraps fetch. The original response is returned untouched; analytics failures never reach the app. */
 export function observeFetch<F extends FetchLike>(fetchImpl: F, analytics: Analytics, origin: string): F {
   const wrapped = (async (input: any, init?: any) => {
+    // A write started without permission must not become reportable just because
+    // the visitor accepts while its response is still pending.
+    let consentedAtStart = false;
+    try { consentedAtStart = analytics.consent() === 'granted'; } catch { /* optional observer */ }
     const response = await fetchImpl(input, init);
     try {
-      if (response.ok && analytics.consent() === 'granted') {
+      if (response.ok && consentedAtStart && analytics.consent() === 'granted') {
         const request = typeof input === 'object' && input !== null && 'url' in input ? input as { url: string; method?: string } : null;
         const url = new URL(request ? request.url : String(input instanceof URL ? input.href : input), origin);
         const method = init?.method ?? request?.method ?? 'GET';

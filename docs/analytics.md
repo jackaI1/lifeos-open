@@ -6,7 +6,41 @@ The checked-in shell and standalone/private app do not load it, even when those 
 variables are set. No real Google identifiers are committed. Until Jack creates the property
 and container and rebuilds the public demo, analytics stays off and there is no consent banner.
 
-## Five-minute setup
+## Check the reporting setup locally
+
+I use this check before publishing changes to the reporting tags. A tag is a
+small configuration that tells Google Analytics which event to record; GTM keeps
+those configurations together in a container. This check reads the same container
+file I import into GTM, so a broken event name or missing destination fails locally.
+
+```sh
+npm ci
+npm run analytics:check
+```
+
+No account, server, browser or network connection is used by the check itself.
+The walkthrough opens School, creates and edits a fictional task, opens Finances,
+adds fictional spending and returns to Today. It uses the application's consent
+controller and request/route observers, then resolves the exported triggers,
+variables and Google tag settings in a deliberately limited local simulator.
+The expected result is seven events: three `page_view` events, one
+`consent_changed`, one `item_created`, one `item_updated` and one
+`budget_entry_added`. Repeating the same route produces no extra page view.
+
+The command writes `.runtime/analytics-check.json`, an ignored report containing
+the resolved tags and parameters. Check `events` for the page associated with each
+action. Seven checks cover consent, initialization, mapping, duplicate page views,
+safe page metadata, record-content exclusion and withdrawal. Deliberately changed
+exports in the regression tests must fail, including wrong event names, automatic
+page views, unsafe referrers, missing destinations and unsupported tag types.
+
+This is a local configuration check, not Google's GTM runtime. It supports only
+this export's Google tag, GA4 event tags, exact custom-event triggers and version 2
+data-layer variables. Unknown components fail instead of silently passing. It
+does not prove Google's import acceptance, network delivery or live reporting;
+the publishing checks below are still needed for a real property.
+
+## Quick setup for live reporting
 
 1. In [Google Analytics](https://analytics.google.com/), create a GA4 property called
    **LifeOS public demo** (Admin → Create → Property), then a **Web** data stream for the
@@ -45,8 +79,8 @@ and container and rebuilds the public demo, analytics stays off and there is no 
    integration. Supply both real IDs for the provided container; GTM alone is supported only
    for a separately configured container with its own measurement destination.
 
-The application-summary claim about using live GA4/GTM is ready after this setup and the
-Realtime check. Code integration and automated tests alone do not prove live collection.
+The code and export can be checked without an account. Live collection remains
+unverified until the property/container setup and Realtime check are complete.
 
 ## Consent and privacy boundary
 
@@ -95,6 +129,8 @@ Item types: `task`, `course`, `project`, `meal`, `grocery`, `coursework`, `run`,
 Features: `task_progress`, `time_logged`, `reminder_saved`, `schedule_entry`.
 Unlisted record kinds/actions, failed writes, reads and foreign-origin requests are ignored.
 Events count successful observed API calls, not unique humans or deduplicated business records.
+A write must start and finish with consent granted. Accepting while an earlier write
+is waiting for its response does not retroactively count that write.
 
 For example, adding a task pushes `{event: 'item_created', item_type: 'task'}`. It never
 pushes the task body. A view location is `https://PUBLIC-DEMO-ORIGIN/#school` regardless of
@@ -119,6 +155,23 @@ For reports, optionally register event-scoped custom dimensions `view`, `previou
 `item_type`, `feature` and `analytics` under GA4 Admin → Custom definitions. This is not
 required for collection. Do not register personal content or enable automatic form measurement.
 
+## Compare visits with useful actions
+
+After publishing and confirming events in Realtime, I can use GA4 **Explore → Funnel
+exploration** to see how often a screen visit leads to a useful action. For a task
+walkthrough, make step 1 `page_view` with `view` equal to `school`, then step 2
+`item_created` with `item_type` equal to `task`. For spending, use `page_view` with
+`view` equal to `finances`, then `budget_entry_added`. Allow an indirect transition
+so moving between screens does not automatically break the sequence. Use event
+counts when checking the local report; GA4's funnel counts users and can differ.
+Google's [funnel exploration guide](https://support.google.com/analytics/answer/9327974?hl=en)
+explains the step conditions and how intervening actions are handled.
+
+The custom dimensions must finish processing before they appear in reports.
+No report or percentage is claimed here: the repository contains fictional checks,
+not a measured visitor dataset. Only consenting visitors contribute to live counts,
+so these counts do not represent everyone who tries the demo.
+
 ## Implementation and verification
 
 - `src/analytics/`: typed event contract, runtime payload allowlist, consent gate, banner and observers.
@@ -135,10 +188,13 @@ required for collection. Do not register personal content or enable automatic fo
   use DevTools/Realtime for production verification without relaxing this policy.
 - `test/analytics.test.mjs`: consent, persistence, privacy signals, typed module behavior,
   safe requests/routes, build isolation, CSP, and container reference consistency.
+- `src/analytics/gtm-sandbox.ts`, `tools/analytics-check.mjs` and
+  `test/analytics-check.test.mjs`: account-free export replay, readable local report,
+  deliberately broken configuration checks and in-flight consent regression tests.
 - `tools/analytics-browser.test.mjs`: actual browser banner, reload, withdrawal, GPC and
   absent-configuration checks with Google requests intercepted (no live analytics traffic).
 
-Run `npm run build`, `npm test`, `npm run lint`, `npm run typecheck`, `npm run privacy`,
+Run `npm run analytics:check`, `npm run build`, `npm test`, `npm run lint`, `npm run typecheck`, `npm run privacy`,
 then `node --test tools/analytics-browser.test.mjs`. Browser tests require Playwright Chromium.
 The tests validate the module and export locally; importing/publishing the container and checking
 live collection still require the owner's Google accounts.

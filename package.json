@@ -12,6 +12,7 @@
     "build": "node tools/build.mjs",
     "test": "node --test test/*.test.mjs integrations/m365/test/*.test.ts && npm run test:react",
     "test:whisper": "node --test test/whisper-inference.integration.mjs",
+    "analytics:check": "node tools/analytics-check.mjs",
     "lint": "eslint src public demo tools test integrations",
     "typecheck": "tsc --noEmit && tsc --noEmit -p src/frontend/react",
     "test:smoke": "node tools/smoke.mjs",
