@@ -120,7 +120,7 @@ Both ask for confirmation (`--purge` requires typing `delete my data`); pass `--
 
 `.github/workflows/linux-deploy.yml` runs on every change to this directory or the app:
 
-- **ShellCheck** over every script (`shellcheck --external-sources --shell=bash`).
+- **ShellCheck** over every script (`shellcheck --external-sources --source-path=SCRIPTDIR --shell=bash`).
 - **Install + service check** in an Ubuntu 22.04 and 24.04 container with systemd as PID 1.
   [`deploy/linux/test/e2e.sh`](../deploy/linux/test/e2e.sh) asserts that the service is active and
   answers an authenticated `/api/health`, that anonymous requests are refused, that it runs as

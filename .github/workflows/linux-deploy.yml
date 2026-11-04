@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: shellcheck deploy/linux
-        run: shellcheck --external-sources --shell=bash deploy/linux/*.sh deploy/linux/test/*.sh
+        run: shellcheck --external-sources --source-path=SCRIPTDIR --shell=bash deploy/linux/*.sh deploy/linux/test/*.sh
   install-and-service:
     name: install + service check (Ubuntu ${{ matrix.ubuntu }}, systemd)
     needs: shellcheck
