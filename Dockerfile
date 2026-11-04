@@ -25,11 +25,9 @@ FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 ENV NODE_ENV=production \
     PORT=8787 \
     LIFEOS_BIND_HOST=0.0.0.0 \
-    LIFEOS_DATABASE=/data/workspace.sqlite \
-    AUTH_MODE=demo \
-    DEMO_SEED=true \
-    LLM_MODE=mock \
-    GOOGLE_MODE=local
+    LIFEOS_DATABASE=/data/workspace.sqlite
+# AUTH_MODE, DEMO_SEED, LLM_MODE and GOOGLE_MODE are left at the application defaults
+# (demo, seeded, mock replies, local files); override them at run time.
 WORKDIR /app
 # The server needs only the node binary: drop the package managers bundled in the base
 # image (npm, npx, corepack) to shrink the image and its scannable attack surface.
