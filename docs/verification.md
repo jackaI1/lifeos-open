@@ -14,6 +14,11 @@ npm run typecheck
 npm run privacy
 ```
 
+On macOS, the local suite was checked with Node 24.21.0. Node 24.22.2
+produces different compressed bytes for the existing Microsoft 365 ZIP fixture,
+so its byte-for-byte package check fails there even though the package contents
+are unchanged. Keep that runtime difference in mind when updating the fixture.
+
 The tests cover storage, API requests, backup/restore, revisions, configuration
 and controlled assistant responses. CI runs the service tests against SQLite and
 PostgreSQL. [Database notes](postgresql.md) explain the separate PostgreSQL test
