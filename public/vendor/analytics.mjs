@@ -247,9 +247,14 @@ var readVersion = (body) => {
 };
 function observeFetch(fetchImpl, analytics, origin) {
   const wrapped = (async (input, init) => {
+    let consentedAtStart = false;
+    try {
+      consentedAtStart = analytics.consent() === "granted";
+    } catch {
+    }
     const response = await fetchImpl(input, init);
     try {
-      if (response.ok && analytics.consent() === "granted") {
+      if (response.ok && consentedAtStart && analytics.consent() === "granted") {
         const request = typeof input === "object" && input !== null && "url" in input ? input : null;
         const url = new URL(request ? request.url : String(input instanceof URL ? input.href : input), origin);
         const method = init?.method ?? request?.method ?? "GET";
