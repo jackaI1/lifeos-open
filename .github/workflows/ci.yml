@@ -30,6 +30,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - name: Verify committed React bundle matches its source
+        run: test -z "$(git status --porcelain -- public/react)" || { git status --short -- public/react; exit 1; }
       - run: npm test
         env:
           TEST_DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql://lifeos:fictional-ci-password@127.0.0.1:5432/lifeos_test' || '' }}

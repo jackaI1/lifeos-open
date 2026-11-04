@@ -1,6 +1,6 @@
 # Third-party notices
 
-Audit snapshot: 2026-10-19. MIT applies to original LifeOS code and authored demo assets; upstream components retain the terms below. This inventory includes every package-lock.json entry, including optional platform binaries. Installed metadata and license files were checked after fresh npm ci; absent platform packages were checked against exact-version npm registry metadata.
+Audit snapshot: 2026-10-19. MIT applies to original LifeOS code and authored demo assets; upstream components retain the terms below. This inventory includes every package-lock.json entry, including optional platform binaries. Installed metadata and license files were checked after fresh npm ci; absent platform packages were checked against exact-version npm registry metadata. React view dependencies (React, React DOM, Vitest, jsdom, Testing Library and their transitive packages) were added on 2026-11-03 with the same method.
 
 ## Runtime dependencies
 
@@ -86,6 +86,9 @@ Audit snapshot: 2026-10-19. MIT applies to original LifeOS code and authored dem
 | w3c-keyname | 2.2.8 | MIT / permissive | [upstream](https://github.com/marijnh/w3c-keyname#readme) | [LICENSE](public/vendor/licenses/npm/w3c-keyname/LICENSE) |
 | web-push | 3.6.7 | MPL-2.0 / weak copyleft | [upstream](https://github.com/web-push-libs/web-push#readme) | [LICENSE](public/vendor/licenses/npm/web-push/LICENSE) |
 | web-streams-polyfill | 3.3.3 | MIT / permissive | [upstream](https://github.com/MattiasBuelens/web-streams-polyfill#readme) | [LICENSE](public/vendor/licenses/npm/web-streams-polyfill/LICENSE) |
+| react | 19.3.1 | MIT / permissive | [upstream](https://react.dev/) | [LICENSE](public/vendor/licenses/npm/react/LICENSE) |
+| react-dom | 19.3.1 | MIT / permissive | [upstream](https://react.dev/) | [LICENSE](public/vendor/licenses/npm/react-dom/LICENSE) |
+| scheduler | 0.28.0 | MIT / permissive | [upstream](https://react.dev/) | [LICENSE](public/vendor/licenses/npm/scheduler/LICENSE) |
 
 ## Development and tests only
 
@@ -228,6 +231,123 @@ Audit snapshot: 2026-10-19. MIT applies to original LifeOS code and authored dem
 | which | 2.0.2 | ISC / permissive | [upstream](https://www.npmjs.com/package/which/v/2.0.2) | [LICENSE](public/vendor/licenses/npm/which/LICENSE) |
 | word-wrap | 1.2.5 | MIT / permissive | [upstream](https://github.com/jonschlinkert/word-wrap) | [LICENSE](public/vendor/licenses/npm/word-wrap/LICENSE) |
 | yocto-queue | 0.1.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/yocto-queue/v/0.1.0) | [license](public/vendor/licenses/npm/yocto-queue/license) |
+| @adobe/css-tools | 4.5.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/@adobe/css-tools/v/4.5.0) | [LICENSE](public/vendor/licenses/npm/@adobe/css-tools/LICENSE) |
+| @asamuzakjp/css-color | 7.1.9 | MIT / permissive | [upstream](https://github.com/asamuzaK/cssColor#readme) | [LICENSE](public/vendor/licenses/npm/@asamuzakjp/css-color/LICENSE) |
+| @asamuzakjp/dom-selector | 10.0.5 | MIT / permissive | [upstream](https://github.com/asamuzaK/domSelector#readme) | [LICENSE](public/vendor/licenses/npm/@asamuzakjp/dom-selector/LICENSE) |
+| @babel/code-frame | 7.29.7 | MIT / permissive | [upstream](https://babel.dev/docs/en/next/babel-code-frame) | [LICENSE](public/vendor/licenses/npm/@babel/code-frame/LICENSE) |
+| @babel/helper-validator-identifier | 7.29.7 | MIT / permissive | [upstream](https://www.npmjs.com/package/@babel/helper-validator-identifier/v/7.29.7) | [LICENSE](public/vendor/licenses/npm/@babel/helper-validator-identifier/LICENSE) |
+| @babel/runtime | 7.29.10 | MIT / permissive | [upstream](https://babel.dev/docs/en/next/babel-runtime) | [LICENSE](public/vendor/licenses/npm/@babel/runtime/LICENSE) |
+| @bramus/specificity | 2.4.3 | MIT / permissive | [upstream](https://github.com/bramus/specificity#readme) | [LICENSE](public/vendor/licenses/npm/@bramus/specificity/LICENSE) |
+| @csstools/color-helpers | 6.1.2 | MIT-0 / permissive | [upstream](https://github.com/csstools/postcss-plugins/tree/main/packages/color-helpers#readme) | [LICENSE.md](public/vendor/licenses/npm/@csstools/color-helpers/LICENSE.md) |
+| @csstools/css-calc | 3.4.3 | MIT / permissive | [upstream](https://github.com/csstools/postcss-plugins/tree/main/packages/css-calc#readme) | [LICENSE.md](public/vendor/licenses/npm/@csstools/css-calc/LICENSE.md) |
+| @csstools/css-color-parser | 4.2.7 | MIT / permissive | [upstream](https://github.com/csstools/postcss-plugins/tree/main/packages/css-color-parser#readme) | [LICENSE.md](public/vendor/licenses/npm/@csstools/css-color-parser/LICENSE.md) |
+| @csstools/css-parser-algorithms | 4.0.2 | MIT / permissive | [upstream](https://github.com/csstools/postcss-plugins/tree/main/packages/css-parser-algorithms#readme) | [LICENSE.md](public/vendor/licenses/npm/@csstools/css-parser-algorithms/LICENSE.md) |
+| @csstools/css-syntax-patches-for-csstree | 1.1.16 | MIT-0 / permissive | [upstream](https://github.com/csstools/postcss-plugins/tree/main/packages/css-syntax-patches-for-csstree#readme) | [LICENSE.md](public/vendor/licenses/npm/@csstools/css-syntax-patches-for-csstree/LICENSE.md) |
+| @csstools/css-tokenizer | 4.0.2 | MIT / permissive | [upstream](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer#readme) | [LICENSE.md](public/vendor/licenses/npm/@csstools/css-tokenizer/LICENSE.md) |
+| @exodus/bytes | 1.16.0 | MIT / permissive | [upstream](https://github.com/ExodusOSS/bytes) | [LICENSE](public/vendor/licenses/npm/@exodus/bytes/LICENSE) |
+| @jridgewell/resolve-uri | 3.1.2 | MIT / permissive | [upstream](https://www.npmjs.com/package/@jridgewell/resolve-uri/v/3.1.2) | [LICENSE](public/vendor/licenses/npm/@jridgewell/resolve-uri/LICENSE) |
+| @jridgewell/sourcemap-codec | 1.6.0 | MIT / permissive | [upstream](https://github.com/jridgewell/sourcemaps/tree/main/packages/sourcemap-codec) | [LICENSE](public/vendor/licenses/npm/@jridgewell/sourcemap-codec/LICENSE) |
+| @jridgewell/trace-mapping | 0.3.31 | MIT / permissive | [upstream](https://github.com/jridgewell/sourcemaps/tree/main/packages/trace-mapping) | [LICENSE](public/vendor/licenses/npm/@jridgewell/trace-mapping/LICENSE) |
+| @oxc-project/types | 0.156.0 | MIT / permissive | [upstream](https://oxc.rs) | [LICENSE](public/vendor/licenses/npm/@oxc-project/types/LICENSE) |
+| @rolldown/binding-android-arm-eabi | 1.2.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/@rolldown/binding-android-arm-eabi/v/1.2.16) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/binding-android-arm64 | 1.2.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/@rolldown/binding-android-arm64/v/1.2.16) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/binding-darwin-arm64 | 1.2.16 | MIT / permissive | [upstream](https://rolldown.rs/) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/binding-darwin-x64 | 1.2.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/@rolldown/binding-darwin-x64/v/1.2.16) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/binding-freebsd-x64 | 1.2.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/@rolldown/binding-freebsd-x64/v/1.2.16) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/binding-linux-arm-gnueabihf | 1.2.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/@rolldown/binding-linux-arm-gnueabihf/v/1.2.16) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/binding-linux-arm64-gnu | 1.2.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/@rolldown/binding-linux-arm64-gnu/v/1.2.16) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/binding-linux-arm64-musl | 1.2.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/@rolldown/binding-linux-arm64-musl/v/1.2.16) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/binding-linux-ppc64-gnu | 1.2.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/@rolldown/binding-linux-ppc64-gnu/v/1.2.16) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/binding-linux-s390x-gnu | 1.2.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/@rolldown/binding-linux-s390x-gnu/v/1.2.16) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/binding-linux-x64-gnu | 1.2.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/@rolldown/binding-linux-x64-gnu/v/1.2.16) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/binding-linux-x64-musl | 1.2.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/@rolldown/binding-linux-x64-musl/v/1.2.16) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/binding-openharmony-arm64 | 1.2.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/@rolldown/binding-openharmony-arm64/v/1.2.16) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/binding-win32-arm64-msvc | 1.2.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/@rolldown/binding-win32-arm64-msvc/v/1.2.16) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/binding-win32-x64-msvc | 1.2.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/@rolldown/binding-win32-x64-msvc/v/1.2.16) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) (platform binary of rolldown; MIT per exact-version registry metadata) |
+| @rolldown/pluginutils | 1.0.1 | MIT / permissive | [upstream](https://github.com/rolldown/plugins/tree/main/packages/pluginutils#readme) | [LICENSE](public/vendor/licenses/npm/@rolldown/pluginutils/LICENSE) |
+| @testing-library/dom | 10.4.2 | MIT / permissive | [upstream](https://github.com/testing-library/dom-testing-library#readme) | [LICENSE](public/vendor/licenses/npm/@testing-library/dom/LICENSE) |
+| @testing-library/jest-dom | 7.0.1 | MIT / permissive | [upstream](https://github.com/testing-library/jest-dom#readme) | [LICENSE](public/vendor/licenses/npm/@testing-library/jest-dom/LICENSE) |
+| dom-accessibility-api | 0.6.3 | MIT / permissive | [upstream](https://www.npmjs.com/package/dom-accessibility-api/v/0.6.3) | [LICENSE.md](public/vendor/licenses/npm/dom-accessibility-api/LICENSE.md) |
+| @testing-library/react | 16.3.3 | MIT / permissive | [upstream](https://github.com/testing-library/react-testing-library#readme) | [LICENSE](public/vendor/licenses/npm/@testing-library/react/LICENSE) |
+| @testing-library/user-event | 14.6.8 | MIT / permissive | [upstream](https://github.com/testing-library/user-event#readme) | [LICENSE](public/vendor/licenses/npm/@testing-library/user-event/LICENSE) |
+| @types/aria-query | 5.0.4 | MIT / permissive | [upstream](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/aria-query) | [LICENSE](public/vendor/licenses/npm/@types/aria-query/LICENSE) |
+| @types/chai | 5.2.3 | MIT / permissive | [upstream](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/chai) | [LICENSE](public/vendor/licenses/npm/@types/chai/LICENSE) |
+| @types/deep-eql | 4.0.2 | MIT / permissive | [upstream](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/deep-eql) | [LICENSE](public/vendor/licenses/npm/@types/deep-eql/LICENSE) |
+| @types/react | 19.3.0 | MIT / permissive | [upstream](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react) | [LICENSE](public/vendor/licenses/npm/@types/react/LICENSE) |
+| @types/react-dom | 19.3.0 | MIT / permissive | [upstream](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom) | [LICENSE](public/vendor/licenses/npm/@types/react-dom/LICENSE) |
+| @vitest/mocker | 5.1.0 | MIT / permissive | [upstream](https://github.com/vitest-dev/vitest/tree/main/packages/mocker) | [LICENSE](public/vendor/licenses/npm/@vitest/mocker/LICENSE) |
+| @vitest/spy | 5.1.0 | MIT / permissive | [upstream](https://vitest.dev/api/mock) | [LICENSE](public/vendor/licenses/npm/@vitest/spy/LICENSE) |
+| ansi-regex | 5.0.1 | MIT / permissive | [upstream](https://www.npmjs.com/package/ansi-regex/v/5.0.1) | [license](public/vendor/licenses/npm/ansi-regex/license) |
+| aria-query | 5.3.0 | Apache-2.0 / permissive | [upstream](https://github.com/A11yance/aria-query#readme) | [LICENSE](public/vendor/licenses/npm/aria-query/LICENSE) |
+| assertion-error | 2.0.1 | MIT / permissive | [upstream](https://www.npmjs.com/package/assertion-error/v/2.0.1) | [LICENSE](public/vendor/licenses/npm/assertion-error/LICENSE) |
+| bidi-js | 1.1.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/bidi-js/v/1.1.0) | [LICENSE.txt](public/vendor/licenses/npm/bidi-js/LICENSE.txt) |
+| chai | 6.3.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/chai/v/6.3.0) | [LICENSE](public/vendor/licenses/npm/chai/LICENSE) |
+| css-tree | 3.2.1 | MIT / permissive | [upstream](https://www.npmjs.com/package/css-tree/v/3.2.1) | [LICENSE](public/vendor/licenses/npm/css-tree/LICENSE) |
+| css.escape | 1.5.1 | MIT / permissive | [upstream](https://mths.be/cssescape) | [LICENSE-MIT.txt](public/vendor/licenses/npm/css.escape/LICENSE-MIT.txt) |
+| csstype | 3.2.3 | MIT / permissive | [upstream](https://www.npmjs.com/package/csstype/v/3.2.3) | [LICENSE](public/vendor/licenses/npm/csstype/LICENSE) |
+| data-urls | 8.0.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/data-urls/v/8.0.0) | [LICENSE.txt](public/vendor/licenses/npm/data-urls/LICENSE.txt) |
+| decimal.js | 10.6.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/decimal.js/v/10.6.0) | [LICENCE.md](public/vendor/licenses/npm/decimal.js/LICENCE.md) |
+| dequal | 2.0.3 | MIT / permissive | [upstream](https://www.npmjs.com/package/dequal/v/2.0.3) | [license](public/vendor/licenses/npm/dequal/license) |
+| detect-libc | 2.1.2 | Apache-2.0 / permissive | [upstream](https://www.npmjs.com/package/detect-libc/v/2.1.2) | [LICENSE](public/vendor/licenses/npm/detect-libc/LICENSE) |
+| dom-accessibility-api | 0.5.16 | MIT / permissive | [upstream](https://www.npmjs.com/package/dom-accessibility-api/v/0.5.16) | [LICENSE.md](public/vendor/licenses/npm/dom-accessibility-api/LICENSE.md) |
+| entities | 9.0.0 | BSD-2-Clause / permissive | [upstream](https://www.npmjs.com/package/entities/v/9.0.0) | [LICENSE](public/vendor/licenses/npm/entities/LICENSE) |
+| es-module-lexer | 2.3.2 | MIT / permissive | [upstream](https://github.com/guybedford/es-module-lexer#readme) | [LICENSE](public/vendor/licenses/npm/es-module-lexer/LICENSE) |
+| estree-walker | 3.0.3 | MIT / permissive | [upstream](https://www.npmjs.com/package/estree-walker/v/3.0.3) | [LICENSE](public/vendor/licenses/npm/estree-walker/LICENSE) |
+| expect-type | 1.4.0 | Apache-2.0 / permissive | [upstream](https://github.com/mmkal/expect-type#readme) | [LICENSE](public/vendor/licenses/npm/expect-type/LICENSE) |
+| fsevents | 2.3.3 | MIT / permissive | [upstream](https://www.npmjs.com/package/fsevents/v/2.3.3) | Optional and not installed by this lockfile's npm ci; MIT per exact-version registry metadata |
+| html-encoding-sniffer | 7.0.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/html-encoding-sniffer/v/7.0.0) | [LICENSE.txt](public/vendor/licenses/npm/html-encoding-sniffer/LICENSE.txt) |
+| indent-string | 4.0.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/indent-string/v/4.0.0) | [license](public/vendor/licenses/npm/indent-string/license) |
+| is-potential-custom-element-name | 1.0.1 | MIT / permissive | [upstream](https://github.com/mathiasbynens/is-potential-custom-element-name) | [LICENSE-MIT.txt](public/vendor/licenses/npm/is-potential-custom-element-name/LICENSE-MIT.txt) |
+| js-tokens | 4.0.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/js-tokens/v/4.0.0) | [LICENSE](public/vendor/licenses/npm/js-tokens/LICENSE) |
+| jsdom | 30.1.3 | MIT / permissive | [upstream](https://www.npmjs.com/package/jsdom/v/30.1.3) | [LICENSE.txt](public/vendor/licenses/npm/jsdom/LICENSE.txt) |
+| lightningcss | 1.33.0 | MPL-2.0 / weak copyleft | [upstream](https://www.npmjs.com/package/lightningcss/v/1.33.0) | [LICENSE](public/vendor/licenses/npm/lightningcss/LICENSE) |
+| lightningcss-android-arm64 | 1.33.0 | MPL-2.0 / weak copyleft | [upstream](https://www.npmjs.com/package/lightningcss-android-arm64/v/1.33.0) | [LICENSE](public/vendor/licenses/npm/lightningcss/LICENSE) (platform binary of lightningcss; MPL-2.0 per exact-version registry metadata) |
+| lightningcss-darwin-arm64 | 1.33.0 | MPL-2.0 / weak copyleft | [upstream](https://www.npmjs.com/package/lightningcss-darwin-arm64/v/1.33.0) | [LICENSE](public/vendor/licenses/npm/lightningcss-darwin-arm64/LICENSE) |
+| lightningcss-darwin-x64 | 1.33.0 | MPL-2.0 / weak copyleft | [upstream](https://www.npmjs.com/package/lightningcss-darwin-x64/v/1.33.0) | [LICENSE](public/vendor/licenses/npm/lightningcss/LICENSE) (platform binary of lightningcss; MPL-2.0 per exact-version registry metadata) |
+| lightningcss-freebsd-x64 | 1.33.0 | MPL-2.0 / weak copyleft | [upstream](https://www.npmjs.com/package/lightningcss-freebsd-x64/v/1.33.0) | [LICENSE](public/vendor/licenses/npm/lightningcss/LICENSE) (platform binary of lightningcss; MPL-2.0 per exact-version registry metadata) |
+| lightningcss-linux-arm-gnueabihf | 1.33.0 | MPL-2.0 / weak copyleft | [upstream](https://www.npmjs.com/package/lightningcss-linux-arm-gnueabihf/v/1.33.0) | [LICENSE](public/vendor/licenses/npm/lightningcss/LICENSE) (platform binary of lightningcss; MPL-2.0 per exact-version registry metadata) |
+| lightningcss-linux-arm64-gnu | 1.33.0 | MPL-2.0 / weak copyleft | [upstream](https://www.npmjs.com/package/lightningcss-linux-arm64-gnu/v/1.33.0) | [LICENSE](public/vendor/licenses/npm/lightningcss/LICENSE) (platform binary of lightningcss; MPL-2.0 per exact-version registry metadata) |
+| lightningcss-linux-arm64-musl | 1.33.0 | MPL-2.0 / weak copyleft | [upstream](https://www.npmjs.com/package/lightningcss-linux-arm64-musl/v/1.33.0) | [LICENSE](public/vendor/licenses/npm/lightningcss/LICENSE) (platform binary of lightningcss; MPL-2.0 per exact-version registry metadata) |
+| lightningcss-linux-x64-gnu | 1.33.0 | MPL-2.0 / weak copyleft | [upstream](https://www.npmjs.com/package/lightningcss-linux-x64-gnu/v/1.33.0) | [LICENSE](public/vendor/licenses/npm/lightningcss/LICENSE) (platform binary of lightningcss; MPL-2.0 per exact-version registry metadata) |
+| lightningcss-linux-x64-musl | 1.33.0 | MPL-2.0 / weak copyleft | [upstream](https://www.npmjs.com/package/lightningcss-linux-x64-musl/v/1.33.0) | [LICENSE](public/vendor/licenses/npm/lightningcss/LICENSE) (platform binary of lightningcss; MPL-2.0 per exact-version registry metadata) |
+| lightningcss-win32-arm64-msvc | 1.33.0 | MPL-2.0 / weak copyleft | [upstream](https://www.npmjs.com/package/lightningcss-win32-arm64-msvc/v/1.33.0) | [LICENSE](public/vendor/licenses/npm/lightningcss/LICENSE) (platform binary of lightningcss; MPL-2.0 per exact-version registry metadata) |
+| lightningcss-win32-x64-msvc | 1.33.0 | MPL-2.0 / weak copyleft | [upstream](https://www.npmjs.com/package/lightningcss-win32-x64-msvc/v/1.33.0) | [LICENSE](public/vendor/licenses/npm/lightningcss/LICENSE) (platform binary of lightningcss; MPL-2.0 per exact-version registry metadata) |
+| lru-cache | 11.5.3 | BlueOak-1.0.0 / permissive | [upstream](https://www.npmjs.com/package/lru-cache/v/11.5.3) | [LICENSE.md](public/vendor/licenses/npm/lru-cache/LICENSE.md) |
+| lz-string | 1.5.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/lz-string/v/1.5.0) | [LICENSE](public/vendor/licenses/npm/lz-string/LICENSE) |
+| magic-string | 1.4.5 | MIT / permissive | [upstream](https://www.npmjs.com/package/magic-string/v/1.4.5) | [LICENSE](public/vendor/licenses/npm/magic-string/LICENSE) |
+| mdn-data | 2.27.1 | CC0-1.0 / permissive | [upstream](https://developer.mozilla.org) | [LICENSE](public/vendor/licenses/npm/mdn-data/LICENSE) |
+| min-indent | 1.0.1 | MIT / permissive | [upstream](https://www.npmjs.com/package/min-indent/v/1.0.1) | [license](public/vendor/licenses/npm/min-indent/license) |
+| nanoid | 3.3.20 | MIT / permissive | [upstream](https://www.npmjs.com/package/nanoid/v/3.3.20) | [LICENSE](public/vendor/licenses/npm/nanoid/LICENSE) |
+| obug | 3.0.0 | MIT / permissive | [upstream](https://github.com/sxzz/obug#readme) | [LICENSE](public/vendor/licenses/npm/obug/LICENSE) |
+| parse5 | 8.1.0 | MIT / permissive | [upstream](https://parse5.js.org) | [LICENSE](public/vendor/licenses/npm/parse5/LICENSE) |
+| picocolors | 1.1.1 | ISC / permissive | [upstream](https://www.npmjs.com/package/picocolors/v/1.1.1) | [LICENSE](public/vendor/licenses/npm/picocolors/LICENSE) |
+| postcss | 8.5.32 | MIT / permissive | [upstream](https://postcss.org/) | [LICENSE](public/vendor/licenses/npm/postcss/LICENSE) |
+| pretty-format | 27.5.1 | MIT / permissive | [upstream](https://www.npmjs.com/package/pretty-format/v/27.5.1) | [LICENSE](public/vendor/licenses/npm/pretty-format/LICENSE) |
+| ansi-styles | 5.2.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/ansi-styles/v/5.2.0) | [license](public/vendor/licenses/npm/ansi-styles/license) |
+| react-is | 17.0.2 | MIT / permissive | [upstream](https://reactjs.org/) | [LICENSE](public/vendor/licenses/npm/react-is/LICENSE) |
+| redent | 3.0.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/redent/v/3.0.0) | [license](public/vendor/licenses/npm/redent/license) |
+| require-from-string | 2.0.2 | MIT / permissive | [upstream](https://www.npmjs.com/package/require-from-string/v/2.0.2) | [license](public/vendor/licenses/npm/require-from-string/license) |
+| rolldown | 1.2.16 | MIT / permissive | [upstream](https://rolldown.rs/) | [LICENSE](public/vendor/licenses/npm/rolldown/LICENSE) |
+| saxes | 6.0.0 | ISC / permissive | [upstream](https://www.npmjs.com/package/saxes/v/6.0.0) | ISC per exact-version registry metadata; package ships no separate license file |
+| source-map-js | 1.2.2 | BSD-3-Clause / permissive | [upstream](https://github.com/7rulnik/source-map-js) | [LICENSE](public/vendor/licenses/npm/source-map-js/LICENSE) |
+| std-env | 4.3.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/std-env/v/4.3.0) | [LICENCE](public/vendor/licenses/npm/std-env/LICENCE) |
+| strip-indent | 3.0.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/strip-indent/v/3.0.0) | [license](public/vendor/licenses/npm/strip-indent/license) |
+| tinybench | 6.2.3 | MIT / permissive | [upstream](https://github.com/tinylibs/tinybench#readme) | [LICENSE](public/vendor/licenses/npm/tinybench/LICENSE) |
+| tinyexec | 1.3.1 | MIT / permissive | [upstream](https://github.com/tinylibs/tinyexec#readme) | [LICENSE](public/vendor/licenses/npm/tinyexec/LICENSE) |
+| tldts | 7.4.19 | MIT / permissive | [upstream](https://github.com/remusao/tldts#readme) | [LICENSE](public/vendor/licenses/npm/tldts/LICENSE) |
+| tldts-core | 7.4.20 | MIT / permissive | [upstream](https://github.com/remusao/tldts#readme) | [LICENSE](public/vendor/licenses/npm/tldts-core/LICENSE) |
+| tough-cookie | 6.0.2 | BSD-3-Clause / permissive | [upstream](https://github.com/salesforce/tough-cookie) | [LICENSE](public/vendor/licenses/npm/tough-cookie/LICENSE) |
+| tr46 | 7.0.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/tr46/v/7.0.0) | [LICENSE.md](public/vendor/licenses/npm/tr46/LICENSE.md) |
+| undici | 8.12.3 | MIT / permissive | [upstream](https://undici.nodejs.org) | [LICENSE](public/vendor/licenses/npm/undici/LICENSE) |
+| vite | 8.3.5 | MIT / permissive | [upstream](https://vite.dev) | [LICENSE.md](public/vendor/licenses/npm/vite/LICENSE.md) |
+| vitest | 5.1.0 | MIT / permissive | [upstream](https://vitest.dev) | [LICENSE.md](public/vendor/licenses/npm/vitest/LICENSE.md) |
+| w3c-xmlserializer | 6.0.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/w3c-xmlserializer/v/6.0.0) | [LICENSE.md](public/vendor/licenses/npm/w3c-xmlserializer/LICENSE.md) |
+| webidl-conversions | 8.0.1 | BSD-2-Clause / permissive | [upstream](https://www.npmjs.com/package/webidl-conversions/v/8.0.1) | [LICENSE.md](public/vendor/licenses/npm/webidl-conversions/LICENSE.md) |
+| whatwg-mimetype | 5.0.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/whatwg-mimetype/v/5.0.0) | [LICENSE.txt](public/vendor/licenses/npm/whatwg-mimetype/LICENSE.txt) |
+| whatwg-url | 17.3.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/whatwg-url/v/17.3.0) | [LICENSE.txt](public/vendor/licenses/npm/whatwg-url/LICENSE.txt) |
+| why-is-node-running | 3.2.1 | MIT / permissive | [upstream](https://github.com/mafintosh/why-is-node-running) | [LICENSE](public/vendor/licenses/npm/why-is-node-running/LICENSE) |
+| xml-name-validator | 5.0.0 | Apache-2.0 / permissive | [upstream](https://www.npmjs.com/package/xml-name-validator/v/5.0.0) | [LICENSE.txt](public/vendor/licenses/npm/xml-name-validator/LICENSE.txt) |
+| xmlchars | 2.2.0 | MIT / permissive | [upstream](https://www.npmjs.com/package/xmlchars/v/2.2.0) | [LICENSE](public/vendor/licenses/npm/xmlchars/LICENSE) |
 
 ## Vendored browser code and fonts
 
@@ -242,8 +362,11 @@ Exact upstream tarball URLs, hashes and byte-comparison results: [SOURCE_VERIFIC
 | marked | 18.0.13 | MIT | https://github.com/markedjs/marked ; [LICENSE](public/vendor/marked/LICENSE). Byte-identical upstream ESM. |
 | perfect-freehand | 1.2.3 | MIT | https://github.com/steveruizok/perfect-freehand ; [notice](public/vendor/perfect-freehand-NOTICE.txt). Upstream ESM with source-map comment omitted; provenance and content hash in perfect-freehand-source.json. |
 | Tiptap / ProseMirror document-runtime bundle | Versions in runtime table | MIT | Generated from src/frontend/document-runtime.mjs and lockfile. Full attributions: [document-runtime.NOTICE.txt](public/vendor/document-runtime.NOTICE.txt). Individual modules are already counted in the runtime table. |
+| React finances view bundle | React 19.3.1, React DOM 19.3.1, scheduler 0.28.0 | MIT | Generated from src/frontend/react/ by tools/build.mjs into public/react/. Upstream `@license` headers are kept at the end of each output file; the packages are counted in the runtime table above. |
 
 ## Obligations and notices
+
+lightningcss and its platform binaries (MPL-2.0) arrive only as development dependencies of Vitest/Vite. They are used unmodified for tests and are not part of any LifeOS build output.
 
 web-push 3.6.7 is MPL-2.0 and is used unmodified as a dependency. Preserve its MPL license and covered-source availability when redistributing it; modifications to its covered files remain MPL, while original application code can remain MIT. Its source is https://github.com/web-push-libs/web-push . No AGPL/GPL runtime dependency was found. BlueOak-1.0.0 and Python-2.0 are permissive grants.
 

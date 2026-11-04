@@ -336,3 +336,6 @@ main.project-help-open{display:flex;flex-direction:column;height:100dvh;min-heig
 :root[data-time-format="12h"] .schedule-clock-button{white-space:nowrap}
 :root[data-time-format="12h"] .today-now .display-clock{font-size:clamp(40px,6vw,64px)}
 @media(max-width:700px){:root[data-time-format="12h"] .today-now .display-clock{font-size:48px}:root[data-time-format="12h"] .day-story:not(.editing) .story-item{grid-template-columns:90px 12px minmax(0,1fr)}}
+
+/* React views (docs/react-migration.md): hosts a shell control without adding a layout box. */
+.react-legacy-slot{display:contents}
