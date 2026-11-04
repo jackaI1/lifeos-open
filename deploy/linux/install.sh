@@ -18,6 +18,11 @@ Environment: LIFEOS_NODE_VERSION pins a Node.js ${LIFEOS_NODE_MAJOR}.x release (
 USAGE
 }
 
+WORK_DIR=""
+# shellcheck disable=SC2329  # invoked through the EXIT trap
+cleanup() { [[ -z "$WORK_DIR" ]] || rm -rf "$WORK_DIR"; }
+trap cleanup EXIT
+
 install_packages() {
   local missing=() cmd
   for cmd in curl tar xz sha256sum sqlite3 flock runuser; do
@@ -52,7 +57,7 @@ install_node() {
   esac
   base="https://nodejs.org/dist/latest-v${LIFEOS_NODE_MAJOR}.x"
   tmp="$(mktemp -d)"
-  trap 'rm -rf "$tmp"' RETURN
+  WORK_DIR="$tmp"
   curl -fsSL --retry 3 -o "$tmp/SHASUMS256.txt" "$base/SHASUMS256.txt"
   version="${LIFEOS_NODE_VERSION:-}"
   if [[ -z "$version" ]]; then

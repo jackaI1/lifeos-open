@@ -37,7 +37,7 @@ jobs:
           done
           echo "systemd state: $state"
       - name: Install, check the service, back up, upgrade, roll back, uninstall
-        run: docker exec lifeos-sd bash -x /src/deploy/linux/test/e2e.sh /src
+        run: docker exec lifeos-sd bash /src/deploy/linux/test/e2e.sh /src
       - name: Container logs on failure
         if: failure()
         run: |
