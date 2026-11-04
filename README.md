@@ -6,10 +6,10 @@ hard to plan my day and find the right part of a lecture later.
 
 ## Overview
 
-I wanted to keep track of classes, deadlines and notes without leaving them in
-separate places. LifeOS puts them together: I can see today's commitments, plan
-coursework and keep lecture slides, handwriting and audio on the same timeline.
-I can also keep records such as budgets, photos and journal entries.
+I kept needing the schedule, the deadline and the notes behind a task together.
+In LifeOS, I can start with today's commitments, open the coursework behind a
+deadline, then return to a lecture's slides, handwriting and audio on one
+timeline. I also keep budgets, photos and journal entries in the workspace.
 
 This is the public edition of my personal project. It starts with fictional
 courses, contacts and records, with no private workspace history. Try the
@@ -34,7 +34,8 @@ needed. Stop with Ctrl-C. Settings lets me change themes and [time format](docs/
 save a backup. The [local guide](docs/local-workspace.md) covers configuration,
 restoring backups and running an empty workspace.
 
-With Docker and Compose v2, I can instead run:
+Docker packages the app with its runtime; Compose starts that package and its
+storage together. With Docker and Compose v2 installed, I can instead run:
 
 ```sh
 docker compose up --build
@@ -47,9 +48,9 @@ port settings.
 
 ## Using the workspace
 
-Today brings together commitments and tasks. School keeps coursework, deadlines
-and study material together. Lecture notebooks let me write over slides, record
-audio and replay notes against the recording. [Notebook notes](docs/notebook-persistence.md)
+I use **Today** to see commitments and tasks, then **School** to find coursework,
+deadlines and study material. In a lecture notebook, I can write over slides,
+record audio and replay my notes against the recording. [Notebook notes](docs/notebook-persistence.md)
 explain how slides stay attached across navigation. Saved drafts and queued edits help
 preserve work through a lost connection, but a full offline reload is not supported.
 The [screen guide](docs/features.md) describes the other views.
@@ -90,10 +91,12 @@ It uses the same fictional material as the [demo video](#demo) and
 ## Keeping it running elsewhere
 
 For a Linux machine that stays on, the [self-hosting guide](docs/self-host-linux.md)
-sets up the service, daily SQLite backups and upgrades with rollback. It also
-explains access through an SSH tunnel and how to uninstall it.
+sets up the service, daily backups and upgrades that can switch back if startup
+fails. It also explains how to uninstall it and how to reach it through an SSH
+tunnel, an encrypted connection to that machine.
 
-SQLite is the default database. For a self-hosted PostgreSQL installation,
+SQLite, the default database, keeps records in a local file. PostgreSQL is an
+alternative database that runs as a separate service. For that setup,
 follow the [database guide](docs/postgresql.md), including the transfer command
 for an existing SQLite workspace. The transfer checks the copied records and
 files and refuses a populated destination. Keep a backup first.
@@ -102,8 +105,8 @@ files and refuses a populated destination. Keep a backup first.
 
 If I want coursework reminders in Microsoft 365, the
 [connection guide](integrations/m365/README.md) explains how to copy tasks from
-the SQLite workspace to a SharePoint list and import a daily Teams/Outlook reminder
-flow. It needs an account with the required permissions. Sync is one-way and
+the SQLite workspace to SharePoint, Microsoft's shared-list service, and import
+a daily reminder workflow for Teams messages and Outlook email. It needs an account with the required permissions. Sync is one-way and
 runs only when requested; it does not change the LifeOS workspace. A live tenant
 connection still needs its own check.
 
@@ -116,11 +119,11 @@ For a browser-only build or hosting the fictional demo, see
 [HOSTED_DEMO.md](HOSTED_DEMO.md). These options are separate from the private
 LifeOS service and include no private credentials or records.
 
-There is also an [optional AWS hosting guide](docs/deploy-aws.md) for the
+There is also an [optional Amazon Web Services (AWS) hosting guide](docs/deploy-aws.md) for the
 browser-only demo. It prepares the infrastructure and tagged releases for a
 separate host; it has not been deployed or checked against a live AWS account.
 Running it needs an AWS account and can incur charges. The usual public demo
-continues to use Cloudflare.
+continues to use Cloudflare, the service hosting its public files.
 
 ## Checks and documentation
 
