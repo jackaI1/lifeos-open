@@ -54,3 +54,10 @@ or storing Terraform state in GitHub. Keep local state private and backed up.
 - Review: fixed task-definition read permission, which AWS requires on `*`;
   registration remains restricted to the demo family. New mock-plan assertion
   failed before the policy fix and passed after it.
+
+- Docker integration: rebased onto the merged shared Dockerfile, added a separate
+  browser-only target before the final standalone target, preserved Docker/M365
+  README evidence and excluded operator AWS state from the build context.
+- Local evidence before integration: 218 unit tests, 62 E2E cases, 49 smoke
+  checks, seven browser-engine checks and six Terraform mock runs passed.
+  All 71 recorded E2E resources and the static fixture/browser were closed.

@@ -1,9 +1,8 @@
 # syntax=docker/dockerfile:1.7
 # Multi-stage image for the standalone LifeOS Open workspace (Node + SQLite).
 #   docker build --target runtime -t lifeos-open .
-# Stages: deps (production modules) -> build (esbuild bundle) -> runtime (slim, non-root).
-# Other deployment targets (e.g. a static public demo) may be appended after `runtime`;
-# always pass --target runtime when you want the workspace server.
+# Targets: runtime (default standalone workspace), public-demo (browser-only static host).
+# Both reuse the shared build stage; choose --target public-demo for AWS hosting.
 
 ARG NODE_VERSION=24
 
@@ -20,6 +19,25 @@ COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci --ignore-scripts
 COPY . .
 RUN npm run build
+
+# Public hosting reuses the shared build dependencies and the browser-only engine.
+FROM build AS public-demo-build
+RUN node tools/build-browser-demo.mjs && node tools/build-hosted-assets.mjs
+
+FROM node:${NODE_VERSION}-bookworm-slim AS public-demo
+ENV NODE_ENV=production \
+    PORT=8080 \
+    LIFEOS_STATIC_DIRECTORY=/app/assets
+WORKDIR /app
+RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /opt/yarn*
+COPY --from=public-demo-build --chown=root:root /app/.runtime/hosted/assets ./assets
+COPY --from=build --chown=root:root /app/package.json ./package.json
+COPY --from=build --chown=root:root /app/src/hosted/server.mjs /app/src/hosted/worker.ts ./src/hosted/
+USER node
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||8080)+'/healthz').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+CMD ["node", "src/hosted/server.mjs"]
 
 FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 ENV NODE_ENV=production \

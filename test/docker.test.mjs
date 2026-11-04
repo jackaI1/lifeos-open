@@ -6,8 +6,10 @@ const read=(path)=>readFile(new URL('../'+path,import.meta.url),'utf8');
 
 test('Dockerfile is multi-stage, non-root and has a healthcheck',async()=>{
  const file=await read('Dockerfile');
- const stages=[...file.matchAll(/^FROM\s+\S+\s+AS\s+(\w+)/gim)].map((m)=>m[1]);
- assert.deepEqual(stages.slice(0,3),['deps','build','runtime']);
+ const stages=[...file.matchAll(/^FROM\s+\S+\s+AS\s+([\w-]+)/gim)].map((m)=>m[1]);
+ assert.deepEqual(stages.slice(0,2),['deps','build']);
+ assert.equal(stages.at(-1),'runtime','the default target must remain the standalone workspace');
+ assert.ok(stages.includes('public-demo'),'AWS needs the shared static target');
  const runtime=file.slice(file.search(/^FROM\s+\S+\s+AS\s+runtime/im));
  assert.match(runtime,/^USER\s+node$/m,'runtime stage must drop root');
  assert.match(runtime,/^HEALTHCHECK\b/m);
