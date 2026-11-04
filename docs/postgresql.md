@@ -15,6 +15,27 @@ PostgreSQL's `sslmode=verify-full` with a trusted CA for remote deployments.
 Do not disable certificate verification. Keep the service's loopback binding;
 public access still requires an operator-managed HTTPS/authentication layer.
 
+### Docker Compose
+
+The existing `postgres` profile in `docker-compose.yml` is reused. In your ignored
+`.env`, set `POSTGRES_PASSWORD` and a matching `DATABASE_URL` using the service
+hostname `postgres` (not `127.0.0.1`), database `lifeos` and user `lifeos`.
+URL-encode the password in the URL. Then start the database and wait for health
+before starting the app:
+
+```sh
+docker compose --profile postgres up -d --wait postgres
+docker compose --profile postgres up -d --build --wait lifeos
+```
+
+The database has no published host port; data persists in `lifeos-pg`. Stop with
+`docker compose --profile postgres down`; adding `--volumes` deletes stored data.
+Without `DATABASE_URL`, the same app image uses SQLite and `lifeos-data` as before.
+The runtime image includes both dialects' SQL migrations. Container CI boots
+both backends and checks that the PostgreSQL profile survives an app restart
+without creating a SQLite file. The offline transfer command runs from the
+source checkout with Node installed; the slim runtime image has no npm tooling.
+
 The shared contract is [`src/storage/types.ts`](../src/storage/types.ts).
 [`postgres.ts`](../src/storage/postgres.ts) owns a pool of at most five clients,
 with 5-second connection and 30-second statement timeouts. Statements bind values

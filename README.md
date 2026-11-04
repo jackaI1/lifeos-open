@@ -206,8 +206,9 @@ Tagged releases are published as `ghcr.io/jackai1/lifeos-open`:
 docker run --rm -p 127.0.0.1:8787:8787 -v lifeos-data:/data ghcr.io/jackai1/lifeos-open:latest
 ```
 
-`docker compose --profile postgres up` also starts an optional Postgres service
-(internal network only, not yet used by the app). Container settings:
+The optional Postgres service stays on the internal network. Set `DATABASE_URL`
+and follow the [PostgreSQL compose startup steps](docs/postgresql.md#docker-compose)
+to use it. Container settings:
 `LIFEOS_BIND_HOST` sets the listening interface (default `127.0.0.1`; the image
 sets `0.0.0.0` so port publishing works). Host and container port must match,
 because the server rejects requests whose Host header is not its loopback origin.
@@ -235,16 +236,6 @@ For an empty workspace use a new database path, `DEMO_SEED=false`,
 `AUTH_MODE=local` and your own token. Existing data requires an intentional
 migration when changing ownership. Real Google/OAuth, school origins and retained
 workers need operator-owned resources; they are not required by the demo.
-
-## Skills demonstrated
-
-- **PostgreSQL and SQL:** optional self-hosted storage with node-postgres pooling,
-  parameterized queries and atomic transactions in [`src/storage/postgres.ts`](src/storage/postgres.ts),
-  a shared [storage interface](src/storage/types.ts), [versioned SQL migrations](src/storage/migrations/)
-  for PostgreSQL/SQLite, and a [verified SQLite transfer tool](tools/sqlite-to-postgres.mjs).
-  [Setup, index rationale and a measured EXPLAIN example](docs/postgresql.md) describe
-  how the database supports existing records, jobs, revisions and file bytes.
-  [CI](.github/workflows/ci.yml) runs the existing unit/API suite on both backends.
 
 ## Testing
 
@@ -319,6 +310,20 @@ THIRD_PARTY_NOTICES.md        dependency and bundled-asset terms
 
 ## Skills demonstrated
 
+- **PostgreSQL and SQL:** optional self-hosted storage with node-postgres pooling,
+  parameterized queries and atomic transactions in [`src/storage/postgres.ts`](src/storage/postgres.ts),
+  a shared [storage interface](src/storage/types.ts), [versioned SQL migrations](src/storage/migrations/)
+  for PostgreSQL/SQLite, and a [verified SQLite transfer tool](tools/sqlite-to-postgres.mjs).
+  [Setup, index rationale and a measured EXPLAIN example](docs/postgresql.md) describe
+  how the database supports existing records, jobs, revisions and file bytes.
+  [CI](.github/workflows/ci.yml) runs the existing unit/API suite on both backends.
+
+- **Microsoft 365 / Microsoft Graph / SharePoint / Power Automate** – an optional integration that syncs
+  coursework tasks to a SharePoint list with MSAL device-code sign-in, a typed Graph client with
+  retry/backoff, and an importable Power Automate flow that sends a Teams and Outlook reminder when an
+  item is due tomorrow. See [`integrations/m365/`](integrations/m365/README.md) (client:
+  `src/graph-client.ts`, sign-in: `src/auth.ts`, flow: `flow/`, tests: `test/`).
+
 - **Docker / containerization** — multi-stage [`Dockerfile`](Dockerfile) (build stage
   to slim non-root runtime with a healthcheck), [`.dockerignore`](.dockerignore) and
   [`docker-compose.yml`](docker-compose.yml) with a persistent data volume and an
@@ -334,11 +339,3 @@ MIT; see [`LICENSE`](LICENSE). Bundled libraries/assets and dependencies retain
 their own terms, including web-push's MPL-2.0 file-level obligations. They are
 listed in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md), with synthetic
 media provenance in [`ASSET_PROVENANCE.md`](ASSET_PROVENANCE.md).
-
-## Skills demonstrated
-
-- **Microsoft 365 / Microsoft Graph / SharePoint / Power Automate** – an optional integration that syncs
-  coursework tasks to a SharePoint list with MSAL device-code sign-in, a typed Graph client with
-  retry/backoff, and an importable Power Automate flow that sends a Teams and Outlook reminder when an
-  item is due tomorrow. See [`integrations/m365/`](integrations/m365/README.md) (client:
-  `src/graph-client.ts`, sign-in: `src/auth.ts`, flow: `flow/`, tests: `test/`).
