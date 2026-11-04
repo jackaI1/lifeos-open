@@ -1,6 +1,8 @@
 # LifeOS Open
 
-I built a personal workspace because I wanted my schedule, coursework and lecture notes in one place.
+I built a personal workspace for my schedule, coursework and lecture notes because
+keeping deadlines, handwritten notes and recordings in separate places made it
+hard to plan my day and find the right part of a lecture later.
 
 ## Overview
 
@@ -12,13 +14,16 @@ I can also keep records such as budgets, photos and journal entries.
 This is the public edition of my personal project. It starts with fictional
 courses, contacts and records, with no private workspace history. Try the
 [browser demo](https://lifeos.jacklai.ca) without signing in, or run it locally
-with the commands below.
+with the commands below. In the demo, open **School → Lectures** and a sample
+notebook to try its labelled transcript.
 
 ## Run it locally
 
-Install Node.js 24 or newer, then run from the repository root:
+Install Node.js 24 or newer, then run:
 
 ```sh
+git clone https://github.com/jackaI1/lifeos-open.git
+cd lifeos-open
 npm ci
 npm run dev
 ```
@@ -54,12 +59,23 @@ month or year. I can add transactions, change their categories, and review
 allowances or the spending forecast. Saved transactions survive a reload in
 both the standalone workspace and the browser demo.
 
-For a saved lecture recording, I can optionally make a transcript on my computer
-and select a sentence to replay the audio beside the nearest handwritten note.
-The [local transcription guide](docs/whisper.md) covers the separate Python/model
-setup and the Transcript controls. The initial model download needs a connection;
-recognition then runs locally. The browser demo keeps its labelled sample
-transcript, and recognition errors still need checking against the recording.
+For a saved lecture recording, I can make a transcript on my computer and select
+a sentence to replay its audio beside nearby handwritten notes, including notes
+on another page or after a recording pause. After the separate
+[transcription setup](docs/whisper.md#setup-macos-or-linux), I open
+**School → Lectures**, record in a notebook, pause and let the audio save, then
+choose **Transcript → Transcribe locally**. On a phone, Transcript is under
+**More**. I refresh the transcript and select a timestamp to listen again.
+
+Whisper, a speech-recognition model, runs on my computer after its initial
+download. A background worker checks the saved audio and saves timestamped text
+while I keep using the notebook. The public browser demo has a labelled sample;
+real recognition runs in the local edition.
+
+I tested the real worker on an 11-second public-domain clip: two timestamped
+segments with 0.0% word error rate. That is one clean English recording, so I still
+check lecture transcripts against the audio. The [transcription guide](docs/whisper.md)
+includes the repeatable evaluation, setup and worker design.
 
 The default assistant uses scripted example replies. Real chat needs a configured
 provider, which receives the selected context and images. Live email sending is
