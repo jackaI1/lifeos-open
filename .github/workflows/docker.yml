@@ -55,6 +55,26 @@ jobs:
           for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8787/api/health >/dev/null 2>&1 && break; sleep 2; done
           docker exec lifeos-persist test -s /data/workspace.sqlite
           echo "database present after restart (size before: $before bytes)"
+      - name: Check PostgreSQL compose startup and restart persistence
+        run: |
+          set -eu
+          export LIFEOS_IMAGE_TAG=ci
+          export DATABASE_URL=postgresql://lifeos:lifeos-dev-only@postgres:5432/lifeos
+          docker tag lifeos-open:ci ghcr.io/jackai1/lifeos-open:ci
+          compose() { docker compose --project-name lifeos-pg-ci --profile postgres "$@"; }
+          cleanup() { compose logs --tail 20 lifeos || true; compose down --volumes --remove-orphans; }
+          trap cleanup EXIT
+          compose up -d --wait postgres
+          compose up -d --no-build --wait lifeos
+          curl -fsS http://127.0.0.1:8787/api/health | grep -q '"status":"online"'
+          compose exec -T lifeos test ! -e /data/workspace.sqlite
+          before=$(compose exec -T postgres psql -U lifeos -d lifeos -tAc 'SELECT count(*) FROM records')
+          [ "$before" -gt 0 ]
+          compose exec -T postgres psql -U lifeos -d lifeos -tAc 'SELECT version FROM _workspace_migrations' | grep -qx 1
+          compose restart lifeos
+          compose up -d --no-build --wait lifeos
+          after=$(compose exec -T postgres psql -U lifeos -d lifeos -tAc 'SELECT count(*) FROM records')
+          [ "$before" = "$after" ]
       - name: Validate compose file
         run: docker compose --profile postgres config --quiet
       # Trivy runs from its official container image (pinned) rather than the

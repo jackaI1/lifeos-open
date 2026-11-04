@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {customPalette,contrastRatio,validateCustomTheme} from '../public/custom-theme.js';
 import {recordData} from '../src/server/validation.mjs';
-import {createService} from '../src/local/service.ts';
+import {createService} from './helpers/service.mjs';
 const custom={base:'midnight',name:'Custom',primary:'#7FA6F5',display:'#fafafa',chassis:'#eeeeee'};
 test('custom colours correct text contrast on display, chassis and primary',()=>{
  for(const bg of ['#ffffff','#777777','#000000','#ff00ff','#808000']){
@@ -26,7 +26,7 @@ test('Node settings persist, rename and reset a custom theme without losing pref
   await save({theme:'custom',customTheme:custom});assert.deepEqual(record.data.customTheme,custom);
   await save({customTheme:{...custom,name:'Evening'}});assert.equal(record.data.customTheme.name,'Evening');
   await save({theme:'midnight',customTheme:null});assert.equal(record.data.theme,'midnight');assert.equal(record.data.customTheme,null);assert.equal(record.data.wakeTime,wake);
- }finally{app.close();}
+ }finally{await app.close();}
 });
 test('opening a custom draft keeps unedited base surfaces and accent links',async()=>{
  const {applyTheme}=await import('../public/themes.js');const values=new Map(),root={dataset:{},style:{removeProperty:key=>values.delete(key),setProperty:(key,value)=>values.set(key,value)}};

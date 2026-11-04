@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createService} from '../src/local/service.ts';
+import {createService} from './helpers/service.mjs';
 import {importCalendarSnapshot,currentTermWindow} from '../src/integrations/jobs.mjs';
 import {buildCoopProfile,buildCoopDraftPrompt} from '../src/integrations/coop.mjs';
 import {createHash} from 'node:crypto';
-async function fixture(fn){const app=await createService({database:':memory:',demo:false});try{const session=await(await app.fetch(new Request(app.origin+'/api/session'))).json();const api=async(path,data,method='POST')=>{const r=await app.fetch(new Request(app.origin+path,{method:data?method:'GET',headers:{origin:app.origin,'x-lifeos-csrf':session.csrf,'content-type':'application/json'},body:data?JSON.stringify(data):undefined}));return {status:r.status,data:await r.json()};};await fn({app,api});}finally{app.close();}}
+async function fixture(fn){const app=await createService({database:':memory:',demo:false});try{const session=await(await app.fetch(new Request(app.origin+'/api/session'))).json();const api=async(path,data,method='POST')=>{const r=await app.fetch(new Request(app.origin+path,{method:data?method:'GET',headers:{origin:app.origin,'x-lifeos-csrf':session.csrf,'content-type':'application/json'},body:data?JSON.stringify(data):undefined}));return {status:r.status,data:await r.json()};};await fn({app,api});}finally{await app.close();}}
 test('manual academic records save with revision and course guards',()=>fixture(async({api,app})=>{
  const course=await api('/api/records/course/manual-course',{version:0,mutationId:crypto.randomUUID(),data:{title:'Example course',code:'DEMO',term:'Example term'}},'PUT');assert.equal(course.status,200);
  const body={version:0,mutationId:crypto.randomUUID(),data:{title:'Read instructions',courseId:'manual-course',remainingMinutes:25,status:'todo'}};

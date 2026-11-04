@@ -5,6 +5,23 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [sqlite, postgres]
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: lifeos
+          POSTGRES_PASSWORD: fictional-ci-password
+          POSTGRES_DB: lifeos_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U lifeos -d lifeos_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -14,6 +31,8 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+        env:
+          TEST_DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql://lifeos:fictional-ci-password@127.0.0.1:5432/lifeos_test' || '' }}
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run privacy

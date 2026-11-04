@@ -18,7 +18,8 @@
     "restore": "node tools/restore.mjs",
     "m365": "node --env-file-if-exists=.env integrations/m365/src/cli.ts",
     "m365:pack-flow": "node integrations/m365/flow/pack.ts",
-    "test:e2e": "node tools/e2e.mjs"
+    "test:e2e": "node tools/e2e.mjs",
+    "db:import": "node --env-file-if-exists=.env tools/sqlite-to-postgres.mjs"
   },
   "dependencies": {
     "@azure/msal-node": "7.1.2",
@@ -31,15 +32,17 @@
     "@tiptap/extension-text-style": "3.31.3",
     "@tiptap/starter-kit": "3.31.3",
     "google-auth-library": "11.0.2",
+    "pg": "^8.23.1",
     "web-push": "3.6.7"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
     "esbuild": "0.28.1",
     "eslint": "^9.39.0",
+    "playwright": "^1.56.0",
     "typescript": "^5.9.0",
-    "typescript-eslint": "^8.46.0",
-    "playwright": "^1.56.0"
+    "typescript-eslint": "^8.46.0"
   },
   "license": "MIT"
 }

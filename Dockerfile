@@ -39,6 +39,7 @@ COPY --from=build --chown=root:root /app/package.json ./package.json
 COPY --from=build --chown=root:root /app/build ./build
 COPY --from=build --chown=root:root /app/public ./public
 COPY --from=build --chown=root:root /app/src/cloud/schema.sql ./src/cloud/schema.sql
+COPY --from=build --chown=root:root /app/src/storage/migrations ./src/storage/migrations
 USER node
 VOLUME ["/data"]
 EXPOSE 8787

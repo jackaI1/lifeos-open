@@ -5,7 +5,7 @@ import {routesFor} from '../public/routes.js';
 import {scenarioRecords} from '../demo/scenarios.mjs';
 import {LocalDatabase} from '../src/local/database.ts';
 import {makeWorkspace} from '../src/local/workspace.ts';
-import {createService} from '../src/local/service.ts';
+import {createService} from './helpers/service.mjs';
 import {RecordPlan} from '../src/cloud/plan.mjs';
 import {scheduleTick} from '../src/runtime/schedule.mjs';
 
@@ -119,5 +119,5 @@ test('manual devotional edits and prayer completion work with scheduling disable
   assert.equal(bootstrap.today.spiritual.prayer.complete,true);
   assert.equal(bootstrap.today.timeline.filter(isPractice).length,1);
   assert.equal(bootstrap.today.timeline.find(isPractice).state,'completed');
- }finally{app.close();}
+ }finally{await app.close();}
 });
