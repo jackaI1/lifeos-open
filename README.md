@@ -25,7 +25,7 @@ npm run dev
 
 Open <http://127.0.0.1:8787>. First launch creates a local database and a fictional
 workspace with an upcoming lab and sample lecture. No account or API key is
-needed. Stop with Ctrl-C. Settings lets me change themes and time format, and
+needed. Stop with Ctrl-C. Settings lets me change themes and [time format](docs/time-format.md), and
 save a backup. The [local guide](docs/local-workspace.md) covers configuration,
 restoring backups and running an empty workspace.
 
@@ -44,7 +44,8 @@ port settings.
 
 Today brings together commitments and tasks. School keeps coursework, deadlines
 and study material together. Lecture notebooks let me write over slides, record
-audio and replay notes against the recording. Saved drafts and queued edits help
+audio and replay notes against the recording. [Notebook notes](docs/notebook-persistence.md)
+explain how slides stay attached across navigation. Saved drafts and queued edits help
 preserve work through a lost connection, but a full offline reload is not supported.
 The [screen guide](docs/features.md) describes the other views.
 

@@ -190,7 +190,7 @@ npm run test:smoke
 npm run test:e2e
 ```
 
-- Unit/API tests: 152 cases in [`test/`](../test/), covering local persistence,
+- Unit/API tests in [`test/`](../test/), covering local persistence,
   authentication, revisions, backup/restore, provider context and configuration.
 - E2E: 50 cases in [`test/e2e/`](../test/e2e/), using fictional databases, fake
   microphone input and a loopback provider stub. Tests assert visible results
