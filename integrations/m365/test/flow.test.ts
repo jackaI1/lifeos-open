@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {inflateRawSync} from 'node:zlib';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {buildSolutionZip, ZIP_NAME, SOLUTION_NAME} from '../flow/pack.ts';
+import {buildSolutionZip, solutionFiles, ZIP_NAME, SOLUTION_NAME} from '../flow/pack.ts';
 import {MANAGED_FIELDS, STATUS_LABELS} from '../src/mapping.ts';
 
 const flowDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'flow');
@@ -90,7 +90,9 @@ test('the solution package has the files Power Automate expects and wraps the de
   assert.deepEqual(Object.keys(workflow.properties.connectionReferences).sort(), ['shared_office365', 'shared_sharepointonline', 'shared_teams']);
 });
 
-test('the committed zip contains the current solution files across zlib versions', () => {
+test('committed and generated solution archives match the current source files', () => {
   // Deflate bytes can differ across Node/zlib versions while the package is identical.
-  assert.deepEqual(unzip(readFileSync(join(flowDir, ZIP_NAME))), unzip(buildSolutionZip()), `run node integrations/m365/flow/pack.ts to refresh ${ZIP_NAME}`);
+  const committed = unzip(readFileSync(join(flowDir, ZIP_NAME)));
+  assert.deepEqual(committed, solutionFiles(definition), `run node integrations/m365/flow/pack.ts to refresh ${ZIP_NAME}`);
+  assert.deepEqual(unzip(buildSolutionZip()), committed);
 });

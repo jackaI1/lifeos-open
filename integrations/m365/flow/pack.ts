@@ -3,8 +3,8 @@
  *
  *   node integrations/m365/flow/pack.ts
  *
- * The output is deterministic (fixed ids and timestamps), so the committed .zip can be checked
- * against a rebuild in tests.
+ * Member contents, ids and timestamps are stable. Deflate bytes can differ between zlib
+ * runtimes, so tests compare the committed archive's extracted contents to the source files.
  */
 import {readFileSync, writeFileSync} from 'node:fs';
 import {crc32, deflateRawSync} from 'node:zlib';
@@ -57,7 +57,7 @@ export function solutionFiles(definition: unknown): Record<string, string> {
   };
 }
 
-/** Minimal deterministic ZIP writer (deflate, fixed 2026-01-01 timestamp). */
+/** Minimal ZIP writer (deflate, fixed ids and 2026-01-01 timestamp). */
 export function zip(files: Record<string, string>): Buffer {
   const dosTime = 0;
   const dosDate = ((2026 - 1980) << 9) | (1 << 5) | 1;
