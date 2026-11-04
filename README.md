@@ -49,6 +49,13 @@ explain how slides stay attached across navigation. Saved drafts and queued edit
 preserve work through a lost connection, but a full offline reload is not supported.
 The [screen guide](docs/features.md) describes the other views.
 
+For a saved lecture recording, I can optionally make a transcript on my computer
+and select a sentence to replay the audio beside the nearest handwritten note.
+The [local transcription guide](docs/whisper.md) covers the separate Python/model
+setup and the Transcript controls. The initial model download needs a connection;
+recognition then runs locally. The browser demo keeps its labelled sample
+transcript, and recognition errors still need checking against the recording.
+
 The default assistant uses scripted example replies. Real chat needs a configured
 provider, which receives the selected context and images. Live email sending is
 not implemented; drafts can be composed and exported.

@@ -33,8 +33,8 @@ Storage, configuration, backups and checks for the standalone workspace.
    drafts and notebook state. [`public/lecture-edit-store.js`](../public/lecture-edit-store.js)
    and [`public/lecture-ink-journal.js`](../public/lecture-ink-journal.js) support
    durable notebook edits; [`public/recorder.js`](../public/recorder.js) manages
-   recording. Timed ink/audio support replay; the bundled transcript is authored,
-   rather than recognised from arbitrary new speech.
+   recording. Timed ink/audio support replay. The optional [local transcription worker](whisper.md)
+   recognises saved audio; the browser-demo transcript remains authored.
 6. **Run local jobs or configured chat.**
    [`src/local/services.ts`](../src/local/services.ts) drains up to 20 eligible queued jobs
    after successful writes, without a separate daemon. Default assistant replies
@@ -228,9 +228,10 @@ THIRD_PARTY_NOTICES.md        dependency and bundled-asset terms
 
 - Full startup or reload while offline is unsupported. Already-open editors and
   durable queues retain work; reconnect to synchronise before reloading the app.
-- Demo transcription and handwriting interpretation are authored examples.
-  Recording bytes/timing save, but automatic recognition of arbitrary new audio
-  or ink needs additional services. No recognition-quality claim is made.
+- Browser-demo transcription and handwriting interpretation are authored examples.
+  The local edition can transcribe saved audio after the separate
+  [Whisper setup](whisper.md). One public speech clip is tested, which does not
+  establish accuracy on classroom recordings.
 - The default model picker offers Demo AI (offline). Compatible chat providers
   receive configured context/images, but their live quality and account behaviour
   were not tested. Compatible endpoints do not supply account quota data.
