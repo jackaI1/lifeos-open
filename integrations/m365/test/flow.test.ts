@@ -90,6 +90,7 @@ test('the solution package has the files Power Automate expects and wraps the de
   assert.deepEqual(Object.keys(workflow.properties.connectionReferences).sort(), ['shared_office365', 'shared_sharepointonline', 'shared_teams']);
 });
 
-test('the committed zip is exactly what the packer builds from definition.json', () => {
-  assert.ok(readFileSync(join(flowDir, ZIP_NAME)).equals(buildSolutionZip()), `run node integrations/m365/flow/pack.ts to refresh ${ZIP_NAME}`);
+test('the committed zip contains the current solution files across zlib versions', () => {
+  // Deflate bytes can differ across Node/zlib versions while the package is identical.
+  assert.deepEqual(unzip(readFileSync(join(flowDir, ZIP_NAME))), unzip(buildSolutionZip()), `run node integrations/m365/flow/pack.ts to refresh ${ZIP_NAME}`);
 });

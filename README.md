@@ -103,8 +103,9 @@ See the [analytics setup and consent notes](docs/analytics.md).
    drafts and notebook state. [`public/lecture-edit-store.js`](public/lecture-edit-store.js)
    and [`public/lecture-ink-journal.js`](public/lecture-ink-journal.js) support
    durable notebook edits; [`public/recorder.js`](public/recorder.js) manages
-   recording. Timed ink/audio support replay; the bundled transcript is authored,
-   rather than recognised from arbitrary new speech.
+   recording. Timed ink/audio support replay. The optional [local Whisper worker](docs/whisper.md)
+   recognizes saved speech and links timestamped sentences to handwritten notes;
+   the bundled browser-demo transcript remains labelled as authored.
 6. **Run local jobs or configured chat.**
    [`src/local/services.ts`](src/local/services.ts) drains up to 20 eligible queued jobs
    after successful writes, without a separate daemon. Default assistant replies
@@ -322,9 +323,10 @@ THIRD_PARTY_NOTICES.md        dependency and bundled-asset terms
 
 - Full startup or reload while offline is unsupported. Already-open editors and
   durable queues retain work; reconnect to synchronise before reloading the app.
-- Demo transcription and handwriting interpretation are authored examples.
-  Recording bytes/timing save, but automatic recognition of arbitrary new audio
-  or ink needs additional services. No recognition-quality claim is made.
+- Browser-demo transcription and handwriting interpretation are authored examples.
+  The local edition can recognize saved audio with the optional offline
+  [Whisper worker](docs/whisper.md); handwriting recognition remains an authored
+  example. One public speech clip is tested, not general classroom accuracy.
 - The default model picker offers Demo AI (offline). Compatible chat providers
   receive configured context/images, but their live quality and account behaviour
   were not tested. Compatible endpoints do not supply account quota data.
@@ -337,6 +339,18 @@ THIRD_PARTY_NOTICES.md        dependency and bundled-asset terms
   available. Browser microphone permission is required for new recordings.
 - Demo authentication is for loopback exploration. A hosted/multi-user deployment
   requires its own configuration and operational validation.
+
+## Skills demonstrated
+
+- **Whisper speech-to-text** — [local faster-whisper worker](src/local/whisper.ts)
+  and [Python inference](tools/whisper/transcribe.py) turn saved lecture audio into
+  timestamped transcripts. [Timeline mapping](src/local/whisper-transcript.mjs) and
+  [notebook links](public/lecture-transcript.js) connect sentences, playback and
+  handwritten notes across recording pauses. [Setup and measured demo](docs/whisper.md),
+  [regressions](test/whisper.test.mjs) and a [real public-domain clip test](test/whisper-inference.integration.mjs)
+  demonstrate offline CPU inference: two segments and 0.0% word error rate on
+  the 11-second fixture. Live recognition runs locally; the public browser demo
+  keeps its authored transcript clearly labelled.
 
 ## License
 

@@ -1,4 +1,5 @@
 import {confirmLectureFinish} from '../lecture-finish-control.js';
+import {transcriptSeekSeconds,nearestTranscriptNote} from '../lecture-transcript.js';
 import {editableLectureStore} from '../lecture-edit-store.js';
 import {persistentLecture,rememberLiveNote,queueLectureSync,getLectureFinisher} from '../lecture-session.js';
 import {openCourseDeckPicker} from '../lecture-course-picker.js';
@@ -915,8 +916,29 @@ async function mountWorkspace(root, ctx, course, id, store) {
   function highlightTranscript(at){let active=null;for(const row of transcriptRows){const selected=at>=row.segment.startMs&&at<row.segment.endMs;row.node.classList.toggle('transcript-active',selected);row.node.setAttribute('aria-current',selected?'true':'false');if(selected)active=row.node;}if(active)active.scrollIntoView({block:'nearest',behavior:'instant'});}
   async function showTranscript(){
    if(transcriptDock?.isConnected){transcriptDock.remove();transcriptDock=null;return;}
-   const transcript=remote.transcript;if(!transcript?.segments?.length){toast('No transcript is available for this recording. Standalone transcription uses a labelled sample.');return;}
-   transcriptDock=el('section',{class:'lecture-transcript','aria-label':'Lecture transcript'});transcriptRows=transcript.segments.map(segment=>{const node=button(el('span',{},elapsed(segment.startMs)+' · '+segment.text),run(async()=>{const clips=await allClips(),clip=clips.find(c=>c.startMs<=segment.startMs&&c.endMs>segment.startMs);if(clip)await playClip(clip,(segment.startMs-clip.startMs)/1000);highlightTranscript(segment.startMs);}),'text-button');transcriptDock.append(node);return {segment,node};});root.querySelector('.lecture-workspace').append(transcriptDock);highlightTranscript(currentClip?currentClip.startMs+audio.currentTime*1000:0);
+   try{const latest=await ctx.request('/api/lectures/'+id);remote.transcript=latest.transcript;remote.transcription=latest.transcription;}catch{}
+   if(dead)return;
+   const transcript=remote.transcript,state=remote.transcription,job=state?.job;
+   transcriptDock=el('section',{class:'lecture-transcript','aria-label':'Lecture transcript'});
+   const refresh=async()=>{transcriptDock?.remove();transcriptDock=null;await showTranscript();};
+   transcriptDock.append(el('p',{},transcript?.mock?'Authored demo transcript':transcript?.engine==='faster-whisper'?'Local Whisper · '+transcript.model:'Lecture transcript'));
+   if(job&&['queued','running'].includes(job.status))transcriptDock.append(el('p',{role:'status'},'Local transcription '+(job.status==='running'?'in progress':'queued')+'. You can keep taking notes.'));
+   if(job?.status==='failed')transcriptDock.append(el('p',{role:'status'},job.error||'Transcription failed. Retry when local Whisper is ready.'));
+   if(state?.available&&!['queued','running'].includes(job?.status))transcriptDock.append(button(transcript?.mock||!transcript?'Transcribe locally':'Transcribe saved audio again',run(async()=>{await ctx.request('/api/lectures/'+id+'/transcribe',{method:'POST',body:{mutationId:crypto.randomUUID()}});await refresh();}),'quiet'));
+   else if(!state?.available)transcriptDock.append(el('p',{},'Live transcription is available in the local edition. Setup: docs/whisper.md in the repository.'));
+   transcriptDock.append(button('Refresh transcript',run(refresh),'quiet'));
+   if(!transcript?.segments?.length)transcriptDock.append(el('p',{},transcript&&!transcript.mock?'No speech detected in the saved audio.':'No transcript yet. Pause recording and save audio before transcribing.'));
+   else transcriptDock.append(el('p',{},'Select a timestamp to hear the audio and open nearby handwritten notes.'));
+   transcriptRows=(transcript?.segments??[]).map(segment=>{const node=button(el('span',{},elapsed(segment.startMs)+' · '+segment.text),run(async()=>{
+    const clips=await allClips(),clip=clips.find(c=>segment.clipId?c.id===segment.clipId:c.startMs<=segment.startMs&&c.endMs>segment.startMs);
+    const notePages=[];for(const key of visibleNotebook(notebook.data)){const local=await ensurePage(key);notePages.push([key,local.page]);}
+    if(dead)return;
+    const note=nearestTranscriptNote({...segment,clipId:segment.clipId??clip?.id},notePages);
+    if(note)await openStudyTarget(note);
+    if(clip)await playClip(clip,transcriptSeekSeconds(segment,clip));
+    highlightTranscript(segment.startMs);
+   }),'text-button');transcriptDock.append(node);return {segment,node};});
+   root.querySelector('.lecture-workspace').append(transcriptDock);highlightTranscript(currentClip?currentClip.startMs+audio.currentTime*1000:0);
   }
   audio.addEventListener("timeupdate", () => {
     if (!currentClip) return;
