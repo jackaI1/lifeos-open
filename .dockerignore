@@ -1,0 +1,37 @@
+# Keep the build context small and free of local state or secrets.
+.git
+.github
+node_modules
+build
+dist
+coverage
+.local
+.runtime
+.lifeos*
+data
+uploads
+backups
+recordings
+transcripts
+exports
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-*
+*.db
+*.log
+.cache
+.DS_Store
+playwright-report
+test-results
+wrangler.jsonc
+wrangler.toml
+.dev.vars
+.wrangler
+# Not needed to build or run the standalone server image.
+test
+docs
+Dockerfile
+docker-compose.yml
+.dockerignore
