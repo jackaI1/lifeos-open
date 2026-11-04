@@ -1,10 +1,11 @@
 import {assert,go,lecture} from './helpers.mjs';
 
-export default async function({page}){
- let release,entered;const hold=new Promise(r=>release=r),started=new Promise(r=>entered=r);
- await page.route(/\/api\/lectures\/[^/]+\/sources\/[^/]+\/0$/,async route=>{entered();await hold;await route.continue();});
+export default async function({page,allowRequestAbort}){
+ let release,entered,heldRequest;const hold=new Promise(r=>release=r),started=new Promise(r=>entered=r);
+ await page.route(/\/api\/lectures\/[^/]+\/sources\/[^/]+\/0$/,async route=>{heldRequest??=route.request();entered();await hold;await route.continue();});
  try{
   await lecture(page);const slides=page.getByRole('button',{name:'Slides',exact:true});if(!await slides.isVisible())await page.getByRole('button',{name:'More',exact:true}).click();await slides.click();await Promise.race([started,new Promise((_,reject)=>setTimeout(()=>reject(Error('Synthetic deck request not reached')),5000))]);
+  allowRequestAbort(heldRequest);
   await page.evaluate(()=>{location.hash='#today';});await page.locator('#main h1').filter({hasText:'Today'}).waitFor();
   await page.evaluate(()=>{window.visibleLateDocks=0;window.lateDockObserver=new MutationObserver(records=>{for(const record of records)for(const node of record.addedNodes)if(node instanceof Element&&node.matches('.lecture-slide-dock')&&!node.hidden)window.visibleLateDocks++;});window.lateDockObserver.observe(document.body,{childList:true});});
   release();await page.waitForLoadState('networkidle');
