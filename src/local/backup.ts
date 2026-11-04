@@ -3,7 +3,6 @@ import {dirname} from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
 import type {WorkspaceDatabase} from './database.ts';
 import {LocalDatabase} from './database.ts';
-import {LocalObjects} from './objects.ts';
 import {createBackup,tableNames} from './backup-data.ts';
 import type {WorkspaceBackup} from './backup-data.ts';
 export {createBackup} from './backup-data.ts';
@@ -11,7 +10,7 @@ export type {WorkspaceBackup} from './backup-data.ts';
 const excluded=new Set(['sessions','oauth_logins','worker_credentials','local_snapshots']);
 const identifier=(v:string)=>{if(!/^[a-z_][a-z_0-9]*$/.test(v))throw Error('Invalid backup table or column.');return '"'+v+'"';};
 const decode=(value:any)=>{if(value&&typeof value==='object'){if(Object.keys(value).length!==1||typeof value.lifeosBlob!=='string'||!/^[A-Za-z0-9+/]*={0,2}$/.test(value.lifeosBlob))throw Error('Invalid backup binary field.');return Buffer.from(value.lifeosBlob,'base64');}if(value!==null&&!['string','number'].includes(typeof value))throw Error('Invalid backup field.');return value;};
-async function initialise(db:LocalDatabase){db.exec(await readFile('src/cloud/schema.sql','utf8'));new LocalObjects(db,'');}
+async function initialise(db:LocalDatabase){db.exec(await readFile('src/cloud/schema.sql','utf8'));db.exec('CREATE TABLE IF NOT EXISTS local_objects(id TEXT PRIMARY KEY,metadata TEXT NOT NULL,content BLOB NOT NULL)');}
 export async function restoreBackup(db:LocalDatabase,backup:WorkspaceBackup){
  if(backup?.format!=='lifeos-local-backup-v1'||!backup.tables||typeof backup.tables!=='object'||!Number.isFinite(Date.parse(backup.createdAt)))throw Error('Unsupported or incomplete LifeOS backup.');
  const allowed=await tableNames(db),names=Object.keys(backup.tables);if(names.some(n=>!allowed.includes(n))||!names.includes('records')||!names.includes('local_objects'))throw Error('Backup schema does not match this LifeOS version.');

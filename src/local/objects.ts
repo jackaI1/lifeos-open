@@ -1,11 +1,11 @@
 import {createHash,randomUUID} from 'node:crypto';
 import type {WorkspaceDatabase} from './database.ts';
 export class LocalObjects {
- db:WorkspaceDatabase;owner:string;ready:Promise<any>;
- constructor(db:WorkspaceDatabase,owner:string){this.db=db;this.owner=owner;this.ready=Promise.resolve(db.exec('CREATE TABLE IF NOT EXISTS local_objects(id TEXT PRIMARY KEY, metadata TEXT NOT NULL, content BLOB NOT NULL)'));}
- async put(id:string,metadata:Record<string,any>,content:Uint8Array){await this.ready;const meta={modifiedTime:new Date().toISOString(),...metadata,id,size:String(content.length),md5Checksum:createHash('md5').update(content).digest('hex'),shared:false,trashed:false,owners:[{emailAddress:this.owner}]};await this.db.prepare('INSERT INTO local_objects VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET metadata=excluded.metadata,content=excluded.content').bind(id,JSON.stringify(meta),content).run();return meta;}
+ db:WorkspaceDatabase;owner:string;
+ constructor(db:WorkspaceDatabase,owner:string){this.db=db;this.owner=owner;}
+ async put(id:string,metadata:Record<string,any>,content:Uint8Array){const meta={modifiedTime:new Date().toISOString(),...metadata,id,size:String(content.length),md5Checksum:createHash('md5').update(content).digest('hex'),shared:false,trashed:false,owners:[{emailAddress:this.owner}]};await this.db.prepare('INSERT INTO local_objects VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET metadata=excluded.metadata,content=excluded.content').bind(id,JSON.stringify(meta),content).run();return meta;}
  async fetch(url:string,options:RequestInit={}){
-  await this.ready;const target=new URL(url),method=options.method??'GET';
+  const target=new URL(url),method=options.method??'GET';
   if(target.pathname==='/drive/v3/files'&&method==='GET'){
    const q=target.searchParams.get('q')??'',parents=[...q.matchAll(/'([^']+)' in parents/g)].map(m=>m[1]);
    let files=(await this.db.prepare('SELECT metadata FROM local_objects ORDER BY id').all()).results.map(r=>JSON.parse(r.metadata));

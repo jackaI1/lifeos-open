@@ -80,3 +80,10 @@ if(process.env.TEST_DATABASE_URL){
   }finally{await app?.close();await storage.close();}
  });
 }
+
+test('constructing a file adapter does not launch unawaited database work',async()=>{
+ const {LocalObjects}=await import('../src/local/objects.ts');
+ const db=new LocalDatabase(':memory:');let schemaCalls=0;
+ const execute=db.exec.bind(db);db.exec=sql=>{schemaCalls++;return execute(sql);};
+ try{new LocalObjects(db,'alex@example.invalid');assert.equal(schemaCalls,0,'DDL belongs in awaited workspace initialization');}finally{db.close();}
+});
