@@ -21,6 +21,7 @@
   "include": [
     "src/local/**/*.ts",
     "src/hosted/**/*.ts",
+    "src/analytics/**/*.ts",
     "integrations/**/*.ts"
   ]
 }

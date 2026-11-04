@@ -4,10 +4,16 @@ import {createBrowserWorkspace} from './vendor/browser-demo/client.mjs';
 // Local persistence is established before any app module can recover a draft.
 window.__LIFEOS_BROWSER_DEMO__=true;
 const workspace=createBrowserWorkspace(),nativeFetch=window.fetch.bind(window);
+// Optional product analytics (see docs/analytics.md). Present only in hosted builds made with real
+// GTM/GA4 ids; never throws into the demo. Consent is kept in the real localStorage, captured before
+// installDemoStorage scopes it, so it is not part of the visitor's workspace data.
+let analytics=null;
+if(document.querySelector('meta[name="lifeos-analytics-gtm"]')){try{analytics=(await import('./vendor/analytics.mjs')).startAnalytics(window,window.localStorage);}catch{analytics=null;}}
 try{
  await workspace.ready;
  installDemoStorage(window,'lifeos-browser-local-workspace-v1'.padEnd(43,'_'));
  window.fetch=browserFetch(workspace,{origin:location.origin,network:nativeFetch});
+ if(analytics)window.fetch=analytics.wrapFetch(window.fetch,nativeFetch);
  navigator.serviceWorker.addEventListener('message',event=>{
   if(event.source!==navigator.serviceWorker.controller||event.data?.type!=='lifeos-local-api'||!event.ports[0])return;
   const port=event.ports[0];

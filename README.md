@@ -310,6 +310,11 @@ THIRD_PARTY_NOTICES.md        dependency and bundled-asset terms
 
 ## Skills demonstrated
 
+- **Google Analytics 4 / Google Tag Manager** – optional public-demo product analytics with
+  Consent Mode v2, a consent banner, typed and allowlisted feature events, an importable GTM
+  container, and automated privacy/consent tests. Disabled until public build IDs are configured;
+  private/self-hosted builds never load analytics. See [setup and event taxonomy](docs/analytics.md).
+
 - **PostgreSQL and SQL:** optional self-hosted storage with node-postgres pooling,
   parameterized queries and atomic transactions in [`src/storage/postgres.ts`](src/storage/postgres.ts),
   a shared [storage interface](src/storage/types.ts), [versioned SQL migrations](src/storage/migrations/)

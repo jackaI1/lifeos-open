@@ -19,6 +19,10 @@ The staging builder reads `wrangler.public.example.jsonc` by default. For a cust
 
 Run Wrangler with `--dry-run` to prepare without publishing. Do not publish before owner preview approval. Active bindings are only `ASSETS` and the two origin values; any database, secret, service or additional binding is rejected.
 
+Optional public-demo GA4/GTM product analytics is configured only at asset-build time.
+It contacts Google only after consent; see [analytics setup and privacy details](docs/analytics.md).
+The default build stays off.
+
 ## Data behavior
 
 API calls are handled by a dedicated browser worker using actual app routes and SQLite WASM. Successful mutations are acknowledged only after IndexedDB commits. Web Locks serialize updates across tabs on the same device. Each browser profile has its own workspace. Browser drafts and recording recovery use a separate stable local namespace.
