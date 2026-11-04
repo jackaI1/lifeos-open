@@ -1,5 +1,6 @@
 // Whisper timestamps are in media seconds. Ink uses the shared lecture clock.
 export function transcriptSeekSeconds(segment, clip) {
+  if (Number.isFinite(segment.mediaStartMs)) return Math.max(0, segment.mediaStartMs) / 1000;
   const duration = clip.mediaDurationMs ?? clip.endMs - clip.startMs;
   return Math.max(0, Math.min(duration, (segment.startMs - clip.startMs) * duration / (clip.endMs - clip.startMs))) / 1000;
 }

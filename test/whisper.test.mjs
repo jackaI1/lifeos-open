@@ -26,10 +26,17 @@ const fakeInfer = async (manifest, output) => {assert.equal(JSON.parse(await rea
 test('Whisper maps media seconds onto the shared ink clock across pauses and drift', () => {
   const clips = [{id: '0001', startMs: 10000, endMs: 30000, mediaDurationMs: 10000}, {id: '0002', startMs: 60000, endMs: 70000}];
   const transcript = buildWhisperTranscript(lectureId, clips, [{duration: 10, segments: [{start: 2, end: 5, text: 'one'}]}, {duration: 10, segments: [{start: 1, end: 11, text: 'two'}]}], 'tiny.en');
-  assert.deepEqual(transcript.segments, [{clipId: '0001', startMs: 14000, endMs: 20000, text: 'one'}, {clipId: '0002', startMs: 61000, endMs: 70000, text: 'two'}]);
+  assert.deepEqual(transcript.segments, [{clipId: '0001', startMs: 14000, endMs: 20000, mediaStartMs: 2000, mediaEndMs: 5000, text: 'one'}, {clipId: '0002', startMs: 61000, endMs: 70000, mediaStartMs: 1000, mediaEndMs: 10000, text: 'two'}]);
   assert.equal(transcript.mock, false);
   assert.equal(transcriptSeekSeconds(transcript.segments[0], clips[0]), 2);
   assert.equal(transcriptSeekSeconds(transcript.segments[1], clips[1]), 1);
+});
+
+test('decoded media duration overrides stale legacy metadata without losing speech or seek alignment', () => {
+  const clip = {id: '0001', startMs: 0, endMs: 6000, mediaDurationMs: 6000};
+  const transcript = buildWhisperTranscript(lectureId, [clip], [{duration: 10, segments: [{start: 8, end: 10, text: 'late speech'}]}], 'tiny.en');
+  assert.equal(transcript.segments[0].startMs, 4800);assert.equal(transcript.segments[0].endMs, 6000);
+  assert.equal(transcriptSeekSeconds(transcript.segments[0], clip), 8);
 });
 
 test('transcript links the nearest visible handwritten stroke on another page', () => {
@@ -87,7 +94,7 @@ test('worker verifies saved chunks, stores an audited real transcript and remove
     assert.equal(state.transcription.job.status, 'completed');
     assert.equal(state.transcript.mock, false);
     assert.equal(state.transcript.engine, 'faster-whisper');
-    assert.deepEqual(state.transcript.segments, [{clipId: '0000', startMs: 1000, endMs: 3000, text: 'Recognized speech.'}]);
+    assert.deepEqual(state.transcript.segments, [{clipId: '0000', startMs: 1000, endMs: 3000, mediaStartMs: 1000, mediaEndMs: 3000, text: 'Recognized speech.'}]);
     assert.ok(await f.app.db.prepare("SELECT 1 FROM audit WHERE kind='lecture-transcript' AND actor='local-whisper'").first());
     await assert.rejects(access(scratch));
   } finally {await worker.close();await f.app.close();}

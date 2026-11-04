@@ -4,7 +4,8 @@ export function buildWhisperTranscript(lectureId, clips, output, model) {
   for (let i = 0; i < clips.length; i++) {
     const clip = clips[i], result = output[i], span = clip.endMs - clip.startMs;
     if (!(span > 0) || !Number.isFinite(result.duration) || result.duration <= 0 || !Array.isArray(result.segments)) throw Error('Invalid Whisper timing.');
-    const durationMs = clip.mediaDurationMs ?? result.duration * 1000;
+    // Decoded bytes are authoritative: older recordings can have stale duration metadata.
+    const durationMs = result.duration * 1000;
     if (!(durationMs > 0) || !Number.isFinite(durationMs)) throw Error('Invalid audio duration.');
     for (const s of result.segments) {
       if (!Number.isFinite(s.start) || !Number.isFinite(s.end) || s.start < 0 || s.end <= s.start || s.start * 1000 >= durationMs || typeof s.text !== 'string' || s.text.length > 10000) throw Error('Invalid Whisper segment.');
@@ -13,7 +14,7 @@ export function buildWhisperTranscript(lectureId, clips, output, model) {
       const startMs = Math.round(clip.startMs + s.start * 1000 / durationMs * span);
       const endMs = Math.min(clip.endMs, Math.round(clip.startMs + s.end * 1000 / durationMs * span));
       if (endMs <= startMs) continue;
-      segments.push({clipId: clip.id, startMs, endMs, text});
+      segments.push({clipId: clip.id, startMs, endMs, mediaStartMs: Math.round(s.start * 1000), mediaEndMs: Math.min(durationMs, Math.round(s.end * 1000)), text});
       if (segments.length > 100000) throw Error('Transcript exceeds segment limit.');
     }
   }

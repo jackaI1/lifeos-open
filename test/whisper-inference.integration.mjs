@@ -56,3 +56,26 @@ test('real offline Whisper recognizes the public-domain clip through the API wor
     console.log(`REAL WHISPER: 11-second public-domain clip, ${transcript.segments.length} timestamped segments, ${(wer*100).toFixed(1)}% word error rate, ${evaluation.elapsedSeconds}s including Python startup.`);
   } finally {await app.close();}
 });
+
+test('real Whisper also transcribes the bundled demo recording with stale legacy duration metadata', {timeout: 120000}, async () => {
+  const origin = 'http://127.0.0.1:18747';
+  const app = await createService({database: ':memory:', origin, env: {WHISPER_PYTHON: process.env.WHISPER_PYTHON ?? 'python3', WHISPER_MODEL: 'tiny.en'}});
+  try {
+    const session = await (await app.fetch(new Request(origin + '/api/session'))).json();
+    const lectures = await (await app.fetch(new Request(origin + '/api/lectures?course=demo-course-design'))).json(), id = lectures.items[0].id;
+    const response = await app.fetch(new Request(origin + '/api/lectures/' + id + '/transcribe', {method: 'POST', headers: {'content-type': 'application/json', origin, 'x-lifeos-csrf': session.csrf}, body: JSON.stringify({mutationId: crypto.randomUUID()})}));
+    assert.equal(response.status, 200);
+    let state;const deadline = Date.now() + 100000;
+    do {
+      state = await (await app.fetch(new Request(origin + '/api/lectures/' + id))).json();
+      if (['completed','failed'].includes(state.transcription.job.status)) break;
+      await new Promise(r => setTimeout(r, 100));
+    } while (Date.now() < deadline);
+    assert.equal(state.transcription.job.status, 'completed', state.transcription.job.error);
+    assert.equal(state.transcript.mock, false);assert.match(state.transcript.text, /feedback/i);
+    assert.ok(state.transcript.segments.every(s => s.startMs >= 0 && s.endMs <= 6000));
+    assert.ok(state.transcript.segments.some(s => s.mediaEndMs > 6000), 'speech after the legacy duration is preserved');
+    const last = state.transcript.segments.at(-1);
+    assert.equal(transcriptSeekSeconds(last, state.clips[0].data), last.mediaStartMs / 1000);
+  } finally {await app.close();}
+});

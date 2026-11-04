@@ -95,8 +95,9 @@ replay browser tests continue to run.
   voice activity detection. Each clip retains its identity across recording
   pauses. No cloud transcription endpoint or credential is used.
 - [`src/local/whisper-transcript.mjs`](../src/local/whisper-transcript.mjs) scales
-  media seconds into each clip's `startMs`–`endMs` clock span. The recorder's
-  measured media duration takes precedence over decoder duration when available.
+  media seconds into each clip's `startMs`–`endMs` clock span using the decoded
+  audio duration. Native media offsets are retained for exact playback even
+  when a legacy recording has stale saved duration metadata.
 - [`public/lecture-transcript.js`](../public/lecture-transcript.js) reverses that
   mapping for playback and finds nearby visible ink. The notebook's existing
   playback listener highlights ink as the transcript/audio advances.
