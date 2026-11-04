@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFile, writeFile, access} from 'node:fs/promises';
-import {dirname} from 'node:path';
+import {readFile, writeFile, access, mkdtemp, rm} from 'node:fs/promises';
+import {dirname, join} from 'node:path';
+import {tmpdir} from 'node:os';
 import {createService} from '../src/local/service.ts';
 import {createWhisperWorker, pythonWhisper} from '../src/local/whisper.ts';
 import {buildWhisperTranscript} from '../src/local/whisper-transcript.mjs';
@@ -145,4 +146,23 @@ for (const backend of ['sqlite', ...(process.env.TEST_DATABASE_URL ? ['postgres'
     const state = await f.state();assert.equal(state.transcription.job.status, 'completed', state.transcription.job.error);
     assert.equal(state.transcript.mock, false);assert.equal(state.transcript.segments.length, 1);
   } finally {await worker.close();await f.app.close();}
+});
+
+test('owned inference child that ignores SIGTERM is killed and reaped on shutdown', async () => {
+  const scratch = await mkdtemp(join(tmpdir(), 'lifeos-whisper-shutdown-')), abort = new AbortController();
+  const script = join(scratch, 'standin'), manifest = join(scratch, 'input.json');
+  let pending;
+  try {
+    await writeFile(manifest, '[]');
+    await writeFile(script, '#!/usr/bin/env node\nimport {writeFileSync} from "node:fs";import {dirname,join} from "node:path";process.on("SIGTERM",()=>{});writeFileSync(join(dirname(process.argv[process.argv.indexOf("--manifest")+1]),"ready"),"ready");setInterval(()=>{},1000);', {mode: 0o700});
+    pending = pythonWhisper(script, 'unused')(manifest, join(scratch, 'output.json'), abort.signal);
+    // Attach a handler immediately while waiting for the child to be ready.
+    const stopped = assert.rejects(pending, /Whisper stopped/);
+    const deadline = Date.now() + 5000;
+    while (true) {try {await access(join(scratch, 'ready'));break;} catch {assert.ok(Date.now() < deadline);await new Promise(r => setTimeout(r, 20));}}
+    const ownership = JSON.parse(await readFile(join(scratch, 'process.json'), 'utf8'));
+    assert.equal(ownership.port, null);assert.ok(ownership.pid);
+    abort.abort();await stopped;
+    assert.throws(() => process.kill(ownership.pid, 0), {code: 'ESRCH'});
+  } finally {abort.abort();await pending?.catch(()=>{});await rm(scratch, {recursive: true, force: true});}
 });

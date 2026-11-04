@@ -18,9 +18,10 @@ export default async function({page:p}){
  assert.equal(await p.evaluate(()=>document.documentElement.dataset.theme),'desk');
  if(!phone)await button(p,'Your day').click();
  assert.equal(await p.getByLabel('Wake time',{exact:true}).inputValue(),'07:25');
- await button(p,'Save preferences').click();
+ const saved=p.waitForResponse(r=>r.request().method()==='PUT'&&new URL(r.url()).pathname==='/api/records/settings/preferences');
+ await button(p,'Save preferences').click();assert.equal((await saved).status(),200);
  await p.locator('#toast').filter({hasText:/^Saved$/}).waitFor({state:'visible'});
- await reload(p);
+ await p.waitForLoadState('networkidle');await reload(p);
  assert.equal(await p.evaluate(()=>document.documentElement.dataset.theme),'desk');
  await section('Your day');
  assert.equal(await p.getByLabel('Wake time',{exact:true}).inputValue(),'07:25');
