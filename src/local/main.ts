@@ -3,6 +3,9 @@ import {Readable} from 'node:stream';
 import {createService} from './service.ts';
 const port=Number(process.env.PORT??8787);if(!Number.isSafeInteger(port)||port<1024||port>65535)throw new Error('PORT must be 1024–65535.');
 const origin=process.env.APP_ORIGIN??`http://127.0.0.1:${port}`;
+// LIFEOS_BIND_HOST only changes the listening interface (containers need 0.0.0.0);
+// the Host/origin check below and the loopback APP_ORIGIN rule still apply.
+const bindHost=process.env.LIFEOS_BIND_HOST??'127.0.0.1';
 const app=await createService({origin});
 const server=createServer(async(req,res)=>{
  try{
@@ -14,6 +17,6 @@ const server=createServer(async(req,res)=>{
  }catch{if(!res.headersSent)res.writeHead(500,{'content-type':'application/json'});res.end(JSON.stringify({error:'Local request failed. Saved drafts are retained.'}));}
 });
 server.requestTimeout=60000;server.headersTimeout=10000;server.maxHeadersCount=100;
-server.listen(port,'127.0.0.1',()=>console.log(`LifeOS standalone ${origin} (PID ${process.pid}; stop with Ctrl-C)`));
+server.listen(port,bindHost,()=>console.log(`LifeOS standalone ${origin} (PID ${process.pid}; stop with Ctrl-C)`));
 let stopping=false;const stop=()=>{if(stopping)return;stopping=true;server.close(()=>{app.close();process.exitCode=0;});server.closeIdleConnections();};
 process.once('SIGINT',stop);process.once('SIGTERM',stop);

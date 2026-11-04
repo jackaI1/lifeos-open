@@ -1,0 +1,54 @@
+# docker compose up --build            -> LifeOS at http://127.0.0.1:8787
+# docker compose --profile postgres up  -> additionally starts a Postgres service
+#
+# The app's SQLite database lives in the named volume `lifeos-data` (mounted at /data),
+# so records survive `docker compose down`. `docker compose down -v` deletes them.
+name: lifeos-open
+
+services:
+  lifeos:
+    build:
+      context: .
+      target: runtime
+    image: ghcr.io/jackai1/lifeos-open:${LIFEOS_IMAGE_TAG:-latest}
+    init: true
+    restart: unless-stopped
+    environment:
+      PORT: "8787"
+      AUTH_MODE: ${AUTH_MODE:-demo}
+      DEMO_SEED: ${DEMO_SEED:-true}
+      LLM_MODE: ${LLM_MODE:-mock}
+      LOCAL_ACCESS_TOKEN: ${LOCAL_ACCESS_TOKEN:-}
+    ports:
+      # Host and container port must match: the server rejects requests whose Host
+      # header differs from its loopback origin. Published on loopback only.
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - lifeos-data:/data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  # Optional database for the Postgres work (profile: postgres). Not wired to the app
+  # yet; reachable inside the compose network as postgres:5432 and never published.
+  postgres:
+    profiles: ["postgres"]
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lifeos
+      POSTGRES_USER: lifeos
+      # Development-only default; override with POSTGRES_PASSWORD in your shell or .env.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lifeos-dev-only}
+    volumes:
+      - lifeos-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lifeos -d lifeos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  lifeos-data:
+  lifeos-pg:

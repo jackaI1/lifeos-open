@@ -187,6 +187,31 @@ The command refuses to overwrite an existing database. Set `LIFEOS_DATABASE` to
 the restored path before the next start. `backup.json` is an operator-created
 export, not a bundled fixture.
 
+### Run with Docker
+
+No Node.js install is needed; Docker with Compose v2 is enough:
+
+```sh
+docker compose up --build
+```
+
+Open `http://127.0.0.1:8787`. The image is a multi-stage build (esbuild bundle,
+then a slim `node:24-bookworm-slim` runtime that runs as the non-root `node`
+user with a healthcheck on `/api/health`). The SQLite database lives in the
+named volume `lifeos-data` at `/data`, so records survive `docker compose down`;
+`docker compose down -v` deletes them. The port is published on loopback only.
+Tagged releases are published as `ghcr.io/jackai1/lifeos-open`:
+
+```sh
+docker run --rm -p 127.0.0.1:8787:8787 -v lifeos-data:/data ghcr.io/jackai1/lifeos-open:latest
+```
+
+`docker compose --profile postgres up` also starts an optional Postgres service
+(internal network only, not yet used by the app). Container settings:
+`LIFEOS_BIND_HOST` sets the listening interface (default `127.0.0.1`; the image
+sets `0.0.0.0` so port publishing works). Host and container port must match,
+because the server rejects requests whose Host header is not its loopback origin.
+
 ### Configuration
 
 The defaults are for local exploration. Configuration names and placeholders
@@ -195,6 +220,7 @@ are documented in [`.env.example`](.env.example); `.env` is optional and ignored
 | Setting | Default | Effect |
 | --- | --- | --- |
 | `PORT` | `8787` | Loopback port |
+| `LIFEOS_BIND_HOST` | `127.0.0.1` | Listening interface (`0.0.0.0` in the Docker image) |
 | `LIFEOS_DATABASE` | `.local/workspace.sqlite` | SQLite path |
 | `DEMO_SEED` | `true` | Seed only a new database |
 | `AUTH_MODE` | `demo` | Demo, token-protected `local`, or Google OAuth |
@@ -224,7 +250,7 @@ npm run test:smoke
 npm run test:e2e
 ```
 
-- Unit/API tests: 147 cases in [`test/`](test/), covering local persistence,
+- Unit/API tests: 152 cases in [`test/`](test/), covering local persistence,
   authentication, revisions, backup/restore, provider context and configuration.
 - E2E: 50 cases in [`test/e2e/`](test/e2e/), using fictional databases, fake
   microphone input and a loopback provider stub. Tests assert visible results
@@ -255,6 +281,8 @@ demo/                       authored fictional scenarios
 test/                       unit/API tests and end-to-end specs
 tools/                      build, privacy, restore and browser harnesses
 docs/                       screen/route inventories and fictional screenshots
+Dockerfile, docker-compose.yml  container image, non-root runtime and persistent volume
+.github/workflows/docker.yml  PR image build, smoke test, Trivy scan, GHCR publish on tags
 THIRD_PARTY_NOTICES.md        dependency and bundled-asset terms
 ```
 
@@ -277,6 +305,17 @@ THIRD_PARTY_NOTICES.md        dependency and bundled-asset terms
   available. Browser microphone permission is required for new recordings.
 - Demo authentication is for loopback exploration. A hosted/multi-user deployment
   requires its own configuration and operational validation.
+
+## Skills demonstrated
+
+- **Docker / containerization** — multi-stage [`Dockerfile`](Dockerfile) (build stage
+  to slim non-root runtime with a healthcheck), [`.dockerignore`](.dockerignore) and
+  [`docker-compose.yml`](docker-compose.yml) with a persistent data volume and an
+  optional Postgres profile. [`.github/workflows/docker.yml`](.github/workflows/docker.yml)
+  builds the image on every pull request, starts it and checks health, persistence
+  and non-root execution, scans it with Trivy, and publishes to
+  `ghcr.io/jackai1/lifeos-open` on `v*` tags. Static checks live in
+  [`test/docker.test.mjs`](test/docker.test.mjs).
 
 ## License
 
