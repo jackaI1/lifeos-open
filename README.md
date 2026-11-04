@@ -60,6 +60,15 @@ The Instrument interface uses self-hosted Barlow fonts and ten selectable themes
 in Settings. Theme choices persist with workspace settings in both local and
 browser-only editions.
 
+## Skills demonstrated
+
+- **AWS:** an optional browser-only deployment uses Terraform-managed ECR,
+  ECS Fargate, CloudFront HTTPS and IAM, plus tag releases with GitHub OIDC and no stored AWS
+  keys. Cloudflare remains the default. See [AWS setup and teardown](docs/deploy-aws.md),
+  [`infra/aws/`](infra/aws/), [release workflow](.github/workflows/deploy-aws.yml),
+  and [static container transport](src/hosted/server.mjs). Live deployment needs
+  an operator AWS account; infrastructure checks run without credentials.
+
 ## How it works
 
 1. **Serve a loopback workspace.** [`src/local/main.ts`](src/local/main.ts)

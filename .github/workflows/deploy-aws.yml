@@ -1,0 +1,84 @@
+name: Deploy optional AWS demo
+on:
+  push:
+    tags: ['aws-v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aws-public-demo
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'jackaI1/lifeos-open'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ECS_CLUSTER: ${{ vars.AWS_ECS_CLUSTER }}
+      AWS_ECS_SERVICE: ${{ vars.AWS_ECS_SERVICE }}
+      AWS_DEMO_URL: ${{ vars.AWS_DEMO_URL }}
+      ECR_REPOSITORY_URL: ${{ vars.AWS_ECR_REPOSITORY_URL }}
+      IMAGE_TAG: aws-${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Require a release commit on main and configured AWS target
+        env:
+          AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+        run: |
+          git merge-base --is-ancestor HEAD origin/main
+          test -n "$AWS_REGION"
+          test -n "$AWS_ROLE_ARN"
+          test -n "$AWS_ECS_CLUSTER"
+          test -n "$AWS_ECS_SERVICE"
+          test -n "$AWS_DEMO_URL"
+          test -n "$ECR_REPOSITORY_URL"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run privacy
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: lifeos-aws-release
+          role-duration-seconds: 1800
+      - name: Build and push the shared Dockerfile's public demo target
+        run: |
+          registry="${ECR_REPOSITORY_URL%%/*}"
+          repository="${ECR_REPOSITORY_URL#*/}"
+          aws ecr get-login-password | docker login --username AWS --password-stdin "$registry"
+          if aws ecr describe-images --repository-name "$repository" --image-ids "imageTag=$IMAGE_TAG" > /dev/null 2> image-check.err; then
+            echo 'Reusing immutable image for this commit.'
+          elif grep -q ImageNotFoundException image-check.err; then
+            docker build --platform linux/amd64 --target public-demo -t "$ECR_REPOSITORY_URL:$IMAGE_TAG" .
+            docker push "$ECR_REPOSITORY_URL:$IMAGE_TAG"
+          else
+            cat image-check.err >&2
+            exit 1
+          fi
+          rm -f image-check.err
+      - name: Update ECS and wait for the selected task revision
+        run: node tools/deploy-aws.mjs
+      - name: Verify HTTPS static hosting and API isolation
+        env:
+          DEMO_URL: ${{ vars.AWS_DEMO_URL }}
+        run: |
+          curl --fail --retry 3 --max-time 30 "$DEMO_URL/healthz"
+          curl --fail --max-time 30 "$DEMO_URL/" -o demo-shell.html
+          grep -q '/demo-bootstrap.js' demo-shell.html
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 30 "$DEMO_URL/api/records")" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 30 --request POST "$DEMO_URL/")" = 405
+          echo "AWS browser-only demo: $DEMO_URL" >> "$GITHUB_STEP_SUMMARY"

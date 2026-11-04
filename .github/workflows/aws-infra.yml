@@ -1,0 +1,40 @@
+name: AWS infrastructure checks
+on:
+  push:
+    paths: ['infra/aws/**', 'src/hosted/**', 'Dockerfile', '.dockerignore', '.github/workflows/aws-infra.yml']
+  pull_request:
+    paths: ['infra/aws/**', 'src/hosted/**', 'Dockerfile', '.dockerignore', '.github/workflows/aws-infra.yml']
+permissions:
+  contents: read
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.0
+      - run: terraform -chdir=infra/aws fmt -check -recursive
+      - run: terraform -chdir=infra/aws init -backend=false -input=false -lockfile=readonly
+      - run: terraform -chdir=infra/aws validate
+      - run: terraform -chdir=infra/aws test
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build the shared public-demo target
+        run: docker build --target public-demo -t lifeos-aws-test .
+      - name: Test the actual static container and clean it up
+        run: |
+          set -euo pipefail
+          cid=$(docker run --detach --publish 127.0.0.1::8080 lifeos-aws-test)
+          trap 'docker stop "$cid" >/dev/null; docker rm "$cid" >/dev/null' EXIT
+          docker inspect --format 'owner=aws-infra-test id={{.Id}} pid={{.State.Pid}} start={{.State.StartedAt}} cleanup=docker-stop-and-rm' "$cid"
+          port=$(docker inspect --format '{{(index (index .NetworkSettings.Ports "8080/tcp") 0).HostPort}}' "$cid")
+          url="http://127.0.0.1:$port"
+          curl --fail --retry 15 --retry-connrefused --retry-delay 1 --max-time 5 "$url/healthz"
+          curl --fail --max-time 10 "$url/" -o demo-shell.html
+          grep -q '/demo-bootstrap.js' demo-shell.html
+          curl --fail --head --max-time 10 "$url/vendor/browser-demo/sql-wasm.wasm" | grep -qi 'content-type: application/wasm'
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 5 "$url/api/records")" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 5 --request POST "$url/")" = 405
