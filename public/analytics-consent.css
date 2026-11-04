@@ -1,0 +1,13 @@
+/* Public demo only: loaded by the analytics module when a build has real GTM/GA4 ids. */
+.analytics-consent-root{position:fixed;z-index:60;left:0;right:0;bottom:0;pointer-events:none;font:14px/1.45 system-ui,sans-serif}
+.analytics-consent{pointer-events:auto;box-sizing:border-box;max-width:34rem;margin:0 auto 12px;padding:14px 16px;border:1px solid var(--seam,#45494e);border-radius:12px;background:var(--plate,#34373b);color:var(--ink,#f1f1ee);box-shadow:0 8px 32px rgb(0 0 0 / .4)}
+.analytics-consent-title{margin:0 0 6px;font-size:15px}
+.analytics-consent-text{margin:0 0 8px;color:var(--dim,#b1b5ba)}
+.analytics-consent-link{color:var(--blue,#6a9cf2)}
+.analytics-consent-actions{display:flex;gap:10px;margin-top:12px;justify-content:flex-end}
+.analytics-consent-button{min-height:40px;padding:0 16px;border:1px solid var(--seam,#45494e);border-radius:8px;background:var(--key,#3e4247);color:var(--key-ink,#f1f1ee);font:inherit;cursor:pointer}
+.analytics-consent-accept{background:var(--primary,#f6c343);border-color:var(--primary,#f6c343);color:var(--primary-ink,#2b2d30)}
+.analytics-consent-button:focus-visible,.analytics-consent-reopen:focus-visible,.analytics-consent-link:focus-visible{outline:2px solid var(--blue,#6a9cf2);outline-offset:2px}
+.analytics-consent-reopen{pointer-events:auto;position:absolute;left:8px;bottom:8px;min-height:24px;padding:0 8px;border:1px solid var(--seam,#45494e);border-radius:999px;background:var(--plate,#34373b);color:var(--dim,#b1b5ba);font:11px/1 system-ui,sans-serif;opacity:.7;cursor:pointer}
+.analytics-consent-reopen:hover{opacity:1}
+@media (max-width:800px){.analytics-consent-reopen{bottom:calc(76px + env(safe-area-inset-bottom,0px))}.analytics-consent{margin:0 8px calc(8px + env(safe-area-inset-bottom,0px))}}

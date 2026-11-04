@@ -37,6 +37,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run privacy
       - run: npx playwright install --with-deps chromium
+      - run: node --test tools/analytics-browser.test.mjs
       - run: npm run test:smoke
       - name: Verify clock preference and lecture lifecycle
         run: npm run test:e2e

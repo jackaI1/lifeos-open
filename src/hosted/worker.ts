@@ -8,15 +8,20 @@ function origin(value:string){
 export function validateStaticBindings(env:DemoEnv){
  if(Object.keys(env).some(key=>!['ASSETS','DEMO_ORIGIN','PARENT_ORIGIN'].includes(key))||!env.ASSETS||typeof env.ASSETS.fetch!=='function'||origin(env.DEMO_ORIGIN)===origin(env.PARENT_ORIGIN))throw Error('Invalid static demo configuration');
 }
-export function staticSecurityHeaders(parent:string){
+/**
+ * `analytics` is true only for builds that inject GTM/GA4 ids (docs/analytics.md). It widens the policy
+ * by exactly the Google Tag Manager / GA4 hosts and nothing else (no inline scripts, no frames).
+ */
+export function staticSecurityHeaders(parent:string,analytics=false){
+ const google=analytics?{script:' https://www.googletagmanager.com',connect:' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com',img:' https://*.google-analytics.com https://*.googletagmanager.com'}:{script:'',connect:'',img:''};
  return {
-  'content-security-policy':`default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; worker-src 'self'; frame-src https://widget.operationworld.org; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors ${origin(parent)}`,
+  'content-security-policy':`default-src 'self'; script-src 'self' 'wasm-unsafe-eval'${google.script}; style-src 'self' 'unsafe-inline'; connect-src 'self'${google.connect}; img-src 'self' data: blob:${google.img}; media-src 'self' blob:; font-src 'self'; worker-src 'self'; frame-src https://widget.operationworld.org; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors ${origin(parent)}`,
   'referrer-policy':'no-referrer','x-content-type-options':'nosniff','permissions-policy':'camera=(), microphone=(self), geolocation=(), payment=()','cross-origin-resource-policy':'same-origin'
  };
 }
-function secure(response:Response,parent:string,head=false){
+function secure(response:Response,parent:string,head=false,analytics=false){
  const headers=new Headers(response.headers);headers.delete('set-cookie');headers.delete('x-frame-options');
- for(const [name,value]of Object.entries(staticSecurityHeaders(parent)))headers.set(name,value);
+ for(const [name,value]of Object.entries(staticSecurityHeaders(parent,analytics)))headers.set(name,value);
  return new Response(head?null:response.body,{status:response.status,headers});
 }
 const denied=(message:string,status:number)=>Response.json({error:message,code:'browser_only_demo'},{status,headers:{'cache-control':'no-store'}});
@@ -35,13 +40,15 @@ export default {
    // A fresh request deliberately carries no visitor cookies or credentials.
    const assetURL=new URL(env.DEMO_ORIGIN+(shell?'/index.html':url.pathname));
    let response=await env.ASSETS.fetch(new Request(assetURL,{method:shell?'GET':request.method}));
+   let analytics=false;
    if(shell&&response.ok){
-    const html=(await response.text()).replace(/src="\/app\.js"/g,'src="/demo-bootstrap.js"'),headers=new Headers(response.headers);
+    const source=await response.text();analytics=source.includes('<meta name="lifeos-analytics-gtm" content="GTM-');
+    const html=source.replace(/src="\/app\.js"/g,'src="/demo-bootstrap.js"'),headers=new Headers(response.headers);
     for(const name of ['content-length','content-encoding','etag'])headers.delete(name);
     headers.set('cache-control','public, max-age=0, must-revalidate');
     response=new Response(html,{status:response.status,headers});
    }
-   return secure(response,env.PARENT_ORIGIN,head);
+   return secure(response,env.PARENT_ORIGIN,head,analytics);
   }catch{
    return new Response(request.method==='HEAD'?null:'The static demo is temporarily unavailable.',{status:503,headers:{'content-type':'text/plain; charset=utf-8','cache-control':'no-store','content-security-policy':"default-src 'none'; frame-ancestors 'none'",'x-content-type-options':'nosniff'}});
   }
