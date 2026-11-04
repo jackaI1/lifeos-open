@@ -71,7 +71,8 @@ resource "aws_iam_role_policy" "release" {
     { Effect = "Allow", Action = ["ecr:GetAuthorizationToken"], Resource = "*" },
     { Effect = "Allow", Action = ["ecr:BatchCheckLayerAvailability", "ecr:BatchGetImage", "ecr:CompleteLayerUpload", "ecr:DescribeImages", "ecr:GetDownloadUrlForLayer", "ecr:InitiateLayerUpload", "ecr:PutImage", "ecr:UploadLayerPart"], Resource = aws_ecr_repository.demo.arn },
     { Effect = "Allow", Action = ["ecs:DescribeServices", "ecs:UpdateService"], Resource = local.service_arn },
-    { Effect = "Allow", Action = ["ecs:DescribeTaskDefinition", "ecs:RegisterTaskDefinition"], Resource = "arn:${local.partition}:ecs:${var.aws_region}:${local.account_id}:task-definition/${var.name}:*" },
+    { Effect = "Allow", Action = ["ecs:RegisterTaskDefinition"], Resource = "arn:${local.partition}:ecs:${var.aws_region}:${local.account_id}:task-definition/${var.name}:*" },
+    { Effect = "Allow", Action = ["ecs:DescribeTaskDefinition"], Resource = "*" },
     { Effect = "Allow", Action = ["iam:PassRole"], Resource = aws_iam_role.execution.arn, Condition = { StringEquals = { "iam:PassedToService" = "ecs-tasks.amazonaws.com" } } }
   ] })
 }

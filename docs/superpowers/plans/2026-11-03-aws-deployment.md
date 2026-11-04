@@ -2,7 +2,7 @@
 
 The supplied Cloud/AWS brief is the specification. Work remains on `skills/aws`;
 Cloudflare remains the default. Native execution follows the owner's instruction
-to finish the scoped work; no additional agents are needed.
+to finish the scoped work. A fresh read-only code review checks the AWS path.
 
 ## Design and decisions
 
@@ -50,3 +50,7 @@ or storing Terraform state in GitHub. Keep local state private and backed up.
 - Ruling: switched from App Runner to ECS Fargate after current AWS availability
   documentation confirmed App Runner is closed to new customers. ALB/IPv4 add
   cost; documented this explicitly and retained Cloudflare as the default.
+
+- Review: fixed task-definition read permission, which AWS requires on `*`;
+  registration remains restricted to the demo family. New mock-plan assertion
+  failed before the policy fix and passed after it.

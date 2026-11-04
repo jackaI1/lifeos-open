@@ -40,8 +40,8 @@ Browser --HTTPS--> CloudFront --HTTP--> ALB --HTTP:8080--> static container
 - OIDC trusts only this repository's `aws-v*` tags and audience `sts.amazonaws.com`.
   The release role pushes to this ECR repository, registers this task family,
   updates this service and passes only its execution role. It cannot administer
-  IAM, networks or other apps. ECR authorization requires a wildcard resource;
-  repository operations are separately scoped.
+  IAM, networks or other apps. ECR authorization and ECS task-definition description require wildcard
+  resources; writes, repository operations and service updates remain scoped.
 
 Visitor records stay in that browser. The Cloudflare origin, this AWS origin and
 other devices have separate storage; there is no migration or reset. Export

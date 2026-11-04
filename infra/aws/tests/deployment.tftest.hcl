@@ -45,6 +45,13 @@ run "bootstrap_without_image" {
     condition     = jsondecode(aws_iam_role_policy.release.policy).Statement[2].Resource == "arn:aws:ecs:us-east-1:123456789012:service/lifeos-open-demo/lifeos-open-demo"
     error_message = "CI must only update its dedicated service."
   }
+  assert {
+    condition = anytrue([for statement in jsondecode(aws_iam_role_policy.release.policy).Statement :
+      contains(statement.Action, "ecs:DescribeTaskDefinition") && statement.Resource == "*"
+    ])
+    error_message = "DescribeTaskDefinition does not support resource-level permissions; AWS requires a wildcard."
+  }
+
 }
 
 run "public_demo_service" {
