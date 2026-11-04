@@ -284,3 +284,11 @@ MIT; see [`LICENSE`](LICENSE). Bundled libraries/assets and dependencies retain
 their own terms, including web-push's MPL-2.0 file-level obligations. They are
 listed in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md), with synthetic
 media provenance in [`ASSET_PROVENANCE.md`](ASSET_PROVENANCE.md).
+
+## Skills demonstrated
+
+- **Microsoft 365 / Microsoft Graph / SharePoint / Power Automate** – an optional integration that syncs
+  coursework tasks to a SharePoint list with MSAL device-code sign-in, a typed Graph client with
+  retry/backoff, and an importable Power Automate flow that sends a Teams and Outlook reminder when an
+  item is due tomorrow. See [`integrations/m365/`](integrations/m365/README.md) (client:
+  `src/graph-client.ts`, sign-in: `src/auth.ts`, flow: `flow/`, tests: `test/`).
