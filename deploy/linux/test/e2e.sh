@@ -48,7 +48,9 @@ check "timer-run backup wrote a snapshot" test "$(count_backups 'lifeos-*Z.sqlit
 snapshot="$(find /var/backups/lifeos -maxdepth 1 -name 'lifeos-*Z.sqlite.gz' | sort | tail -n 1)"
 check "snapshot checksum verifies" bash -c "cd /var/backups/lifeos && sha256sum -c --status '$(basename "$snapshot").sha256'"
 check "snapshot is a valid SQLite database" bash -c "gunzip -c '$snapshot' > /tmp/restore-check.sqlite && test \"\$(sqlite3 /tmp/restore-check.sqlite 'PRAGMA integrity_check;')\" = ok"
-for _ in 1 2 3 4; do sleep 1; runuser -u lifeos -- env LIFEOS_BACKUP_KEEP=2 /opt/lifeos/bin/backup.sh >/dev/null; done
+# backup.sh reads retention from the installed environment file.
+sed -i 's/^LIFEOS_BACKUP_KEEP=.*/LIFEOS_BACKUP_KEEP=2/' /etc/lifeos/lifeos.env
+for _ in 1 2 3 4; do sleep 1; runuser -u lifeos -- /opt/lifeos/bin/backup.sh >/dev/null; done
 check "rotation keeps only the newest 2 snapshots" test "$(count_backups 'lifeos-*Z.sqlite.gz')" = 2
 
 # --- restart policy ------------------------------------------------------------
