@@ -1,6 +1,7 @@
 import {readFile,mkdir,open,rm} from 'node:fs/promises';
 import {dirname} from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
+import type {WorkspaceDatabase} from './database.ts';
 import {LocalDatabase} from './database.ts';
 import {LocalObjects} from './objects.ts';
 import {createBackup,tableNames} from './backup-data.ts';
@@ -31,5 +32,5 @@ async function verifyFiles(db:LocalDatabase){
  for(const table of ['private_objects','chunks'])for(const row of (await db.prepare('SELECT * FROM '+identifier(table)).all()).results){if(table==='private_objects'&&!row.verified)continue;const object=objects.get(row.drive_id);if(!object||object.bytes.length!==row.size||createHash('sha256').update(object.bytes).digest('hex')!==row.sha256)throw Error('Restored file reference or checksum differs.');}
 }
 export async function verifyBackup(snapshot:WorkspaceBackup){const db=new LocalDatabase(':memory:');try{await initialise(db);await restoreBackup(db,snapshot);await verifyFiles(db);if(canonical(snapshot)!==canonical(await createBackup(db)))throw Error('Backup restore verification differs.');return true;}finally{db.close();}}
-export async function saveVerifiedBackup(db:LocalDatabase){const snapshot=await createBackup(db);await verifyBackup(snapshot);const id=randomUUID(),content=JSON.stringify(snapshot);db.exec('CREATE TABLE IF NOT EXISTS local_snapshots(id TEXT PRIMARY KEY,created_at TEXT NOT NULL,content TEXT NOT NULL,sha256 TEXT NOT NULL)');await db.prepare('INSERT INTO local_snapshots VALUES(?,?,?,?)').bind(id,snapshot.createdAt,content,createHash('sha256').update(content).digest('hex')).run();return {id,verified:true};}
+export async function saveVerifiedBackup(db:WorkspaceDatabase){const snapshot=await createBackup(db);await verifyBackup(snapshot);const id=randomUUID(),content=JSON.stringify(snapshot);await db.exec('CREATE TABLE IF NOT EXISTS local_snapshots(id TEXT PRIMARY KEY,created_at TEXT NOT NULL,content TEXT NOT NULL,sha256 TEXT NOT NULL)');await db.prepare('INSERT INTO local_snapshots VALUES(?,?,?,?)').bind(id,snapshot.createdAt,content,createHash('sha256').update(content).digest('hex')).run();return {id,verified:true};}
 export async function restoreBackupFile(source:string,destination:string){const bytes=await readFile(source);if(bytes.length>512*1024*1024)throw Error('Backup exceeds the restore size limit.');const snapshot=JSON.parse(bytes.toString()) as WorkspaceBackup;await verifyBackup(snapshot);await mkdir(dirname(destination),{recursive:true,mode:0o700});const handle=await open(destination,'wx',0o600);await handle.close();let db:LocalDatabase|undefined;try{db=new LocalDatabase(destination);await initialise(db);await restoreBackup(db,snapshot);db.close();db=undefined;}catch(error){db?.close();await rm(destination,{force:true});await rm(destination+'-wal',{force:true});await rm(destination+'-shm',{force:true});throw error;}}

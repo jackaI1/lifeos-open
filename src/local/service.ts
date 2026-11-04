@@ -3,22 +3,24 @@ import {configuredModels} from '../shared/llm.mjs';
 import {mkdir,readFile,stat,realpath} from 'node:fs/promises';
 import {dirname,resolve,extname,relative} from 'node:path';
 import {randomBytes,timingSafeEqual} from 'node:crypto';
+import type {WorkspaceDatabase} from './database.ts';
 import {LocalDatabase} from './database.ts';
 import {LocalObjects} from './objects.ts';
 import {makeWorkspace,DEMO_EMAIL} from './workspace.ts';
 import {createBackup,saveVerifiedBackup} from './backup.ts';
 import {drainJobs} from './services.ts';
 import cloud from '../cloud/app.mjs';
-export interface ServiceOptions {database?:string;origin?:string;authMode?:string;demo?:boolean;env?:Record<string,string|undefined>}
+export interface ServiceOptions {database?:string;storage?:WorkspaceDatabase;databaseUrl?:string;origin?:string;authMode?:string;demo?:boolean;env?:Record<string,string|undefined>}
 export async function createService(options:ServiceOptions={}){
  const vars=options.env??process.env,origin=options.origin??vars.APP_ORIGIN??'http://127.0.0.1:8787',authMode=options.authMode??vars.AUTH_MODE??'demo';
  const address=new URL(origin);if(!['127.0.0.1','localhost','[::1]'].includes(address.hostname))throw new Error('Standalone service must bind to loopback.');
  if(!['demo','local','google'].includes(authMode))throw new Error('AUTH_MODE must be demo, local or google.');
  if(authMode==='local'&&(!vars.LOCAL_ACCESS_TOKEN||vars.LOCAL_ACCESS_TOKEN.length<24))throw new Error('Local mode requires LOCAL_ACCESS_TOKEN with at least 24 characters.');
+ const databaseUrl=options.databaseUrl??vars.DATABASE_URL;
  const database=options.database??vars.LIFEOS_DATABASE??'.local/workspace.sqlite';
- if(database!==':memory:')await mkdir(dirname(resolve(database)),{recursive:true,mode:0o700});
+ if(!options.storage&&!databaseUrl&&database!==':memory:')await mkdir(dirname(resolve(database)),{recursive:true,mode:0o700});
  const demoClock=vars.DEMO_CLOCK?Date.parse(vars.DEMO_CLOCK):null;if(demoClock!==null&&!Number.isFinite(demoClock))throw Error('DEMO_CLOCK must be an ISO date and time.');const clockStarted=Date.now();
- const db=new LocalDatabase(database);await makeWorkspace(db,{now:demoClock===null?new Date():new Date(demoClock),demo:options.demo??vars.DEMO_SEED!=='false',owner:vars.ALLOWED_EMAIL??DEMO_EMAIL});
+ const db:WorkspaceDatabase=options.storage??(databaseUrl?new (await import('../storage/postgres.ts')).PostgresDatabase(databaseUrl):new LocalDatabase(database));try{await makeWorkspace(db,{now:demoClock===null?new Date():new Date(demoClock),demo:options.demo??vars.DEMO_SEED!=='false',owner:vars.ALLOWED_EMAIL??DEMO_EMAIL});}catch(error){await db.close?.();throw error;}
  const objects=new LocalObjects(db,vars.ALLOWED_EMAIL??DEMO_EMAIL),csrf=randomBytes(24).toString('hex'),sessionToken=randomBytes(32).toString('hex');
  const env:Record<string,any>={...vars,DB:db,APP_ORIGIN:origin,AUTH_MODE:authMode,LOCAL_STANDALONE:true,LOCAL_CSRF:csrf,LOCAL_SESSION_TOKEN:sessionToken,ALLOWED_EMAIL:vars.ALLOWED_EMAIL??DEMO_EMAIL,ENVIRONMENT:'beta',RELEASE_COMMIT:'0000000000000000000000000000000000000001',GOOGLE_CLIENT_ID:vars.GOOGLE_CLIENT_ID??'local-placeholder',GOOGLE_CLIENT_SECRET:vars.GOOGLE_CLIENT_SECRET??'local-placeholder',LLM_MODE:vars.LLM_MODE??'mock',LOCAL_MOCK_SERVICES:true,APP_CONFIG:JSON.stringify({calendarIds:{schoolA:'demo-school',personal:'demo-personal'},driveFolders:{uploads:'local-uploads',backups:'local-backups'},...(vars.APP_CONFIG?JSON.parse(vars.APP_CONFIG):{})}),LOCAL_OBJECTS:vars.GOOGLE_MODE==='real'?null:objects};
  if(demoClock!==null)env.LOCAL_DEMO_NOW=()=>new Date(demoClock+Date.now()-clockStarted).toISOString();
@@ -48,5 +50,5 @@ export async function createService(options:ServiceOptions={}){
   // Local-only service capabilities used by feature UIs; no external workers are launched.
   return response;
  };
- return {origin,db,env,async fetch(req:Request){const result=serial.then(()=>serve(req));serial=result.catch(()=>{});return result;},close(){db.close();}};
+ return {origin,db,env,async fetch(req:Request){const result=serial.then(()=>serve(req));serial=result.catch(()=>{});return result;},async close(){await serial;await db.close?.();}};
 }

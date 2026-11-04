@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as ui from '../public/ui.js';
 import * as preferences from '../public/workspace-preferences.js';
 import {recordData} from '../src/server/validation.mjs';
-import {createService} from '../src/local/service.ts';
+import {createService} from './helpers/service.mjs';
 import {timeValue,replaceTime} from '../public/schedule-edit.js';
 import {formatTimer} from '../public/task-time.js';
 
@@ -44,7 +44,7 @@ test('Settings API saves the time choice through the theme record and revision c
   const save=async(version,timeFormat)=>app.fetch(new Request(app.origin+'/api/records/settings/preferences',{method:'PUT',headers:{origin:app.origin,'x-lifeos-csrf':session.csrf,'content-type':'application/json'},body:JSON.stringify({mutationId:crypto.randomUUID(),version,data:{...record.data,timeFormat}})}));
   const version=record.version;assert.equal((await save(version,'12h')).status,200);record=await read();assert.equal(record.data.timeFormat,'12h');for(const [k,v]of Object.entries(original))assert.deepEqual(record.data[k],v);
   assert.equal((await save(version,'24h')).status,409);assert.equal((await read()).data.timeFormat,'12h');assert.equal((await save(record.version,'24h')).status,200);assert.equal((await read()).data.timeFormat,'24h');
- }finally{app.close();}
+ }finally{await app.close();}
 });
 test('time cache is a safe display fallback and bootstrap preferences win',()=>{
  const previous=globalThis.localStorage,previousDocument=globalThis.document,cache=new Map(),root={dataset:{}};

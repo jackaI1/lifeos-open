@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {LocalDatabase} from '../src/local/database.ts';
 import {makeWorkspace} from '../src/local/workspace.ts';
-import {createService} from '../src/local/service.ts';
+import {createService} from './helpers/service.mjs';
 
 test('SQLite D1 compatibility rolls a failed batch back', async()=>{
  const db=new LocalDatabase(':memory:');
@@ -37,7 +37,7 @@ test('local API supports session, complete bootstrap, notes, photos, lecture and
   const answer=await get('/api/assistant/threads/'+thread.item.id);
   assert.ok(answer.messages.some(m=>m.data.role==='assistant'&&m.data.mock===true&&m.data.text.length>40));
   const denied=await app.fetch(new Request(app.origin+'/api/actions/backup',{method:'POST',headers:{'content-type':'application/json'},body:'{}'}));assert.equal(denied.status,403);
- }finally{app.close();}
+ }finally{await app.close();}
 });
 test('seeded lecture page satisfies the production notebook schema and has timed ink',async()=>{
  const {validatePage}=await import('../public/lecture-core.js');

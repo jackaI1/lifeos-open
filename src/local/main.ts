@@ -18,5 +18,5 @@ const server=createServer(async(req,res)=>{
 });
 server.requestTimeout=60000;server.headersTimeout=10000;server.maxHeadersCount=100;
 server.listen(port,bindHost,()=>console.log(`LifeOS standalone ${origin} (PID ${process.pid}; stop with Ctrl-C)`));
-let stopping=false;const stop=()=>{if(stopping)return;stopping=true;server.close(()=>{app.close();process.exitCode=0;});server.closeIdleConnections();};
+let stopping=false;const stop=()=>{if(stopping)return;stopping=true;server.close(async()=>{await app.close();process.exitCode=0;});server.closeIdleConnections();};
 process.once('SIGINT',stop);process.once('SIGTERM',stop);

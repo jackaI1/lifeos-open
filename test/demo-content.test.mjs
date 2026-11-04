@@ -46,7 +46,7 @@ test('untouched old training and devotional fixtures upgrade without changing co
  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM _demo_seed_originals WHERE kind IN ('training','training-source','devotional')").first()).n,3);
 }));
 test('deleted examples stay deleted when a previous demo is upgraded',async()=>{
- const {createService}=await import('../src/local/service.ts');
+ const {createService}=await import('./helpers/service.mjs');
  const app=await createService({database:':memory:',origin:'http://127.0.0.1:18749',now});
  try{
   const session=await(await app.fetch(new Request(app.origin+'/api/session'))).json();
@@ -57,7 +57,7 @@ test('deleted examples stay deleted when a previous demo is upgraded',async()=>{
   await app.db.prepare("DELETE FROM meta WHERE key='demo-content-revision'").run();await makeWorkspace(app.db,{now});
   for(const [kind,id]of [['task','demo-task-outline'],['prayer-note','demo-prayer'],['project','demo-portfolio-kitchen']])assert.equal(await row(app.db,kind,id),null);
   assert.equal((await app.db.prepare('SELECT COUNT(*) AS n FROM retired_records').first()).n,3);
- }finally{app.close();}
+ }finally{await app.close();}
 });
 
 test('an older demo gets a new example study block relative to its upgrade day',()=>fixture(async db=>{
@@ -67,7 +67,7 @@ test('an older demo gets a new example study block relative to its upgrade day',
 }));
 
 test('task planning edits survive bootstrap refresh and a later demo seed upgrade',async()=>{
- const {createService}=await import('../src/local/service.ts');
+ const {createService}=await import('./helpers/service.mjs');
  const app=await createService({database:':memory:',origin:'http://127.0.0.1:18749',env:{DEMO_CLOCK:now.toISOString()}});
  try{
   const session=await(await app.fetch(new Request(app.origin+'/api/session'))).json();
@@ -81,5 +81,5 @@ test('task planning edits survive bootstrap refresh and a later demo seed upgrad
   await makeWorkspace(app.db,{now:new Date('2026-10-23T14:00:00Z')});
   const after=await row(app.db,'task',before.id);
   assert.deepEqual(after.data,saved.item.data);assert.equal(after.version,saved.item.version);
- }finally{app.close();}
+ }finally{await app.close();}
 });

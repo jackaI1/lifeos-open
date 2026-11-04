@@ -1,7 +1,7 @@
 import {DatabaseSync, type SQLInputValue} from 'node:sqlite';
-export type Row=Record<string,any>;
-export interface WorkspaceStatement {bind(...args:any[]):WorkspaceStatement;all():Promise<{results:Row[];[key:string]:any}>;first(column?:string):Promise<any>;run():Promise<any>;raw():Promise<any[]>}
-export interface WorkspaceDatabase {prepare(query:string):WorkspaceStatement;exec(sql:string):any;batch(statements:any[]):Promise<any[]>}
+import {loadMigrations} from '../storage/migrations.ts';
+import type {Row,WorkspaceDatabase} from '../storage/types.ts';
+export type {Row,WorkspaceStatement,WorkspaceDatabase} from '../storage/types.ts';
 
 export class LocalStatement {
  db:DatabaseSync; query:string; args:SQLInputValue[];
@@ -15,10 +15,21 @@ export class LocalStatement {
 }
 /** D1's validated SQL routes run unchanged, with real atomic local SQLite batches. */
 export class LocalDatabase {
+ readonly dialect='sqlite';
  db:DatabaseSync;
- constructor(path:string){this.db=new DatabaseSync(path);this.db.exec('PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;');if(path!==':memory:')this.db.exec('PRAGMA journal_mode=WAL;');}
+ constructor(path:string,{readOnly=false}={}){this.db=new DatabaseSync(path,{readOnly});this.db.exec('PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;');if(!readOnly&&path!==':memory:')this.db.exec('PRAGMA journal_mode=WAL;');}
  prepare(query:string){return new LocalStatement(this.db,query);}
  exec(sql:string){this.db.exec(sql);}
  async batch(statements:LocalStatement[]){this.db.exec('BEGIN IMMEDIATE');try{const result=statements.map(s=>s.execute());this.db.exec('COMMIT');return result;}catch(error){this.db.exec('ROLLBACK');throw error;}}
+ async migrate(){
+  const migrations=await loadMigrations('sqlite');
+  await this.transaction(async db=>{
+   await db.exec('CREATE TABLE IF NOT EXISTS _workspace_migrations(version INTEGER PRIMARY KEY,applied_at TEXT NOT NULL)');
+   for(const {version,sql} of migrations)if(!await db.prepare('SELECT version FROM _workspace_migrations WHERE version=?').bind(version).first()){
+    await db.exec(sql);await db.prepare('INSERT INTO _workspace_migrations VALUES(?,?)').bind(version,new Date().toISOString()).run();
+   }
+  });
+ }
+ async transaction<T>(fn:(db:WorkspaceDatabase)=>Promise<T>):Promise<T>{this.db.exec('BEGIN IMMEDIATE');try{const result=await fn(this);this.db.exec('COMMIT');return result;}catch(error){this.db.exec('ROLLBACK');throw error;}}
  close(){this.db.close();}
 }

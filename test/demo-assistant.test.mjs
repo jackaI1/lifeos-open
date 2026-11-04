@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {demoAssistantOptions,demoAssistantAnswer} from '../public/demo-assistant.js';
-import {createService} from '../src/local/service.ts';
+import {createService} from './helpers/service.mjs';
 test('each assistant has distinct ready-to-send examples',()=>{
  const all=['today','academics','finances','lecture','project','support'].flatMap(scope=>{const options=demoAssistantOptions(scope);assert.ok(options.length>=3,scope);return options;});
  assert.equal(new Set(all.map(o=>o.id)).size,all.length);
@@ -27,7 +27,7 @@ test('demo schedule examples produce reviewable local changes and preserve the s
  assert.deepEqual((await app.db.prepare("SELECT * FROM records WHERE kind='calendar-event' ORDER BY id").all()).results,source.results,'Sending creates a preview, not an edit');
  const p=answer.proposals.find(p=>p.data.proposal.operation==='calendar-create');await api('/api/assistant/proposals/'+p.id+'/apply','POST',{version:p.version,mutationId:crypto.randomUUID()});
  assert.ok((await app.db.prepare("SELECT data FROM records WHERE kind='calendar-event'").all()).results.some(r=>JSON.parse(r.data).title==='Walk'||JSON.parse(r.data).summary==='Walk'));
- }finally{app.close();}
+ }finally{await app.close();}
 });
 test('moving a study block uses its current revision, and a tomorrow question skips today',()=>{
  const context={asOf:'2026-10-22T14:00:00Z',lifeosDay:'2026-10-22',timeZone:'America/Toronto',schedule:[{day:'2026-10-23',entries:[{id:'study-1',title:'Study feedback',start:'2026-10-23T16:00:00Z',end:'2026-10-23T16:20:00Z',correctionVersion:3}]}],freeSlots:[{day:'2026-10-22',start:'2026-10-22T17:00:00Z',end:'2026-10-22T18:00:00Z'},{day:'2026-10-23',start:'2026-10-23T16:00:00Z',end:'2026-10-23T18:00:00Z'}]};
@@ -42,7 +42,7 @@ test('academic, finance and lecture examples return answers through their existi
   for(const o of demoAssistantOptions(scope))await api('/api/assistant/threads/'+id+'/messages','POST',{message:o.message,sentAt:new Date().toISOString(),mutationId:crypto.randomUUID()});
   const data=await api('/api/assistant/threads/'+id);const replies=data.messages.filter(m=>m.data.role==='assistant');assert.equal(replies.length,3);assert.equal(new Set(replies.map(m=>m.data.text)).size,3);assert.deepEqual(data.proposals,[]);
  }
- }finally{app.close();}
+ }finally{await app.close();}
 });
 test('available demo windows exclude corrected commitments',async()=>{
  const {demoAvailableSlots}=await import('../src/local/services.ts');
@@ -66,7 +66,7 @@ test('demo dining answer agrees with reconciled Finances balances',async()=>{
  await api('/api/finances/reconcile','POST',{transactionId:'demo-lunch',transactionVersion:1,version:0,decision:'transfer',mutationId:crypto.randomUUID()});
  const finances=await api('/api/finances'),id=crypto.randomUUID();await api('/api/assistant/threads','POST',{id,scope:'finances',mutationId:crypto.randomUUID()});await api('/api/assistant/threads/'+id+'/messages','POST',{message:demoAssistantOptions('finances')[0].message,sentAt:new Date().toISOString(),mutationId:crypto.randomUUID()});
  const data=await api('/api/assistant/threads/'+id),remaining=finances.summary.cards.find(c=>c.id==='dining').remaining/100;assert.ok(data.messages.find(m=>m.data.role==='assistant').data.text.includes(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(remaining)));
- }finally{app.close();}
+ }finally{await app.close();}
 });
 
 test('project examples explain different useful starting actions',()=>{

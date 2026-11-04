@@ -13,7 +13,8 @@ export const DEMO_NAME='Example User';
 export const DEMO_EMAIL='alex@example.invalid';
 export function syntheticAudio(){const rate=8000,seconds=6,buffer=Buffer.alloc(44+rate*seconds*2);buffer.write('RIFF');buffer.writeUInt32LE(buffer.length-8,4);buffer.write('WAVEfmt ',8);buffer.writeUInt32LE(16,16);buffer.writeUInt16LE(1,20);buffer.writeUInt16LE(1,22);buffer.writeUInt32LE(rate,24);buffer.writeUInt32LE(rate*2,28);buffer.writeUInt16LE(2,32);buffer.writeUInt16LE(16,34);buffer.write('data',36);buffer.writeUInt32LE(buffer.length-44,40);for(let i=0;i<rate*seconds;i++)buffer.writeInt16LE(Math.round(Math.sin(i*2*Math.PI*220/rate)*800*Math.sin(i*Math.PI/(rate*seconds))),44+i*2);return buffer;}
 export async function makeWorkspace(db:WorkspaceDatabase,{demo=true,now=new Date(),owner=DEMO_EMAIL,readAsset:load=readFile}={}){
- db.exec(await load('src/cloud/schema.sql','utf8'));
+ if(db.migrate)await db.migrate();else await db.exec(await load('src/cloud/schema.sql','utf8'));
+ await db.exec('CREATE TABLE IF NOT EXISTS local_objects(id TEXT PRIMARY KEY,metadata TEXT NOT NULL,content BLOB NOT NULL)');
  if(await db.prepare("SELECT value FROM meta WHERE key='local-initialized'").first()){if(demo)await refreshDemoExamples(db,now);return;}
  const date=lifeosDay(now.getTime(),'America/Toronto'),stamp=now.toISOString(),objects=new LocalObjects(db,owner);
  const rec=async(kind:string,id:string,data:any)=>db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?)').bind(kind,id,JSON.stringify(data),1,stamp,stamp).run();
@@ -112,9 +113,8 @@ async function refreshDemoExamples(db:WorkspaceDatabase,now:Date){
  const profile=await db.prepare("SELECT * FROM records WHERE kind='profile' AND id='local-user'").first();if(!profile||JSON.parse(profile.data).fictional!==true)return;
  const date=lifeosDay(Date.parse(profile.created_at),'America/Toronto'),stamp=now.toISOString(),delta=Date.parse(date+'T12:00Z')-Date.parse(STORY_DAY+'T12:00Z');
  const shift=(v:any):any=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}(?:T|$)/.test(v)?new Date(Date.parse(v.length===10?v+'T12:00Z':v)+delta).toISOString().slice(0,v.length===10?10:24):Array.isArray(v)?v.map(shift):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,shift(x)])):v;
- db.exec('BEGIN IMMEDIATE');
- try{
-  db.exec('CREATE TABLE IF NOT EXISTS _demo_seed_originals(revision TEXT,kind TEXT,id TEXT,data TEXT,version INTEGER,created_at TEXT,updated_at TEXT,PRIMARY KEY(revision,kind,id))');
+ const refresh=async(db:WorkspaceDatabase)=>{
+  await db.exec('CREATE TABLE IF NOT EXISTS _demo_seed_originals(revision TEXT,kind TEXT,id TEXT,data TEXT,version INTEGER,created_at TEXT,updated_at TEXT,PRIMARY KEY(revision,kind,id))');
   const get=async(kind:string,id:string)=>db.prepare('SELECT * FROM records WHERE kind=? AND id=?').bind(kind,id).first();
   const put=async(kind:string,id:string,data:any)=>{if(await db.prepare('SELECT id FROM retired_records WHERE kind=? AND id=?').bind(kind,id).first())return;const old=await get(kind,id);if(old){if(old.version!==1||old.data===JSON.stringify(data))return;await db.prepare('INSERT OR IGNORE INTO _demo_seed_originals VALUES(?,?,?,?,?,?,?)').bind(DEMO_REVISION,kind,id,old.data,old.version,old.created_at,old.updated_at).run();await db.prepare('UPDATE records SET data=?,version=version+1,updated_at=? WHERE kind=? AND id=? AND version=1').bind(JSON.stringify(data),stamp,kind,id).run();}else await db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?)').bind(kind,id,JSON.stringify(data),1,stamp,stamp).run();};
   for(const row of scenarioRecords().task){const old=await get('task',row.id);if(!old||JSON.parse(old.data).title===row.data.title)await put('task',row.id,shift({...row.data,difficulty:row.data.difficulty??3}));}
@@ -129,6 +129,7 @@ async function refreshDemoExamples(db:WorkspaceDatabase,now:Date){
   const baseline=await get('training','baseline');if(baseline&&JSON.parse(baseline.data).notes==='Fictional fitness plan; edit for your own ability.')await put('training','baseline',demoTraining(date));
   const source=await get('training-source','fictional-plan');if(source&&JSON.parse(source.data).source?.title==='Fictional gentle activity reference')await put('training-source','fictional-plan',createDemoMarathonSource());
   await assignmentExamples(db,stamp,put,true);
-  await db.prepare('INSERT OR REPLACE INTO meta VALUES(?,?)').bind('demo-content-revision',DEMO_REVISION).run();db.exec('COMMIT');
- }catch(error){db.exec('ROLLBACK');throw error;}
+  await db.prepare('INSERT OR REPLACE INTO meta VALUES(?,?)').bind('demo-content-revision',DEMO_REVISION).run();
+ };
+ if(db.transaction)await db.transaction(refresh);else {await db.exec('BEGIN IMMEDIATE');try{await refresh(db);await db.exec('COMMIT');}catch(error){await db.exec('ROLLBACK');throw error;}}
 }

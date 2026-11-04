@@ -1,6 +1,6 @@
 # LifeOS Open
 
-An open-source personal workspace for scheduling, coursework, lecture notebooks and everyday records, with local SQLite and a browser-only fictional demo.
+An open-source personal workspace for scheduling, coursework, lecture notebooks and everyday records, with local SQLite, optional self-hosted PostgreSQL and a browser-only fictional demo.
 
 https://github.com/user-attachments/assets/5397817a-6c90-41f8-9ad9-6138a0c4023d
 
@@ -222,6 +222,7 @@ are documented in [`.env.example`](.env.example); `.env` is optional and ignored
 | `PORT` | `8787` | Loopback port |
 | `LIFEOS_BIND_HOST` | `127.0.0.1` | Listening interface (`0.0.0.0` in the Docker image) |
 | `LIFEOS_DATABASE` | `.local/workspace.sqlite` | SQLite path |
+| `DATABASE_URL` | unset | PostgreSQL URL; takes precedence over the SQLite path |
 | `DEMO_SEED` | `true` | Seed only a new database |
 | `AUTH_MODE` | `demo` | Demo, token-protected `local`, or Google OAuth |
 | `LOCAL_ACCESS_TOKEN` | unset | Local mode requires at least 24 characters |
@@ -234,6 +235,16 @@ For an empty workspace use a new database path, `DEMO_SEED=false`,
 `AUTH_MODE=local` and your own token. Existing data requires an intentional
 migration when changing ownership. Real Google/OAuth, school origins and retained
 workers need operator-owned resources; they are not required by the demo.
+
+## Skills demonstrated
+
+- **PostgreSQL and SQL:** optional self-hosted storage with node-postgres pooling,
+  parameterized queries and atomic transactions in [`src/storage/postgres.ts`](src/storage/postgres.ts),
+  a shared [storage interface](src/storage/types.ts), [versioned SQL migrations](src/storage/migrations/)
+  for PostgreSQL/SQLite, and a [verified SQLite transfer tool](tools/sqlite-to-postgres.mjs).
+  [Setup, index rationale and a measured EXPLAIN example](docs/postgresql.md) describe
+  how the database supports existing records, jobs, revisions and file bytes.
+  [CI](.github/workflows/ci.yml) runs the existing unit/API suite on both backends.
 
 ## Testing
 
