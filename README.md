@@ -49,6 +49,11 @@ explain how slides stay attached across navigation. Saved drafts and queued edit
 preserve work through a lost connection, but a full offline reload is not supported.
 The [screen guide](docs/features.md) describes the other views.
 
+In **Finances**, I can track spending and see what is left for the current week,
+month or year. I can add transactions, change their categories, and review
+allowances or the spending forecast. Saved transactions survive a reload in
+both the standalone workspace and the browser demo.
+
 For a saved lecture recording, I can optionally make a transcript on my computer
 and select a sentence to replay the audio beside the nearest handwritten note.
 The [local transcription guide](docs/whisper.md) covers the separate Python/model
@@ -102,6 +107,9 @@ Running it needs an AWS account and can incur charges. The usual public demo
 continues to use Cloudflare.
 
 ## Checks and documentation
+
+The [budget view guide](docs/react-migration.md) explains its React implementation
+and how to use the same approach for another view.
 
 ```sh
 npm test
