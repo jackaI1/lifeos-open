@@ -60,6 +60,18 @@ The Instrument interface uses self-hosted Barlow fonts and ten selectable themes
 in Settings. Theme choices persist with workspace settings in both local and
 browser-only editions.
 
+### Hosting the demo elsewhere
+
+The public demo can also run as a container on AWS when I want to try a separate
+host. It keeps the same browser-only storage; Cloudflare remains the normal public
+host. [The AWS guide](docs/deploy-aws.md) covers setup, releases, costs and removing
+the deployment afterward. Infrastructure and container tests run without an AWS
+account; running the actual hosted service incurs charges.
+
+The hosted build can optionally ask for permission to measure which demo features
+get used. This stays off until configured, and private workspaces do not load it.
+See the [analytics setup and consent notes](docs/analytics.md).
+
 ## How it works
 
 1. **Serve a loopback workspace.** [`src/local/main.ts`](src/local/main.ts)
@@ -213,6 +225,12 @@ to use it. Container settings:
 sets `0.0.0.0` so port publishing works). Host and container port must match,
 because the server rejects requests whose Host header is not its loopback origin.
 
+### Run on Linux
+
+For a Linux machine I want to leave running, the [installation guide](docs/self-host-linux.md)
+sets up a system service, scheduled backups and an update command with rollback.
+The scripts live in [`deploy/linux/`](deploy/linux/).
+
 ### Configuration
 
 The defaults are for local exploration. Configuration names and placeholders
@@ -236,6 +254,18 @@ For an empty workspace use a new database path, `DEMO_SEED=false`,
 `AUTH_MODE=local` and your own token. Existing data requires an intentional
 migration when changing ownership. Real Google/OAuth, school origins and retained
 workers need operator-owned resources; they are not required by the demo.
+
+## Optional connections
+
+Coursework tasks can be copied to a SharePoint list so they are available alongside
+other school work. An optional reminder flow can send a Teams or Outlook reminder
+for tomorrow's due items. This needs a configured Microsoft account and stays
+separate from the normal local workspace. Follow the
+[connection setup](integrations/m365/README.md) to try it.
+
+For a self-hosted workspace that needs a separate database server, see the
+[PostgreSQL guide](docs/postgresql.md). SQLite remains the default; the guide also
+covers transferring an existing SQLite workspace and checking the result.
 
 ## Testing
 
@@ -307,43 +337,6 @@ THIRD_PARTY_NOTICES.md        dependency and bundled-asset terms
   available. Browser microphone permission is required for new recordings.
 - Demo authentication is for loopback exploration. A hosted/multi-user deployment
   requires its own configuration and operational validation.
-
-## Skills demonstrated
-
-- **Google Analytics 4 / Google Tag Manager** – optional public-demo product analytics with
-  Consent Mode v2, a consent banner, typed and allowlisted feature events, an importable GTM
-  container, and automated privacy/consent tests. Disabled until public build IDs are configured;
-  private/self-hosted builds never load analytics. See [setup and event taxonomy](docs/analytics.md).
-
-- **PostgreSQL and SQL:** optional self-hosted storage with node-postgres pooling,
-  parameterized queries and atomic transactions in [`src/storage/postgres.ts`](src/storage/postgres.ts),
-  a shared [storage interface](src/storage/types.ts), [versioned SQL migrations](src/storage/migrations/)
-  for PostgreSQL/SQLite, and a [verified SQLite transfer tool](tools/sqlite-to-postgres.mjs).
-  [Setup, index rationale and a measured EXPLAIN example](docs/postgresql.md) describe
-  how the database supports existing records, jobs, revisions and file bytes.
-  [CI](.github/workflows/ci.yml) runs the existing unit/API suite on both backends.
-
-- **Microsoft 365 / Microsoft Graph / SharePoint / Power Automate** – an optional integration that syncs
-  coursework tasks to a SharePoint list with MSAL device-code sign-in, a typed Graph client with
-  retry/backoff, and an importable Power Automate flow that sends a Teams and Outlook reminder when an
-  item is due tomorrow. See [`integrations/m365/`](integrations/m365/README.md) (client:
-  `src/graph-client.ts`, sign-in: `src/auth.ts`, flow: `flow/`, tests: `test/`).
-
-- **Docker / containerization** — multi-stage [`Dockerfile`](Dockerfile) (build stage
-  to slim non-root runtime with a healthcheck), [`.dockerignore`](.dockerignore) and
-  [`docker-compose.yml`](docker-compose.yml) with a persistent data volume and an
-  optional Postgres profile. [`.github/workflows/docker.yml`](.github/workflows/docker.yml)
-  builds the image on every pull request, starts it and checks health, persistence
-  and non-root execution, scans it with Trivy, and publishes to
-  `ghcr.io/jackai1/lifeos-open` on `v*` tags. Static checks live in
-  [`test/docker.test.mjs`](test/docker.test.mjs).
-
-- **Linux, Bash and systemd** — first-class self-hosting on Linux: an idempotent installer, a hardened
-  `lifeos.service`, a daily SQLite backup timer with rotation, atomic upgrades with automatic
-  rollback, and an uninstaller. ShellCheck and an Ubuntu 22.04/24.04 systemd container test run in CI.
-  Guide: [docs/self-host-linux.md](docs/self-host-linux.md). Code: [`deploy/linux/`](deploy/linux/)
-  (`install.sh`, `update.sh`, `backup.sh`, `uninstall.sh`, `systemd/`, `test/e2e.sh`);
-  workflow: [`.github/workflows/linux-deploy.yml`](.github/workflows/linux-deploy.yml).
 
 ## License
 

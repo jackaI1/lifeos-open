@@ -1,0 +1,8 @@
+aws_region = "us-east-1"
+name       = "lifeos-open-demo"
+# Keep the real account configuration and state outside version control.
+parent_origin = "https://portfolio.example.invalid"
+# If GitHub OIDC already exists in your AWS account, set its ARN here:
+# existing_oidc_provider_arn = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
+# Leave null for first apply; fill this after building and pushing the image:
+# image_tag = "aws-0123456789abcdef0123456789abcdef01234567"

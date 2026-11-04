@@ -35,3 +35,10 @@ docs
 Dockerfile
 docker-compose.yml
 .dockerignore
+
+# Operator-owned AWS state/plans must never enter any Docker build stage.
+infra/aws/.terraform
+infra/aws/*.tfstate
+infra/aws/*.tfstate.*
+infra/aws/*.tfvars
+infra/aws/*.tfplan
