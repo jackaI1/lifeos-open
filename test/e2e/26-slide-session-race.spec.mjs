@@ -21,9 +21,11 @@ export default async function({page}){
   assert.equal(await page.locator('.lecture-slide-dock').count(),1,'concurrent routes must share one lecture slide dock');
   assert.equal(await page.locator('.lecture-slide-dock:visible').count(),1,'the current lecture owns its dock');
   assert.equal(mounts,1,'only one workspace may mount for a lecture');
-  await go(page,'today');assert.equal(await page.locator('.lecture-slide-dock:visible').count(),0);
+  const dock=await page.locator('.lecture-slide-dock').elementHandle();
+  await page.evaluate(()=>{location.hash='#today';});await page.locator('#main h1').filter({hasText:'Today'}).waitFor();assert.equal(await page.locator('.lecture-slide-dock:visible').count(),0);
   await page.evaluate(route=>{location.hash=route;},route);
   await page.locator('canvas.lecture-canvas').waitFor();await page.locator('.lecture-slide-dock:visible').waitFor();
   assert.equal(await page.locator('.lecture-slide-dock').count(),1,'returning reuses the suspended dock');
+  assert.equal(await dock.evaluate(node=>node.isConnected&&node===document.querySelector('.lecture-slide-dock')),true,'returning must preserve the mounted dock');
  }finally{release();await page.unrouteAll({behavior:'wait'});}
 }

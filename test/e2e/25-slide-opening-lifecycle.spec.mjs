@@ -1,4 +1,4 @@
-import {assert,go,lecture} from './helpers.mjs';
+import {assert,lecture} from './helpers.mjs';
 
 export default async function({page,allowRequestAbort}){
  let release,entered,heldRequest;const hold=new Promise(r=>release=r),started=new Promise(r=>entered=r);
@@ -11,11 +11,15 @@ export default async function({page,allowRequestAbort}){
   release();await page.waitForLoadState('networkidle');
   await page.waitForFunction(()=>[...document.querySelectorAll('canvas.lecture-crop-canvas')].some(c=>c.width>300));
   assert.equal(await page.locator('.lecture-slide-dock:visible').count(),0,'late slide rendering must respect the suspended notebook');
+  const suspendedDock=await page.locator('.lecture-slide-dock').elementHandle();
   assert.equal(await page.evaluate(()=>window.visibleLateDocks),0,'late docks must be hidden from their first insertion');
   await page.setViewportSize({...page.viewportSize(),height:page.viewportSize().height-40});
   await page.waitForLoadState('networkidle');
   assert.equal(await page.locator('.lecture-slide-dock:visible').count(),0,'viewport changes must preserve suspension');
-  await go(page,'school?lectures=demo-course-design');await page.getByText('Introduction to feedback loops',{exact:true}).click();await page.locator('canvas.lecture-canvas').waitFor();
+  // Return through the SPA router: a full page navigation discards the suspended
+  // workspace and can abort deck requests, so it cannot verify dock reuse.
+  await page.evaluate(()=>{location.hash='#school?lectures=demo-course-design';});await page.getByText('Introduction to feedback loops',{exact:true}).click();await page.locator('canvas.lecture-canvas').waitFor();
   await page.locator('.lecture-slide-dock:visible').waitFor();assert.equal(await page.locator('.lecture-slide-dock:visible').count(),1,'returning reuses exactly one slide dock');
+  assert.equal(await suspendedDock.evaluate(node=>node.isConnected&&node===document.querySelector('.lecture-slide-dock')),true,'returning must reuse the suspended dock itself');
  }finally{release();await page.evaluate(()=>window.lateDockObserver?.disconnect());}
 }
