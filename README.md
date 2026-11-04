@@ -107,7 +107,9 @@ If I want coursework reminders in Microsoft 365, the
 [connection guide](integrations/m365/README.md) explains how to copy tasks from
 the SQLite workspace to SharePoint, Microsoft's shared-list service, and import
 a daily reminder workflow for Teams messages and Outlook email. It needs an account with the required permissions. Sync is one-way and
-runs only when requested; it does not change the LifeOS workspace. A live tenant
+runs only when requested; it does not change the LifeOS workspace. I can keep tasks
+without a deadline in the shared list; the reminder workflow skips them and keeps
+the reminders for tasks due tomorrow. A live tenant
 connection still needs its own check.
 
 The public demo can optionally collect a small set of usage events after a

@@ -1,7 +1,15 @@
 # Microsoft 365 integration (optional)
 
-Pushes LifeOS coursework tasks to a **SharePoint list** through **Microsoft Graph**, and ships a
-**Power Automate flow** that sends a Teams and Outlook reminder when a synced item is due tomorrow.
+I built a shared coursework list with daily reminders because I wanted to see my
+LifeOS deadlines alongside the messages and email I already check.
+
+## Overview
+
+I copy tasks to SharePoint, Microsoft's shared-list service, through Microsoft
+Graph, its data API. A Power Automate flow, a scheduled workflow, checks the list
+each morning and sends me a Teams message and Outlook email for tasks due tomorrow.
+Tasks without deadlines stay in the list and do not interrupt reminders for dated tasks.
+This is an optional connection for my personal project.
 
 LifeOS keeps working without any of this. Nothing here runs unless you configure it and run a command.
 
@@ -122,6 +130,14 @@ refused so the bearer token cannot be sent elsewhere.
 is tomorrow and whose status is not Completed or Archived, and for each one posts a Teams message from
 *Flow bot* and sends an Outlook email to you.
 
+The flow first removes rows with null, missing or empty `DueDate` values in
+**Keep items with due dates**. Only that action's output reaches the date formatter
+in **Keep items due tomorrow**. This separate step avoids relying on Boolean
+short-circuiting to protect a formatter that requires a timestamp string. It also
+keeps undated tasks available in SharePoint. The
+[Microsoft expression reference](https://learn.microsoft.com/en-us/azure/logic-apps/expression-functions-reference)
+documents `empty` and `formatDateTime`.
+
 ### Import
 
 1. Run a sync first so the `LifeOS Tasks` list exists.
@@ -141,8 +157,11 @@ To remove Teams or Outlook, delete that action inside *For each due item*.
 
 ### Test it end to end
 
-Sync, then in SharePoint set one item's **Due date** to tomorrow and **Status** to *Not started*, and run
-the flow manually. You should receive both messages.
+Sync, then in SharePoint set one item's **Due date** to tomorrow and **Status** to *Not started*.
+Leave another open item's **Due date** blank and run the flow manually. The two filter
+actions should succeed, and only the dated item should produce both messages.
+If I imported an older package, I import the rebuilt ZIP again or add the new filter
+step from `definition.json` before testing.
 
 ## Development
 
@@ -150,6 +169,7 @@ the flow manually. You should receive both messages.
 npm test                    # includes integrations/m365/test with a mocked Graph
 npm run typecheck
 npm run m365:pack-flow      # after editing flow/definition.json; a test fails if the zip is stale
+node --test integrations/m365/test/flow.test.ts  # execute the reminder regression and package checks
 ```
 
 The tests use an in-memory stand-in for Graph, so they run offline and need no Microsoft account.
@@ -160,5 +180,16 @@ Covered by automated tests: the Graph client (retry, backoff, paging, auth refre
 silent-token logic against a fake MSAL app, the sync (create, update, no-op, prune, dry-run, adopt,
 columns), the mapping, the read-only LifeOS reader, and the flow definition and package structure.
 
-Not covered by tests: the live calls to Microsoft 365 and the Power Automate import. Those need a signed-in
+The reminder regression creates a temporary SQLite database with five fictional
+tasks, reads and maps them through the real sync source, then adds missing and empty
+connector-date cases. A small offline expression interpreter executes the actual
+Query expressions from `definition.json`: seven mixed rows retain exactly the two
+tomorrow tasks, and only the four dated rows reach `formatDateTime`. Empty and wholly
+undated lists also succeed with no reminders. The interpreter rejects null timestamp
+arguments and unsupported syntax instead of silently accepting them. A control test
+checks that the original unsafe expression still fails. Package tests compare every
+extracted ZIP member to the generated contents and its embedded definition to the source.
+
+The interpreter covers the filter expressions, not Microsoft's workflow engine or
+message delivery. Not covered by tests: live calls to Microsoft 365 and the Power Automate import. Those need a signed-in
 account; see the end-to-end run notes in the pull request.
