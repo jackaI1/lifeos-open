@@ -88,6 +88,12 @@ For a browser-only build or hosting the fictional demo, see
 [HOSTED_DEMO.md](HOSTED_DEMO.md). These options are separate from the private
 LifeOS service and include no private credentials or records.
 
+There is also an [optional AWS hosting guide](docs/deploy-aws.md) for the
+browser-only demo. It prepares the infrastructure and tagged releases for a
+separate host; it has not been deployed or checked against a live AWS account.
+Running it needs an AWS account and can incur charges. The usual public demo
+continues to use Cloudflare.
+
 ## Checks and documentation
 
 ```sh
