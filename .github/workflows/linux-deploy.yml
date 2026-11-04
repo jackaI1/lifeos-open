@@ -1,0 +1,48 @@
+name: Linux self-hosting
+on:
+  push:
+    paths: ['deploy/linux/**', '.github/workflows/linux-deploy.yml', 'src/**', 'public/**', 'package*.json', 'tools/build.mjs']
+  pull_request:
+    paths: ['deploy/linux/**', '.github/workflows/linux-deploy.yml', 'src/**', 'public/**', 'package*.json', 'tools/build.mjs']
+permissions:
+  contents: read
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: shellcheck deploy/linux
+        run: shellcheck --external-sources --source-path=SCRIPTDIR --shell=bash deploy/linux/*.sh deploy/linux/test/*.sh
+  install-and-service:
+    name: install + service check (Ubuntu ${{ matrix.ubuntu }}, systemd)
+    needs: shellcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: ['22.04', '24.04']
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build Ubuntu image with systemd
+        run: docker build --build-arg UBUNTU_VERSION=${{ matrix.ubuntu }} -t lifeos-systemd:${{ matrix.ubuntu }} -f deploy/linux/test/Dockerfile.systemd deploy/linux/test
+      - name: Boot the container
+        run: |
+          docker run -d --name lifeos-sd --privileged --cgroupns=host \
+            -v /sys/fs/cgroup:/sys/fs/cgroup:rw -v "$PWD":/src:ro lifeos-systemd:${{ matrix.ubuntu }}
+          for _ in $(seq 1 60); do
+            state="$(docker exec lifeos-sd systemctl is-system-running 2>/dev/null || true)"
+            case "$state" in running|degraded) break ;; esac
+            sleep 1
+          done
+          echo "systemd state: $state"
+      - name: Install, check the service, back up, upgrade, roll back, uninstall
+        run: docker exec lifeos-sd bash /src/deploy/linux/test/e2e.sh /src
+      - name: Container logs on failure
+        if: failure()
+        run: |
+          docker exec lifeos-sd journalctl -u lifeos -u lifeos-backup --no-pager -n 120 || true
+          docker logs lifeos-sd 2>&1 | tail -n 40 || true
+      - name: Remove container
+        if: always()
+        run: docker rm -f lifeos-sd

@@ -1,0 +1,34 @@
+[Unit]
+Description=LifeOS Open self-hosted workspace
+Documentation=https://github.com/jackaI1/lifeos-open/blob/main/docs/self-host-linux.md
+After=network.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=lifeos
+Group=lifeos
+WorkingDirectory=/opt/lifeos/current
+EnvironmentFile=/etc/lifeos/lifeos.env
+ExecStart=/opt/lifeos/node/bin/node build/server.mjs
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=20
+# Sandboxing: the service can only write its own data directory.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+ReadWritePaths=/var/lib/lifeos
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
