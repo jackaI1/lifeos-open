@@ -1,6 +1,6 @@
 # LifeOS Open
 
-A personal workspace for my schedule, coursework, lecture notes and everyday records.
+I built a personal workspace because I wanted my schedule, coursework and lecture notes in one place.
 
 ## Overview
 
