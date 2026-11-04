@@ -1,6 +1,6 @@
 # LifeOS Open
 
-A personal workspace for my schedule, coursework, lecture notes and everyday records.
+I built a personal workspace because I wanted my schedule, coursework and lecture notes in one place.
 
 ## Overview
 
@@ -108,8 +108,8 @@ continues to use Cloudflare.
 
 ## Checks and documentation
 
-The [budget view guide](docs/react-migration.md) explains its React implementation
-and how to use the same approach for another view.
+The [budget view guide](docs/react-migration.md) explains how this screen is built
+and how to use the same approach for another screen.
 
 ```sh
 npm test

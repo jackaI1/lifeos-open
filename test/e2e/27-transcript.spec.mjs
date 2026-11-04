@@ -1,13 +1,13 @@
 import {assert, button, lecture, clickLectureTool} from './helpers.mjs';
 export default async function({page: p, allowRequestAbort}) {
-  await lecture(p);
   const lectures = await (await p.request.get(p.origin + '/api/lectures?course=demo-course-design')).json(), id = lectures.items[0].id;
-  // Transcript seeks can cancel a browser media-range read. Allow only this
-  // fixture's exact media requests; HTTP errors and other failures still fail.
+  // Opening or seeking audio can cancel an unfinished download. Observe it
+  // before notebook mount; HTTP errors and other file requests still fail.
   const mediaPath = '/api/files/' + id + '-a-0000';
-  const allowMediaAbort = request => {if (request.resourceType() === 'media' && new URL(request.url()).pathname === mediaPath) allowRequestAbort(request);};
+  const allowMediaAbort = request => {if (request.method() === 'GET' && new URL(request.url()).pathname === mediaPath) allowRequestAbort(request);};
   p.on('request', allowMediaAbort);
   try {
+  await lecture(p);
   await clickLectureTool(p, 'Transcript');
   const panel = p.getByRole('region', {name: 'Lecture transcript'});
   await panel.getByText('Authored demo transcript', {exact: true}).waitFor();
