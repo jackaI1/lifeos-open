@@ -1,26 +1,25 @@
 # LifeOS Open
 
-An open-source personal workspace for scheduling, coursework, lecture notebooks and everyday records, with local SQLite, optional self-hosted PostgreSQL and a browser-only fictional demo.
+I built a personal workspace because I wanted my schedule, coursework and lecture notes in one place.
 
 https://github.com/user-attachments/assets/5397817a-6c90-41f8-9ad9-6138a0c4023d
 
 ## Overview
 
-Daily planning spans calendar commitments, deadlines, source material and records
-that need to stay useful after a reload. Lecture notes add another requirement:
-handwriting, audio and slides need a common timeline rather than separate files.
+I want calendar commitments, deadlines and source material to stay useful after a
+reload. During lectures, I also want handwriting, audio and slides to share one
+timeline so I can return to the right part of a note or recording.
 
-LifeOS Open runs the browser interface and domain rules against a local Node
-service. SQLite stores records and file bytes. The default workspace is authored
-for Example User, with fictional courses and contacts such as John Doe; it needs
-no external account. Optional assistant services use labelled demo replies until
-an operator configures a compatible provider.
+I use LifeOS Open to plan my day, manage coursework and keep those materials
+together. I can run it on my computer without an external account. The included
+Example User workspace has fictional courses and contacts; optional assistant
+features use labelled demo replies unless I configure a real provider.
 
-This personal project is the standalone open-source edition. It includes no
-personal workspace or original private history. The demo video, fixtures and included
+This is my personal project and the standalone open-source edition. It includes
+no personal workspace or original private history. The video, fixtures and
 [screenshots](docs/screenshots/today.png) use fictional or synthetic content.
-See the [screen inventory](docs/features.md) and
-[route inventory](docs/api-routes.json) for the retained surface.
+The [screen inventory](docs/features.md) and [route inventory](docs/api-routes.json)
+describe the rest of the application.
 
 ## Public browser demo
 
