@@ -59,6 +59,7 @@ jobs:
       - name: Trivy image scan (fixable HIGH/CRITICAL fail the build)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
+          version: v0.76.1
           image-ref: lifeos-open:ci
           format: table
           severity: HIGH,CRITICAL
@@ -68,6 +69,7 @@ jobs:
       - name: Trivy Dockerfile and compose misconfiguration scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
+          version: v0.76.1
           scan-type: config
           scan-ref: .
           severity: HIGH,CRITICAL
