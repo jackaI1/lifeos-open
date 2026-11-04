@@ -54,7 +54,7 @@ another machine, tunnel instead of exposing it: `ssh -L 8787:127.0.0.1:8787 you@
 with `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome`, `PrivateTmp`,
 `PrivateDevices` and a single writable directory. Edit `/etc/lifeos/lifeos.env` and run
 `sudo systemctl restart lifeos` to change settings; see the configuration table in the
-[README](../README.md#configuration) for the available variables.
+[local reference](local-workspace.md#configuration) for the available variables.
 
 ```sh
 systemctl status lifeos            # state
