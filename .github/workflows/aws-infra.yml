@@ -28,11 +28,22 @@ jobs:
         run: |
           set -euo pipefail
           cid=$(docker run --detach --publish 127.0.0.1::8080 lifeos-aws-test)
-          trap 'docker stop "$cid" >/dev/null; docker rm "$cid" >/dev/null' EXIT
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then docker logs "$cid" 2>&1 | tail -n 30; fi
+            docker stop "$cid" >/dev/null
+            docker rm "$cid" >/dev/null
+            if docker inspect "$cid" >/dev/null 2>&1; then
+              echo 'Owned test container was not removed.' >&2
+              exit 1
+            fi
+            exit "$status"
+          }
+          trap cleanup EXIT
           docker inspect --format 'owner=aws-infra-test id={{.Id}} pid={{.State.Pid}} start={{.State.StartedAt}} cleanup=docker-stop-and-rm' "$cid"
           port=$(docker inspect --format '{{(index (index .NetworkSettings.Ports "8080/tcp") 0).HostPort}}' "$cid")
           url="http://127.0.0.1:$port"
-          curl --fail --retry 15 --retry-connrefused --retry-delay 1 --max-time 5 "$url/healthz"
+          curl --fail --retry 15 --retry-all-errors --retry-delay 1 --max-time 5 "$url/healthz"
           curl --fail --max-time 10 "$url/" -o demo-shell.html
           grep -q '/demo-bootstrap.js' demo-shell.html
           curl --fail --head --max-time 10 "$url/vendor/browser-demo/sql-wasm.wasm" | grep -qi 'content-type: application/wasm'
