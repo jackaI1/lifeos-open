@@ -1,4 +1,4 @@
-import {render, screen, waitFor, within} from '@testing-library/react';
+import {act, render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, it, vi} from 'vitest';
 import {FinancesView} from './FinancesView';
@@ -176,6 +176,42 @@ describe('FinancesView', () => {
     await new Promise(r => setTimeout(r, 0));
     expect(screen.queryByText('Stale month row')).not.toBeInTheDocument();
     expect(screen.getByText('Fictional campus lunch')).toBeInTheDocument();
+  });
+
+  it('refreshes the current period when a save from an earlier period finishes', async () => {
+    const shell = fakeShell([lunch()]);
+    let finishSave!: () => void;
+    shell.submit.mockImplementationOnce(() => new Promise(resolve => {
+      finishSave = () => resolve({auditId: 'delayed-save'});
+    }));
+    const {user} = renderView(shell);
+    await screen.findByText('This week');
+    await user.click(screen.getByRole('button', {name: 'Add transaction'}));
+    await user.type(dialog().getByLabelText('Merchant or description'), 'Fictional delayed snack');
+    await user.type(dialog().getByLabelText('Expense amount'), '2');
+    await user.click(dialog().getByRole('button', {name: 'Save transaction'}));
+    expect(shell.submit).toHaveBeenCalledOnce();
+    await user.click(dialog().getByRole('button', {name: 'Close'}));
+    await user.click(screen.getByRole('button', {name: 'Next budget period'}));
+    await screen.findByText('This month');
+    await act(async () => finishSave());
+    await waitFor(() => expect(shell.request).toHaveBeenCalledTimes(3));
+    expect(shell.request).toHaveBeenLastCalledWith('/api/finances?period=month');
+    expect(screen.getByText('This month')).toBeInTheDocument();
+  });
+
+  it('keeps retained totals labelled with their actual period when a switch fails', async () => {
+    const shell = fakeShell([lunch()]);
+    const {user} = renderView(shell);
+    await screen.findByText('This week');
+    shell.request.mockRejectedValueOnce(new Error('Month budget is unavailable'));
+    await user.click(screen.getByRole('button', {name: 'Next budget period'}));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Month budget is unavailable');
+    expect(screen.getByRole('heading', {name: 'This week'})).toBeInTheDocument();
+    expect(screen.queryByRole('heading', {name: 'This month'})).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', {name: 'Retry'}));
+    expect(await screen.findByRole('heading', {name: 'This month'})).toBeInTheDocument();
+    expect(shell.request).toHaveBeenLastCalledWith('/api/finances?period=month');
   });
 
   it('keeps shell-owned tools that app.js appends to the heading across re-renders', async () => {

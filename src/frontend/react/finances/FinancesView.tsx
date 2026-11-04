@@ -114,7 +114,7 @@ export function FinancesView({ctx, initialPeriod, onSettled}: FinancesViewProps)
           <FinanceOptions data={data} ctx={ctx} openDialog={dialog.open} openForecast={openForecast} />
         </ShellDisclosure>
       </PageHeading>
-      <BudgetPeriod period={period} cards={s.cards} provisional={provisional} onMove={move} />
+      <BudgetPeriod period={s.period} cards={s.cards} provisional={provisional} onMove={move} />
       {error ? (
         <p className="notice" role="alert">
           {error.message}{' '}

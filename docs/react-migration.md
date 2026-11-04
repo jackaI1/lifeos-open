@@ -119,6 +119,9 @@ public/app.js ──import()──▶ public/modules/finances.js        (unchang
     comes from the data.
   - A failed refresh after the first load used to go to a detached node and
     never appeared. It now shows an inline notice with Retry.
+  - Refresh callbacks use the current selection even when a write from an
+    earlier period finishes later. Retained allowance totals keep their own
+    period label until the next request succeeds, including after an error.
 - **Removed:** `public/finance-tools.js`. Its dialogs and inbox are now React
   components. The pure model (`finance-model.js`, `finance-preview.js`) stays
   shared JavaScript, used by both the server-side snapshot and the React view.

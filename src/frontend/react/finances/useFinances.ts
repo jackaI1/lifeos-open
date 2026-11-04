@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import type {ShellContext} from '../context';
 import type {FinanceSnapshot, Period} from './types';
 
@@ -20,6 +20,12 @@ export function useFinances(ctx: ShellContext, period: Period): FinancesState {
   const [state, setState] = useState<Omit<FinancesState, 'reload'>>({data: null, error: null, loading: true});
   const generation = useRef(0);
   const live = useRef(true);
+  // Dialog callbacks can outlive the render that opened them. Refresh the current
+  // committed selection even when a write from an earlier period finishes later.
+  const current = useRef({ctx, period});
+  useLayoutEffect(() => {
+    current.current = {ctx, period};
+  }, [ctx, period]);
   useEffect(() => {
     live.current = true;
     return () => {
@@ -28,6 +34,8 @@ export function useFinances(ctx: ShellContext, period: Period): FinancesState {
   }, []);
 
   const reload = useCallback(async () => {
+    if (!live.current) return;
+    const {ctx, period} = current.current;
     const id = ++generation.current;
     setState(s => ({...s, loading: true}));
     try {
@@ -37,11 +45,11 @@ export function useFinances(ctx: ShellContext, period: Period): FinancesState {
       const error = e instanceof Error ? e : new Error(String(e));
       if (live.current && id === generation.current) setState(s => ({...s, error, loading: false}));
     }
-  }, [ctx, period]);
+  }, []);
 
   useEffect(() => {
     void reload();
-  }, [reload]);
+  }, [reload, ctx, period]);
 
   return {...state, reload};
 }
