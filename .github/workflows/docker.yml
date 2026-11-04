@@ -8,6 +8,7 @@ permissions:
   contents: read
 env:
   IMAGE: ghcr.io/jackai1/lifeos-open
+  TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.76.1
 jobs:
   image:
     name: Build, smoke-test and scan image
@@ -56,24 +57,18 @@ jobs:
           echo "database present after restart (size before: $before bytes)"
       - name: Validate compose file
         run: docker compose --profile postgres config --quiet
+      # Trivy runs from its official container image (pinned) rather than the
+      # aquasecurity/trivy-action installer, which fails to install on hosted runners.
       - name: Trivy image scan (fixable HIGH/CRITICAL fail the build)
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          version: v0.76.1
-          image-ref: lifeos-open:ci
-          format: table
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: '1'
-          vuln-type: os,library
+        run: |
+          set -eu
+          docker save lifeos-open:ci -o "$RUNNER_TEMP/lifeos-open.tar"
+          docker run --rm -v "$RUNNER_TEMP:/scan:ro" -v trivy-cache:/root/.cache/ "$TRIVY_IMAGE" \
+            image --input /scan/lifeos-open.tar --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
       - name: Trivy Dockerfile and compose misconfiguration scan
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          version: v0.76.1
-          scan-type: config
-          scan-ref: .
-          severity: HIGH,CRITICAL
-          exit-code: '1'
+        run: |
+          docker run --rm -v "$PWD:/src:ro" -v trivy-cache:/root/.cache/ "$TRIVY_IMAGE" \
+            config /src --severity HIGH,CRITICAL --exit-code 1
   publish:
     name: Publish to GHCR (tags only)
     needs: image

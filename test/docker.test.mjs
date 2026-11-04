@@ -44,7 +44,7 @@ test('docker workflow builds on PRs, scans with Trivy and publishes to GHCR on t
  const wf=await read('.github/workflows/docker.yml');
  assert.match(wf,/pull_request:/);
  assert.match(wf,/tags:\s*\[?\s*['"]?v\*/);
- assert.match(wf,/aquasecurity\/trivy-action/);
+ assert.match(wf,/aquasecurity\/trivy:/);
  assert.match(wf,/ghcr\.io\/jackai1\/lifeos-open/);
  assert.match(wf,/if:\s*startsWith\(github\.ref,\s*'refs\/tags\/v'\)/);
  assert.match(wf,/packages:\s*write/);
