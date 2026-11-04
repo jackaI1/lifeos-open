@@ -14,6 +14,7 @@ test('Dockerfile is multi-stage, non-root and has a healthcheck',async()=>{
  assert.match(runtime,/\/api\/health/);
  assert.match(runtime,/LIFEOS_BIND_HOST=0\.0\.0\.0/);
  assert.match(runtime,/LIFEOS_DATABASE=\/data\//);
+ assert.match(runtime,/rm -rf \/usr\/local\/lib\/node_modules/,'package managers must be removed from the runtime');
  assert.doesNotMatch(runtime,/npm ci|esbuild/,'dev tooling must stay out of the runtime stage');
  assert.doesNotMatch(file,/^(ENV|ARG)\s+\S*(TOKEN|SECRET|PASSWORD|API_KEY)\S*=\S+/im,'no credentials baked into the image');
 });

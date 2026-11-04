@@ -31,8 +31,11 @@ ENV NODE_ENV=production \
     LLM_MODE=mock \
     GOOGLE_MODE=local
 WORKDIR /app
+# The server needs only the node binary: drop the package managers bundled in the base
+# image (npm, npx, corepack) to shrink the image and its scannable attack surface.
 # /data is the only writable location; a named volume mounted here inherits this ownership.
-RUN mkdir -p /data && chown node:node /data
+RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /opt/yarn* \
+ && mkdir -p /data && chown node:node /data
 COPY --from=deps --chown=root:root /app/node_modules ./node_modules
 COPY --from=build --chown=root:root /app/package.json ./package.json
 COPY --from=build --chown=root:root /app/build ./build
