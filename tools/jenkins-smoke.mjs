@@ -38,8 +38,11 @@ if (build?.result !== 'SUCCESS') {
 }
 assert.equal(build?.result, 'SUCCESS', 'the real SCM pipeline succeeds');
 const reports = await json('job/lifeos-open/1/testReport/api/json');
+await writeFile('test-results/jenkins/test-report.json', JSON.stringify(reports, null, 2));
 assert.equal(reports.failCount, 0);
-assert.ok(reports.totalCount > 19, 'both Node and React reports were collected');
+// TestResult exports these three counts; totalCount belongs to TestResultAction.
+const totalCount = reports.passCount + reports.failCount + reports.skipCount;
+assert.ok(totalCount > 19, 'both Node and React reports were collected');
 for (const artifact of ['test-results/node.xml', 'test-results/react.xml', 'test-results/privacy.json', 'test-results/image-id.txt']) {
   assert.ok(build.artifacts.some(item => item.relativePath === artifact), `archived ${artifact}`);
   const response = await request(`job/lifeos-open/1/artifact/${artifact}`);
@@ -48,4 +51,4 @@ for (const artifact of ['test-results/node.xml', 'test-results/react.xml', 'test
 }
 const revisions = build.actions.flatMap(action => Object.values(action.buildsByBranchName || {}));
 assert.ok(revisions.some(revision => revision.revision?.SHA1 === process.env.LIFEOS_JENKINS_REF), 'SCM checked out the requested commit');
-console.log(`Jenkins SCM build #1: SUCCESS; ${reports.totalCount} tests; 4 archived reports; requested commit verified.`);
+console.log(`Jenkins SCM build #1: SUCCESS; ${totalCount} tests; 4 archived reports; requested commit verified.`);
