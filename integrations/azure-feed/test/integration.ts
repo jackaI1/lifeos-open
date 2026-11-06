@@ -41,6 +41,7 @@ await test('real SQL Server, Core Tools and Azurite', {timeout: 300000}, async t
       await t.test('readiness writes its heartbeat through the real Azurite blob binding', async () => {
         const response = await fetch(url + '/api/health');
         assert.equal(response.status, 200);
+        // SDK 12.33 uses the 2026-06-06 API implemented by pinned Azurite 3.37.
         const blob = BlobServiceClient.fromConnectionString(storage).getContainerClient('demo-health').getBlockBlobClient('latest.json');
         const heartbeat = JSON.parse((await blob.downloadToBuffer()).toString());
         assert.equal(heartbeat.status, 'ok');

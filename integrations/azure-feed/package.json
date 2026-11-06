@@ -21,7 +21,7 @@
     "mssql": "12.7.14"
   },
   "devDependencies": {
-    "@azure/storage-blob": "12.34.0",
+    "@azure/storage-blob": "12.33.0",
     "@types/mssql": "12.3.0",
     "@types/node": "26.6.6",
     "azurite": "3.37.0",
