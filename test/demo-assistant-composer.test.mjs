@@ -10,3 +10,13 @@ test('a connected model retains normal editable input and sending',async()=>{
  const module=await import('../public/demo-assistant-composer.js').catch(()=>({}));assert.equal(typeof module.configureDemoComposer,'function');
  for(const session of [{mode:'demo',services:{ai:'real'}},{mode:'owner',services:{ai:'mock'}}]){const {input,send}=controls();assert.equal(module.configureDemoComposer(session,input,send),false);assert.equal(input.readOnly,undefined);assert.equal(input.placeholder,'Ask about your day');assert.equal(send.disabled,false);}
 });
+test('local retrieval accepts typed note questions while finance, project and support retain demo controls',async()=>{
+ const {configureDemoComposer}=await import('../public/demo-assistant-composer.js');
+ const session={mode:'demo',services:{ai:'mock',retrieval:'local'}};
+ for(const scope of ['academics','today','lecture']){
+  const {input,send}=controls();assert.equal(configureDemoComposer(session,input,send,scope),false);assert.notEqual(input.readOnly,true);assert.equal(send.disabled,false);
+ }
+ for(const scope of ['finances','project','support']){
+  const {input,send}=controls();assert.equal(configureDemoComposer(session,input,send,scope),true);assert.equal(input.readOnly,true);
+ }
+});

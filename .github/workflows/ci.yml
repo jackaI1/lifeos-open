@@ -88,3 +88,26 @@ jobs:
           name: whisper-public-clip-evaluation
           path: .runtime/whisper/evaluation.json
           retention-days: 7
+  retrieval:
+    name: Local retrieval, citations and labelled recall
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Download pinned public embedding weights (setup only)
+        run: npm run rag:download
+      - name: Exercise offline model and assistant, then measure recall
+        run: npm run test:rag
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:rag:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: retrieval-labelled-evaluation
+          path: .runtime/retrieval/evaluation.json
+          retention-days: 7

@@ -1,0 +1,35 @@
+{
+  "description": "Fictional student workspace. Relevant keys were labelled by reading the records; unknown questions have no supporting source. This is a small regression set, not a production accuracy estimate.",
+  "records": [
+    {"kind":"calendar-event","id":"systems-lab","data":{"title":"Systems laboratory","description":"Bring safety goggles and a lab notebook. Complete the pre-lab checklist before arriving.","location":"Room S-204","start":{"dateTime":"2026-11-09T14:00:00-05:00"},"end":{"dateTime":"2026-11-09T15:00:00-05:00"}}},
+    {"kind":"learning-note","id":"negative-feedback","data":{"title":"Negative feedback","courseId":"systems","text":"Negative feedback reduces a deviation from a target. A thermostat senses the room temperature, compares it with the set point, and switches heating to reduce the difference."}},
+    {"kind":"private-note","id":"backup-restore","data":{"title":"Restoring my workspace","text":"Before an upgrade I save a complete workspace backup from Settings. To recover after a bad upgrade, I stop LifeOS, restore the saved database and file bytes, then check a note and a recording before continuing."}},
+    {"kind":"learning-note","id":"spin-coating","data":{"title":"Thin film spin coating","courseId":"materials","text":"Spin coating spreads a liquid film by rotating a substrate. Film thickness depends on spin speed, solution viscosity and evaporation. Our fictional sample recipe calls for 30 seconds at 3000 rpm after dispensing the solution."}},
+    {"kind":"calendar-event","id":"project-meeting","data":{"title":"Planter prototype review","description":"Meet the design group to review the water reservoir sketch. Bring the cardboard prototype and the measured container dimensions.","location":"Design studio B","start":{"dateTime":"2026-11-10T11:30:00-05:00"},"end":{"dateTime":"2026-11-10T12:00:00-05:00"}}},
+    {"kind":"private-note","id":"lentil-soup","data":{"title":"Lentil soup recipe","text":"Simmer red lentils, carrots and chopped tomato in vegetable stock for 20 minutes. Season to taste and serve with bread. Freeze leftover portions in labelled containers."}},
+    {"kind":"learning-note","id":"measurement-error","data":{"title":"Measurement uncertainty","courseId":"measurement","text":"Repeated measurements help estimate random uncertainty. A consistent offset suggests systematic error; taking more readings does not remove it. Compare the instrument with a known reference before adjusting its calibration."}},
+    {"kind":"private-note","id":"run-recovery","data":{"title":"Running recovery plan","text":"After a long training run I schedule an easy recovery day instead of speed work. My saved plan leaves Monday for rest and Wednesday for a short easy run. This is a personal planning example, not medical advice."}},
+    {"kind":"calendar-event","id":"library-return","data":{"title":"Library book return","description":"Return the borrowed materials textbook at the campus library service desk. Renew it online first if I still need it.","location":"Campus library","start":{"date":"2026-11-12"},"end":{"date":"2026-11-13"}}},
+    {"kind":"learning-note","id":"diffusion","data":{"title":"Diffusion and concentration gradients","courseId":"materials","text":"Diffusion is the net movement of particles from a region of higher concentration toward lower concentration. A steeper concentration gradient increases the flux in Fick's first law. Heating generally increases the diffusion coefficient."}}
+  ],
+  "questions": [
+    {"question":"What equipment should I take to the systems laboratory?","relevant":["calendar-event/systems-lab"]},
+    {"question":"Which room is the systems lab in?","relevant":["calendar-event/systems-lab"]},
+    {"question":"How does a thermostat correct a temperature difference?","relevant":["learning-note/negative-feedback"]},
+    {"question":"What does negative feedback do to a deviation?","relevant":["learning-note/negative-feedback"]},
+    {"question":"How do I recover my workspace after an unsuccessful upgrade?","relevant":["private-note/backup-restore"]},
+    {"question":"What speed and duration does my spin coating recipe specify?","relevant":["learning-note/spin-coating"]},
+    {"question":"Where is the planter prototype review meeting?","relevant":["calendar-event/project-meeting"]},
+    {"question":"What should I bring to the design group review?","relevant":["calendar-event/project-meeting"]},
+    {"question":"How long should I simmer the lentil soup?","relevant":["private-note/lentil-soup"]},
+    {"question":"Will repeating measurements remove a systematic offset?","relevant":["learning-note/measurement-error"]},
+    {"question":"How should I check an instrument calibration?","relevant":["learning-note/measurement-error"]},
+    {"question":"What kind of run follows a long training run?","relevant":["private-note/run-recovery"]},
+    {"question":"Where do I return the borrowed textbook?","relevant":["calendar-event/library-return"]},
+    {"question":"How does a concentration gradient affect diffusion flux?","relevant":["learning-note/diffusion"]},
+    {"question":"Who won the Antarctic chess championship in 1987?","relevant":[]},
+    {"question":"What is the password for the satellite uplink?","relevant":[]},
+    {"question":"What were the mayoral election results in Atlantis?","relevant":[]},
+    {"question":"What is the current exchange rate between euros and yen?","relevant":[]}
+  ]
+}

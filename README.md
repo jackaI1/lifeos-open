@@ -18,6 +18,12 @@ with the commands below. In the demo, open **School → Lectures** and a sample
 notebook to try its labelled transcript. Open **Academics → Week workload** to
 compare the week’s commitments and see which courses have deadlines together.
 
+I can ask the local assistant about saved notes and calendar entries, then check
+the passages behind its answer. If nothing is relevant enough, it says it does
+not know. The [saved-text setup](docs/retrieval.md#try-it) takes two commands after
+installing the app. This runs on my computer; the browser demo keeps its scripted
+example questions.
+
 I can also check the fictional day's schedule and upcoming deadlines in the
 phone client. From this checkout, run `cd mobile`, `npm ci`, then `npm start`
 and open it in Expo Go, an app that runs the phone preview. **Refresh** downloads
@@ -102,9 +108,20 @@ it says it does not know. This runs on my computer with a separate local model;
 the browser demo does not answer these questions. I still open the source to
 check whether a quote answers what I meant.
 
-The default assistant uses scripted example replies. Real chat needs a configured
-provider, which receives the selected context and images. Live email sending is
-not implemented; drafts can be composed and exported.
+The default assistant uses scripted example replies. To ask my own questions
+about saved text, I run `npm run rag:download` once, then start the app with
+`RAG_MODE=local npm run dev`. I open **School → Academic advisor**, type
+"What should I bring to the Systems lab?", and get the saved passage with a
+numbered source. I can add or edit a note and ask again without rebuilding an
+index by hand. No chat API key is needed for quoted answers.
+
+The local model turns passages into lists of numbers called embeddings, which
+let the assistant find related wording. SQLite stores them beside the workspace.
+A configured chat provider can write an answer using just the retrieved passages;
+I check its citations against those passages. Other real chat features still need
+a configured provider, which receives their selected context and images. The
+[retrieval guide](docs/retrieval.md) explains setup, privacy and limitations.
+Live email sending is not implemented; drafts can be composed and exported.
 
 The browser demo saves changes and uploads only in that browser. Clearing site
 data can remove them, and there is no cross-device sync. Its chat accepts the
@@ -224,6 +241,15 @@ focused tests, including the real Ollama adapters against a fake local server.
 CI runs these tests without model downloads. In a separate check with two real
 local models and three fictional notes, both supported questions returned the
 right source quote and an unrelated question returned the unknown answer.
+
+For saved-text answers, `npm run rag:download && npm run test:rag` runs ten
+focused checks and a labelled set of fictional questions with the real local
+model. At the default relevance cutoff, the expected source appears in the top
+three for 12 of 14 answerable questions (85.7% recall at three), and all four
+unknown questions receive an abstention. Two answerable questions also receive
+an abstention. This small set checks regressions, not general answer accuracy.
+`npm run test:rag:browser` checks typed questions, citations and abstention on
+desktop and phone layouts. CI runs both and uploads the question-by-question report.
 
 The [local reference](docs/local-workspace.md#testing) also covers browser tests.
 I also keep a local build desk for checking a change before packaging it. Jenkins,
