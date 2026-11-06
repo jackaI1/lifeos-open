@@ -17,8 +17,7 @@ jenkins:
     loggedInUsersCanDoAnything:
       allowAnonymousRead: false
   crumbIssuer:
-    standard:
-      excludeClientIPFromCrumb: false
+    standard: {}
 unclassified:
   location:
     url: 'http://127.0.0.1:8081/'

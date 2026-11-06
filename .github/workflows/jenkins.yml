@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+      - name: Check integration script
+        run: shellcheck deploy/jenkins/test.sh
       - name: Boot Jenkins, validate and run the versioned pipeline
         env:
           LIFEOS_JENKINS_REF: '${{ github.event.pull_request.head.sha || github.sha }}'
