@@ -110,7 +110,8 @@ A SHA-256 content hash and transform version identify cached HTML. Editing a pag
 invalidates its cache entry; unchanged content can be reused. Only after all
 validation succeeds does a transaction replace the visible page set, including
 deleted pages. Repeating a build key returns its status and does not enqueue a
-second active job. Re-running a worker after interruption replaces the snapshot
+second job, including after a failed attempt. After exhausted retries, I use a new
+build key to request another build. Re-running a worker after interruption replaces the snapshot
 without duplicate pages. A new build key reads the source repository's current
 HEAD. Logs emit JSON events with build duration and cache hits. `/metrics` reports
 queue depth, successful publication attempts and the cache hit rate. A successful

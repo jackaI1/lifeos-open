@@ -25,7 +25,7 @@ def start(request: BuildRequest, authorization: str | None = Header(default=None
         with cache.lock("lifeos:enqueue:" + build_id, timeout=10, blocking_timeout=3):
             with database() as db:
                 previous = db.execute("SELECT state FROM builds WHERE id=?", (build_id,)).fetchone()
-                if previous and previous["state"] in {"queued", "running", "published"}:
+                if previous:
                     return {"id": build_id, "state": previous["state"]}
                 # Enqueue before status: if the worker wins the race, do not overwrite published.
                 enqueue(build_id)

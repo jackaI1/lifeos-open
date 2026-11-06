@@ -34,7 +34,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run seed
-      - run: npm run evaluate | tee evaluation.json
+      - run: npm run --silent evaluate | tee evaluation.json
       - run: npm run build
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --frozen --directory ../../services/study --python 3.12

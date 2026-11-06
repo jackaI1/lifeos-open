@@ -138,6 +138,7 @@ def test_git_queue_retries_and_cache(docs, monkeypatch):
     bad = submit("bad")
     SimpleWorker([queue()], connection=redis_client()).work(burst=True, with_scheduler=True)
     assert client.get("/builds/" + bad).json()["state"] == "failed"
+    assert submit("bad") == bad  # Keep the queue's scheduled retry, never enqueue a duplicate.
     assert client.get("/search?q=Starts").json()["pages"]
     monkeypatch.setenv("PUBLISH_DOCS_PATH", "docs")
     scheduler = RQScheduler([queue()], connection=redis_client())
