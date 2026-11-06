@@ -1,0 +1,859 @@
+{
+  "schema_version": 1,
+  "config": {
+    "history": "annual_returns.csv",
+    "scenarios": 20000,
+    "seed": 2026,
+    "years": 20,
+    "initial_assets": 1000000,
+    "first_payment": 70000,
+    "payment_growth": 0.02,
+    "discount_rate": 0.04,
+    "target_return": 0.07,
+    "max_weight": 0.65,
+    "correlation_blend": 0.35
+  },
+  "data": {
+    "file": "annual_returns.csv",
+    "sha256": "f45fcd3be2c9659a83fa71f426dd1c8e08520216b87789b50372d3c40c22c21d",
+    "first_year": 1976,
+    "last_year": 2025,
+    "observations": 50
+  },
+  "calibration": {
+    "assets": [
+      "us_equity",
+      "treasury_10y",
+      "baa_credit",
+      "cash_3m"
+    ],
+    "log_mean": [
+      0.11264782562308322,
+      0.05951434257311057,
+      0.08195563317603809,
+      0.042235041451968325
+    ],
+    "log_covariance": [
+      [
+        0.024159465197735316,
+        0.0003865906689325131,
+        0.004812368071582901,
+        0.0006300791526274989
+      ],
+      [
+        0.0003865906689325131,
+        0.009106381215984921,
+        0.005212059233303506,
+        0.0008162159532497758
+      ],
+      [
+        0.004812368071582901,
+        0.005212059233303506,
+        0.006047466912434739,
+        0.0004426050735871148
+      ],
+      [
+        0.0006300791526274989,
+        0.0008162159532497758,
+        0.0004426050735871148,
+        0.001085016636283105
+      ]
+    ],
+    "arithmetic_mean": [
+      0.13283977813736175,
+      0.06616439780367818,
+      0.0886946030305431,
+      0.043705696453163016
+    ],
+    "arithmetic_covariance": [
+      [
+        0.03138202905170636,
+        0.0004670119392627125,
+        0.005949477254934962,
+        0.0007452096697537284
+      ],
+      [
+        0.0004670119392627125,
+        0.010398557686352386,
+        0.006065573429938155,
+        0.0009086247450607433
+      ],
+      [
+        0.005949477254934962,
+        0.006065573429938155,
+        0.0071895133327180135,
+        0.0005030331727850051
+      ],
+      [
+        0.0007452096697537284,
+        0.0009086247450607433,
+        0.0005030331727850051,
+        0.00118257347737155
+      ]
+    ],
+    "baseline_log_correlation": [
+      [
+        1.0,
+        0.02606362363224012,
+        0.3981332307660861,
+        0.12306463094102048
+      ],
+      [
+        0.02606362363224012,
+        1.0,
+        0.702343679892017,
+        0.25966532971428935
+      ],
+      [
+        0.3981332307660861,
+        0.702343679892017,
+        1.0,
+        0.17278714904698156
+      ],
+      [
+        0.12306463094102048,
+        0.25966532971428935,
+        0.17278714904698156,
+        1.0
+      ]
+    ],
+    "changed_log_correlation": [
+      [
+        1.0,
+        0.36694135536095607,
+        0.6087865999979559,
+        0.42999201011166327
+      ],
+      [
+        0.36694135536095607,
+        1.0,
+        0.806523391929811,
+        0.518782464314288
+      ],
+      [
+        0.6087865999979559,
+        0.806523391929811,
+        1.0,
+        0.462311646880538
+      ],
+      [
+        0.42999201011166327,
+        0.518782464314288,
+        0.462311646880538,
+        1.0
+      ]
+    ]
+  },
+  "liabilities": {
+    "present_value": 1126415.5200678664,
+    "initial_funded_ratio": 0.8877718587717525,
+    "payments": [
+      70000.0,
+      71400.0,
+      72828.0,
+      74284.56000000001,
+      75770.2512,
+      77285.656224,
+      78831.36934848,
+      80407.9967354496,
+      82016.1566701586,
+      83656.47980356177,
+      85329.60939963302,
+      87036.20158762568,
+      88776.92561937819,
+      90552.46413176575,
+      92363.51341440107,
+      94210.78368268909,
+      96094.99935634287,
+      98016.89934346973,
+      99977.23733033914,
+      101976.78207694592
+    ]
+  },
+  "allocations": {
+    "baseline": {
+      "weights": {
+        "us_equity": 0.11402553723464601,
+        "treasury_10y": 0.0,
+        "baa_credit": 0.3585493230233285,
+        "cash_3m": 0.5274251397420255
+      },
+      "expected_return": 0.07,
+      "volatility": 0.04927086802450805
+    },
+    "changed": {
+      "weights": {
+        "us_equity": 0.07227468365990652,
+        "treasury_10y": 0.0,
+        "baa_credit": 0.44126802583321045,
+        "cash_3m": 0.48645729050688313
+      },
+      "expected_return": 0.07,
+      "volatility": 0.05644455271834054
+    }
+  },
+  "results": {
+    "baseline": {
+      "shortfall_probability": 0.113,
+      "expected_pv_unpaid": 7595.003637831254,
+      "mean_terminal_assets": 547169.5334447412,
+      "p05_terminal_assets": 0.0,
+      "mean_payment_coverage": 0.9904838275533603
+    },
+    "equal_weight_reference": {
+      "shortfall_probability": 0.0686,
+      "expected_pv_unpaid": 6050.321579577518,
+      "mean_terminal_assets": 1106512.64252715,
+      "p05_terminal_assets": 0.0,
+      "mean_payment_coverage": 0.9925144566738759
+    },
+    "changed_model_fixed_weights": {
+      "shortfall_probability": 0.15445,
+      "expected_pv_unpaid": 12652.933607305655,
+      "mean_terminal_assets": 558337.9583759083,
+      "p05_terminal_assets": 0.0,
+      "mean_payment_coverage": 0.9842686987514083
+    },
+    "changed_model_reoptimized": {
+      "shortfall_probability": 0.1518,
+      "expected_pv_unpaid": 12391.174022082592,
+      "mean_terminal_assets": 558013.2469352048,
+      "p05_terminal_assets": 0.0,
+      "mean_payment_coverage": 0.9845911050125207
+    }
+  },
+  "reconciliation": {
+    "shortfall_probability": {
+      "baseline": 0.113,
+      "changed_model_fixed_weights": 0.15445,
+      "changed_model_reoptimized": 0.1518,
+      "assumption_effect": 0.04145,
+      "allocation_effect": -0.0026500000000000135,
+      "total_change": 0.03879999999999999,
+      "bridge_residual": 0.0,
+      "paired_mc_standard_error": {
+        "assumption_effect": 0.0014218635517510075,
+        "allocation_effect": 0.0010354721073617848,
+        "total_change": 0.0013963615188319117
+      }
+    },
+    "expected_pv_unpaid": {
+      "baseline": 7595.003637831254,
+      "changed_model_fixed_weights": 12652.933607305655,
+      "changed_model_reoptimized": 12391.174022082592,
+      "assumption_effect": 5057.9299694744,
+      "allocation_effect": -261.75958522306246,
+      "total_change": 4796.170384251338,
+      "bridge_residual": 0.0,
+      "paired_mc_standard_error": {
+        "assumption_effect": 98.36811313699066,
+        "allocation_effect": 47.292291822226254,
+        "total_change": 95.78725835918527
+      }
+    },
+    "mean_terminal_assets": {
+      "baseline": 547169.5334447412,
+      "changed_model_fixed_weights": 558337.9583759083,
+      "changed_model_reoptimized": 558013.2469352048,
+      "assumption_effect": 11168.42493116716,
+      "allocation_effect": -324.71144070348237,
+      "total_change": 10843.713490463677,
+      "bridge_residual": 0.0,
+      "paired_mc_standard_error": {
+        "assumption_effect": 621.8943906072211,
+        "allocation_effect": 434.42576959711727,
+        "total_change": 629.6221535549967
+      }
+    },
+    "p05_terminal_assets": {
+      "baseline": 0.0,
+      "changed_model_fixed_weights": 0.0,
+      "changed_model_reoptimized": 0.0,
+      "assumption_effect": 0.0,
+      "allocation_effect": 0.0,
+      "total_change": 0.0,
+      "bridge_residual": 0.0
+    },
+    "mean_payment_coverage": {
+      "baseline": 0.9904838275533603,
+      "changed_model_fixed_weights": 0.9842686987514083,
+      "changed_model_reoptimized": 0.9845911050125207,
+      "assumption_effect": -0.0062151288019519635,
+      "allocation_effect": 0.00032240626111235127,
+      "total_change": -0.005892722540839612,
+      "bridge_residual": 0.0,
+      "paired_mc_standard_error": {
+        "assumption_effect": 0.00012031695147876574,
+        "allocation_effect": 5.8630538824160575e-05,
+        "total_change": 0.00011718619111605047
+      }
+    }
+  },
+  "frontier": [
+    {
+      "return_floor": 0.043705696453163016,
+      "expected_return": 0.05934485093235743,
+      "volatility": 0.03999892582722735,
+      "us_equity": 0.016392688700983565,
+      "treasury_10y": 0.036866993784622736,
+      "baa_credit": 0.29674031751439367,
+      "cash_3m": 0.65
+    },
+    {
+      "return_floor": 0.05423187793842191,
+      "expected_return": 0.05934485093235743,
+      "volatility": 0.03999892582722735,
+      "us_equity": 0.016392688700983565,
+      "treasury_10y": 0.036866993784622736,
+      "baa_credit": 0.29674031751439367,
+      "cash_3m": 0.65
+    },
+    {
+      "return_floor": 0.06475805942368079,
+      "expected_return": 0.06475805942368079,
+      "volatility": 0.04342913729804982,
+      "us_equity": 0.08635267754611635,
+      "treasury_10y": 4.0007060164715114e-17,
+      "baa_credit": 0.29685976771855815,
+      "cash_3m": 0.6167875547353255
+    },
+    {
+      "return_floor": 0.07528424090893968,
+      "expected_return": 0.07528424090893968,
+      "volatility": 0.05584887500896166,
+      "us_equity": 0.1419217056677795,
+      "treasury_10y": 2.50817043593839e-17,
+      "baa_credit": 0.4207366879981257,
+      "cash_3m": 0.4373416063340948
+    },
+    {
+      "return_floor": 0.08581042239419856,
+      "expected_return": 0.08581042239419856,
+      "volatility": 0.07022886198633886,
+      "us_equity": 0.19749073378944265,
+      "treasury_10y": 1.0495077029659683e-16,
+      "baa_credit": 0.544613608277693,
+      "cash_3m": 0.25789565793286434
+    },
+    {
+      "return_floor": 0.09633660387945744,
+      "expected_return": 0.09633660387945742,
+      "volatility": 0.08560533234275185,
+      "us_equity": 0.26239254064299705,
+      "treasury_10y": 8.326672684688674e-17,
+      "baa_credit": 0.65,
+      "cash_3m": 0.08760745935700265
+    },
+    {
+      "return_floor": 0.10686278536471636,
+      "expected_return": 0.10686278536471633,
+      "volatility": 0.1033758699896723,
+      "us_equity": 0.4115553351008675,
+      "treasury_10y": 0.0,
+      "baa_credit": 0.5884446648991324,
+      "cash_3m": 2.1120258320017626e-16
+    },
+    {
+      "return_floor": 0.11738896684997523,
+      "expected_return": 0.11738896684997523,
+      "volatility": 0.1297945869772669,
+      "us_equity": 0.65,
+      "treasury_10y": 0.0,
+      "baa_credit": 0.35,
+      "cash_3m": 0.0
+    }
+  ],
+  "yearly": {
+    "baseline": [
+      {
+        "year": 1,
+        "liability": 70000.0,
+        "mean_assets_after_payment": 999758.7395529724,
+        "p05_assets_after_payment": 922117.7444891796,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 0.9131747160098744
+      },
+      {
+        "year": 2,
+        "liability": 71400.0,
+        "mean_assets_after_payment": 997731.2044921297,
+        "p05_assets_after_payment": 884600.3761335663,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 0.9333061957768681
+      },
+      {
+        "year": 3,
+        "liability": 72828.0,
+        "mean_assets_after_payment": 995163.9442279781,
+        "p05_assets_after_payment": 854283.5477309363,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 0.9560428901578459
+      },
+      {
+        "year": 4,
+        "liability": 74284.56000000001,
+        "mean_assets_after_payment": 990251.965871387,
+        "p05_assets_after_payment": 823009.1711667593,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 0.9802010126421378
+      },
+      {
+        "year": 5,
+        "liability": 75770.2512,
+        "mean_assets_after_payment": 983760.0875642542,
+        "p05_assets_after_payment": 790292.4854727903,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.0069431211317286
+      },
+      {
+        "year": 6,
+        "liability": 77285.656224,
+        "mean_assets_after_payment": 975293.4782296536,
+        "p05_assets_after_payment": 756077.3177138517,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.0365003816698732
+      },
+      {
+        "year": 7,
+        "liability": 78831.36934848,
+        "mean_assets_after_payment": 964570.8216822234,
+        "p05_assets_after_payment": 720392.8596811413,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.0693269994198566
+      },
+      {
+        "year": 8,
+        "liability": 80407.9967354496,
+        "mean_assets_after_payment": 951913.3369878359,
+        "p05_assets_after_payment": 680230.0643665526,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.1066891010615432
+      },
+      {
+        "year": 9,
+        "liability": 82016.1566701586,
+        "mean_assets_after_payment": 936536.9429694881,
+        "p05_assets_after_payment": 639445.8446362562,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.148973910978172
+      },
+      {
+        "year": 10,
+        "liability": 83656.47980356177,
+        "mean_assets_after_payment": 918734.9804898874,
+        "p05_assets_after_payment": 595251.9735744328,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.1980983182352738
+      },
+      {
+        "year": 11,
+        "liability": 85329.60939963302,
+        "mean_assets_after_payment": 897217.734584748,
+        "p05_assets_after_payment": 544114.2314171769,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.254664768948712
+      },
+      {
+        "year": 12,
+        "liability": 87036.20158762568,
+        "mean_assets_after_payment": 873193.8054979009,
+        "p05_assets_after_payment": 493720.2762389766,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.3231826332943897
+      },
+      {
+        "year": 13,
+        "liability": 88776.92561937819,
+        "mean_assets_after_payment": 845081.3331724824,
+        "p05_assets_after_payment": 434133.96049571026,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.4059736792712252
+      },
+      {
+        "year": 14,
+        "liability": 90552.46413176575,
+        "mean_assets_after_payment": 814107.9870180644,
+        "p05_assets_after_payment": 373033.6927482065,
+        "shortfall_probability_to_date": 5e-05,
+        "mean_funded_ratio_before_payment": 1.5116781388346134
+      },
+      {
+        "year": 15,
+        "liability": 92363.51341440107,
+        "mean_assets_after_payment": 778145.4803312017,
+        "p05_assets_after_payment": 304609.4476772136,
+        "shortfall_probability_to_date": 0.00075,
+        "mean_funded_ratio_before_payment": 1.6479876365220714
+      },
+      {
+        "year": 16,
+        "liability": 94210.78368268909,
+        "mean_assets_after_payment": 739093.1232763788,
+        "p05_assets_after_payment": 230357.00277882098,
+        "shortfall_probability_to_date": 0.0034,
+        "mean_funded_ratio_before_payment": 1.8380219935505537
+      },
+      {
+        "year": 17,
+        "liability": 96094.99935634287,
+        "mean_assets_after_payment": 695684.6184675992,
+        "p05_assets_after_payment": 151288.0607619908,
+        "shortfall_probability_to_date": 0.01155,
+        "mean_funded_ratio_before_payment": 2.118484137122703
+      },
+      {
+        "year": 18,
+        "liability": 98016.89934346973,
+        "mean_assets_after_payment": 648368.9300492781,
+        "p05_assets_after_payment": 62486.27988595522,
+        "shortfall_probability_to_date": 0.03035,
+        "mean_funded_ratio_before_payment": 2.5809538304274
+      },
+      {
+        "year": 19,
+        "liability": 99977.23733033914,
+        "mean_assets_after_payment": 598263.6080386556,
+        "p05_assets_after_payment": 0.0,
+        "shortfall_probability_to_date": 0.06385,
+        "mean_funded_ratio_before_payment": 3.503076033881315
+      },
+      {
+        "year": 20,
+        "liability": 101976.78207694592,
+        "mean_assets_after_payment": 547169.5334447412,
+        "p05_assets_after_payment": 0.0,
+        "shortfall_probability_to_date": 0.113,
+        "mean_funded_ratio_before_payment": 6.278779147346702
+      }
+    ],
+    "changed_model_fixed_weights": [
+      {
+        "year": 1,
+        "liability": 70000.0,
+        "mean_assets_after_payment": 999683.5545155674,
+        "p05_assets_after_payment": 910218.886282229,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 0.9131105360479429
+      },
+      {
+        "year": 2,
+        "liability": 71400.0,
+        "mean_assets_after_payment": 997569.0142594965,
+        "p05_assets_after_payment": 867767.3478556452,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 0.9331646105828572
+      },
+      {
+        "year": 3,
+        "liability": 72828.0,
+        "mean_assets_after_payment": 994963.4458133545,
+        "p05_assets_after_payment": 833221.9216061605,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 0.9558634083885081
+      },
+      {
+        "year": 4,
+        "liability": 74284.56000000001,
+        "mean_assets_after_payment": 990004.3703619597,
+        "p05_assets_after_payment": 799073.5229511765,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 0.9799730323303606
+      },
+      {
+        "year": 5,
+        "liability": 75770.2512,
+        "mean_assets_after_payment": 983471.1022594875,
+        "p05_assets_after_payment": 762238.2258350847,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.0066684789114007
+      },
+      {
+        "year": 6,
+        "liability": 77285.656224,
+        "mean_assets_after_payment": 974985.6941339534,
+        "p05_assets_after_payment": 723992.5313860263,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.0361972991535828
+      },
+      {
+        "year": 7,
+        "liability": 78831.36934848,
+        "mean_assets_after_payment": 964147.6826795376,
+        "p05_assets_after_payment": 684987.3150889615,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.0688933469280668
+      },
+      {
+        "year": 8,
+        "liability": 80407.9967354496,
+        "mean_assets_after_payment": 951535.6620237409,
+        "p05_assets_after_payment": 641337.7892568514,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.1062842186350605
+      },
+      {
+        "year": 9,
+        "liability": 82016.1566701586,
+        "mean_assets_after_payment": 936156.5801233408,
+        "p05_assets_after_payment": 598548.341326879,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.148544844504285
+      },
+      {
+        "year": 10,
+        "liability": 83656.47980356177,
+        "mean_assets_after_payment": 918372.7677365777,
+        "p05_assets_after_payment": 550107.233360654,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.197665387082352
+      },
+      {
+        "year": 11,
+        "liability": 85329.60939963302,
+        "mean_assets_after_payment": 896753.6447568878,
+        "p05_assets_after_payment": 497608.25231683796,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.2540721489999545
+      },
+      {
+        "year": 12,
+        "liability": 87036.20158762568,
+        "mean_assets_after_payment": 872746.5454966786,
+        "p05_assets_after_payment": 442013.62558172754,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.3225663156810912
+      },
+      {
+        "year": 13,
+        "liability": 88776.92561937819,
+        "mean_assets_after_payment": 844560.5907311745,
+        "p05_assets_after_payment": 380821.14357773203,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.4051896736051988
+      },
+      {
+        "year": 14,
+        "liability": 90552.46413176575,
+        "mean_assets_after_payment": 813703.0556691573,
+        "p05_assets_after_payment": 316211.26790760306,
+        "shortfall_probability_to_date": 0.0006,
+        "mean_funded_ratio_before_payment": 1.5109664356584434
+      },
+      {
+        "year": 15,
+        "liability": 92363.51341440107,
+        "mean_assets_after_payment": 777728.0760634544,
+        "p05_assets_after_payment": 244169.43957827208,
+        "shortfall_probability_to_date": 0.00305,
+        "mean_funded_ratio_before_payment": 1.6469912036966612
+      },
+      {
+        "year": 16,
+        "liability": 94210.78368268909,
+        "mean_assets_after_payment": 739175.6597433245,
+        "p05_assets_after_payment": 166730.11991225937,
+        "shortfall_probability_to_date": 0.01085,
+        "mean_funded_ratio_before_payment": 1.8372519105238623
+      },
+      {
+        "year": 17,
+        "liability": 96094.99935634287,
+        "mean_assets_after_payment": 696827.9104014662,
+        "p05_assets_after_payment": 80663.14309516456,
+        "shortfall_probability_to_date": 0.0267,
+        "mean_funded_ratio_before_payment": 2.1187504368784613
+      },
+      {
+        "year": 18,
+        "liability": 98016.89934346973,
+        "mean_assets_after_payment": 651590.7894963857,
+        "p05_assets_after_payment": 0.0,
+        "shortfall_probability_to_date": 0.05435,
+        "mean_funded_ratio_before_payment": 2.5855328193474745
+      },
+      {
+        "year": 19,
+        "liability": 99977.23733033914,
+        "mean_assets_after_payment": 604865.0356560303,
+        "p05_assets_after_payment": 0.0,
+        "shortfall_probability_to_date": 0.09985,
+        "mean_funded_ratio_before_payment": 3.520781291462036
+      },
+      {
+        "year": 20,
+        "liability": 101976.78207694592,
+        "mean_assets_after_payment": 558337.9583759083,
+        "p05_assets_after_payment": 0.0,
+        "shortfall_probability_to_date": 0.15445,
+        "mean_funded_ratio_before_payment": 6.349377041620735
+      }
+    ],
+    "changed_model_reoptimized": [
+      {
+        "year": 1,
+        "liability": 70000.0,
+        "mean_assets_after_payment": 999665.3397148275,
+        "p05_assets_after_payment": 910786.1769961402,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 0.9130949874061063
+      },
+      {
+        "year": 2,
+        "liability": 71400.0,
+        "mean_assets_after_payment": 997554.628532047,
+        "p05_assets_after_payment": 868407.7522101019,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 0.9331520524529451
+      },
+      {
+        "year": 3,
+        "liability": 72828.0,
+        "mean_assets_after_payment": 994957.3374664608,
+        "p05_assets_after_payment": 834747.7214489968,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 0.9558579403307665
+      },
+      {
+        "year": 4,
+        "liability": 74284.56000000001,
+        "mean_assets_after_payment": 990007.1114612378,
+        "p05_assets_after_payment": 800057.350169394,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 0.9799755562722101
+      },
+      {
+        "year": 5,
+        "liability": 75770.2512,
+        "mean_assets_after_payment": 983478.8465994173,
+        "p05_assets_after_payment": 764477.9374242119,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.006675838879808
+      },
+      {
+        "year": 6,
+        "liability": 77285.656224,
+        "mean_assets_after_payment": 975072.824143631,
+        "p05_assets_after_payment": 726840.6593711438,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.0362830982021576
+      },
+      {
+        "year": 7,
+        "liability": 78831.36934848,
+        "mean_assets_after_payment": 964335.3167134583,
+        "p05_assets_after_payment": 688196.6569948368,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.0690856429958784
+      },
+      {
+        "year": 8,
+        "liability": 80407.9967354496,
+        "mean_assets_after_payment": 951764.0206604229,
+        "p05_assets_after_payment": 645667.2498984487,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.1065290280815898
+      },
+      {
+        "year": 9,
+        "liability": 82016.1566701586,
+        "mean_assets_after_payment": 936405.8551670238,
+        "p05_assets_after_payment": 602846.0882313056,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.1488260380149142
+      },
+      {
+        "year": 10,
+        "liability": 83656.47980356177,
+        "mean_assets_after_payment": 918583.0570437098,
+        "p05_assets_after_payment": 553626.692407343,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.1979167332631584
+      },
+      {
+        "year": 11,
+        "liability": 85329.60939963302,
+        "mean_assets_after_payment": 897000.587809214,
+        "p05_assets_after_payment": 499198.3558440823,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.2543874831663815
+      },
+      {
+        "year": 12,
+        "liability": 87036.20158762568,
+        "mean_assets_after_payment": 873029.2945886952,
+        "p05_assets_after_payment": 444576.7253799609,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.3229559397142656
+      },
+      {
+        "year": 13,
+        "liability": 88776.92561937819,
+        "mean_assets_after_payment": 844900.6797872788,
+        "p05_assets_after_payment": 381573.5664824311,
+        "shortfall_probability_to_date": 0.0,
+        "mean_funded_ratio_before_payment": 1.4057016959137119
+      },
+      {
+        "year": 14,
+        "liability": 90552.46413176575,
+        "mean_assets_after_payment": 813971.6923556473,
+        "p05_assets_after_payment": 315331.4247438149,
+        "shortfall_probability_to_date": 0.00055,
+        "mean_funded_ratio_before_payment": 1.511411813966418
+      },
+      {
+        "year": 15,
+        "liability": 92363.51341440107,
+        "mean_assets_after_payment": 778014.2202147386,
+        "p05_assets_after_payment": 245410.8659841769,
+        "shortfall_probability_to_date": 0.0027,
+        "mean_funded_ratio_before_payment": 1.6475308611702244
+      },
+      {
+        "year": 16,
+        "liability": 94210.78368268909,
+        "mean_assets_after_payment": 739376.626552206,
+        "p05_assets_after_payment": 163864.36033693058,
+        "shortfall_probability_to_date": 0.00985,
+        "mean_funded_ratio_before_payment": 1.8377763791017176
+      },
+      {
+        "year": 17,
+        "liability": 96094.99935634287,
+        "mean_assets_after_payment": 697049.490668746,
+        "p05_assets_after_payment": 79297.62343624004,
+        "shortfall_probability_to_date": 0.02605,
+        "mean_funded_ratio_before_payment": 2.119531711730889
+      },
+      {
+        "year": 18,
+        "liability": 98016.89934346973,
+        "mean_assets_after_payment": 651723.8704553171,
+        "p05_assets_after_payment": 0.0,
+        "shortfall_probability_to_date": 0.05455,
+        "mean_funded_ratio_before_payment": 2.5861899876949552
+      },
+      {
+        "year": 19,
+        "liability": 99977.23733033914,
+        "mean_assets_after_payment": 604851.5668503703,
+        "p05_assets_after_payment": 0.0,
+        "shortfall_probability_to_date": 0.0969,
+        "mean_funded_ratio_before_payment": 3.5215177943041525
+      },
+      {
+        "year": 20,
+        "liability": 101976.78207694592,
+        "mean_assets_after_payment": 558013.2469352048,
+        "p05_assets_after_payment": 0.0,
+        "shortfall_probability_to_date": 0.1518,
+        "mean_funded_ratio_before_payment": 6.348436708926725
+      }
+    ]
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1"
+  }
+}
