@@ -1,0 +1,165 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  font:
+    18px/1.6 "Trebuchet MS",
+    Calibri,
+    sans-serif;
+  background: #edf3fa;
+  color: #14365b;
+  margin: 0;
+}
+header {
+  background: #14365b;
+  color: white;
+  padding: 1rem max(1rem, calc((100vw - 64rem) / 2));
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+header a {
+  color: white;
+}
+nav {
+  display: flex;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+main {
+  max-width: 64rem;
+  margin: auto;
+  padding: 2rem 1.25rem;
+}
+h1 {
+  font-size: clamp(2rem, 5vw, 3.3rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+h1,
+h2 {
+  line-height: 1.2;
+}
+p {
+  max-width: 72ch;
+}
+section {
+  background: white;
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  border-left: 5px solid #2665a8;
+}
+li {
+  margin: 0.7rem 0;
+}
+a {
+  color: #205f9f;
+}
+button,
+input,
+textarea {
+  font: inherit;
+}
+button {
+  padding: 0.55rem 1rem;
+  background: #205f9f;
+  border: 0;
+  color: white;
+  cursor: pointer;
+  margin: 0.8rem 0.5rem 0.5rem 0;
+  border-radius: 0.25rem;
+}
+button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+input,
+textarea {
+  padding: 0.45rem;
+  border: 1px solid #52708d;
+  max-width: 100%;
+  display: block;
+  background: white;
+  color: #14365b;
+}
+input:not([type="date"]),
+textarea {
+  width: 100%;
+}
+label {
+  display: block;
+  margin: 1rem 0;
+}
+details {
+  margin: 1.5rem 0;
+}
+summary {
+  cursor: pointer;
+}
+textarea {
+  font-size: 14px;
+  line-height: 1.4;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  background: white;
+  font-size: 16px;
+}
+th,
+td {
+  text-align: left;
+  padding: 0.6rem;
+  border-bottom: 1px solid #b7c9da;
+}
+caption {
+  text-align: left;
+  font-weight: bold;
+}
+.timeline {
+  overflow-x: auto;
+}
+svg {
+  min-width: 640px;
+  width: 100%;
+  font-size: 15px;
+}
+footer {
+  max-width: 64rem;
+  margin: 2rem auto;
+  padding: 1rem;
+  font-size: 15px;
+}
+.quote {
+  white-space: pre-wrap;
+  background: white;
+  border-left: 4px solid #527342;
+  padding: 1rem;
+}
+.muted {
+  font-size: 15px;
+}
+time {
+  font-variant-numeric: tabular-nums;
+}
+:focus-visible,
+section:focus {
+  outline: 3px solid #b34428;
+  outline-offset: 4px;
+}
+[role="alert"] {
+  color: #8a2814;
+}
+@media (max-width: 600px) {
+  header {
+    display: block;
+  }
+  header nav {
+    margin-top: 0.6rem;
+  }
+  th,
+  td {
+    padding: 0.35rem;
+  }
+}

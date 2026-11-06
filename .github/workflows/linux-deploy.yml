@@ -1,9 +1,5 @@
 name: Linux self-hosting
-on:
-  push:
-    paths: ['deploy/linux/**', '.github/workflows/linux-deploy.yml', 'src/**', 'public/**', 'demo/**', 'package*.json', 'tools/build.mjs', 'tools/build-demo-feed.ts']
-  pull_request:
-    paths: ['deploy/linux/**', '.github/workflows/linux-deploy.yml', 'src/**', 'public/**', 'demo/**', 'package*.json', 'tools/build.mjs', 'tools/build-demo-feed.ts']
+on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:

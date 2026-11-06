@@ -1,0 +1,54 @@
+name: Optional AWS static release
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: aws-static-demo
+  cancel-in-progress: false
+jobs:
+  release:
+    if: vars.AWS_STATIC_ROLE_ARN != '' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    environment: aws-public-demo
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run privacy
+      - run: npm run build
+      - run: node tools/build-browser-demo.mjs
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_STATIC_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Build assets for this distribution
+        env:
+          AWS_STATIC_URL: ${{ vars.AWS_STATIC_URL }}
+        run: node tools/build-aws-static.mjs
+      - name: Publish and invalidate short-lived entry files
+        env:
+          BUCKET: ${{ vars.AWS_STATIC_BUCKET }}
+          DISTRIBUTION: ${{ vars.AWS_STATIC_DISTRIBUTION }}
+        run: |
+          aws s3 sync .runtime/hosted/assets/ "s3://$BUCKET/" --delete --cache-control max-age=60
+          aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION" --paths '/*' > /dev/null
+      - name: Smoke check HTTPS and the deployed commit
+        env:
+          DEMO_URL: ${{ vars.AWS_STATIC_URL }}
+        run: node tools/smoke-aws-static.mjs

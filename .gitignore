@@ -33,3 +33,13 @@ wrangler.toml
 **/local.settings.json
 integrations/azure-feed/infra/*.bicepparam
 integrations/azure-feed/infra/*.parameters.json
+.next/
+
+# Disposable study-service environments and checks
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.tsbuildinfo
+.aws-sam/
+*.egg-info/
