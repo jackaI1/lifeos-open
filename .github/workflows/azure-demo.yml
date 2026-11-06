@@ -1,6 +1,7 @@
 name: Optional Azure browser demo
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -33,7 +34,7 @@ jobs:
           client-id: ${{ vars.AZURE_DEMO_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_DEMO_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_DEMO_SUBSCRIPTION_ID }}
-      - run: az deployment sub what-if --location canadacentral --template-file infra/azure-demo/main.bicep --parameters resourceGroupName=lifeos-public-study prefix=lifeosdemo
+      - run: az deployment group what-if --resource-group lifeos-public-study --template-file infra/azure-demo/resources.bicep --parameters location=canadacentral prefix=lifeosdemo imageTag=initial deployApp=false
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.AZURE_DEMO_CLIENT_ID != ''
     needs: validate
@@ -50,13 +51,13 @@ jobs:
           tenant-id: ${{ vars.AZURE_DEMO_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_DEMO_SUBSCRIPTION_ID }}
       - name: Provision registry, logs, environment and pull identity
-        run: az deployment sub create --name lifeos-public-foundation --location canadacentral --template-file infra/azure-demo/main.bicep --parameters deployApp=false --output json > /tmp/foundation.json
+        run: az deployment group create --resource-group lifeos-public-study --name lifeos-public-foundation --template-file infra/azure-demo/resources.bicep --parameters location=canadacentral prefix=lifeosdemo imageTag=initial deployApp=false --output json > /tmp/foundation.json
       - name: Build only the public browser image
         run: |
           registry=$(python3 -c "import json;print(json.load(open('/tmp/foundation.json'))['properties']['outputs']['registryName']['value'])")
           az acr build --registry "$registry" --image "lifeos-public:$GITHUB_SHA" --target public-demo .
       - name: Deploy revision with managed identity image pull
-        run: az deployment sub create --name lifeos-public-release --location canadacentral --template-file infra/azure-demo/main.bicep --parameters deployApp=true imageTag="$GITHUB_SHA" --output json > /tmp/release.json
+        run: az deployment group create --resource-group lifeos-public-study --name lifeos-public-release --template-file infra/azure-demo/resources.bicep --parameters location=canadacentral prefix=lifeosdemo deployApp=true imageTag="$GITHUB_SHA" --output json > /tmp/release.json
       - name: Check the public health endpoint
         run: |
           url=$(python3 -c "import json;print(json.load(open('/tmp/release.json'))['properties']['outputs']['demoUrl']['value'])")

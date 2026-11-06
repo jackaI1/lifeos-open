@@ -24,6 +24,10 @@ export function embedding(text: string): number[] {
 }
 let pool: Pool | undefined;
 export function database() {
+  if (!process.env.CONSOLE_DATABASE_URL)
+    throw Error(
+      "Set CONSOLE_DATABASE_URL to the dedicated public-guide database.",
+    );
   return (pool ??= new Pool({
     connectionString: process.env.CONSOLE_DATABASE_URL,
     max: 4,

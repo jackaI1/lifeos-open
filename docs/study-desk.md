@@ -113,7 +113,8 @@ deleted pages. Repeating a build key returns its status and does not enqueue a
 second active job. Re-running a worker after interruption replaces the snapshot
 without duplicate pages. A new build key reads the source repository's current
 HEAD. Logs emit JSON events with build duration and cache hits. `/metrics` reports
-queue depth, total attempts and the cache hit rate; counters include retries.
+queue depth, successful publication attempts and the cache hit rate. A successful
+retry counts as another publication attempt.
 
 For development without containers:
 

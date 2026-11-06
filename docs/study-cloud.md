@@ -72,16 +72,29 @@ python3 tools/check-azure-demo.py /tmp/azure-demo.json
 az deployment sub what-if --location canadacentral --template-file infra/azure-demo/main.bicep
 ```
 
-For GitHub, create an Entra application and service principal, then federated
-credentials for the `azure-public-demo` environment and, for the preview job,
-`repo:jackaI1/lifeos-open:pull_request`. Give the deployment principal Contributor
-and Role Based Access Control Administrator only in the dedicated resource group;
-provision that group first and use a subscription deployment permission scoped to
-this template's resource-group creation if automated provisioning is required.
-Review least privilege for the subscription-level deployment with the operator.
-Never grant access to the private LifeOS resources. Use the official
-[OIDC login instructions](https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure-openid-connect)
-to create the federated identity without a client secret.
+For GitHub, I use a second managed identity with federated credentials. An
+operator with permission to create role assignments can bootstrap it once:
+
+```sh
+az group create --name lifeos-public-study --location canadacentral
+az identity create --resource-group lifeos-public-study --name lifeos-public-release
+principal=$(az identity show -g lifeos-public-study -n lifeos-public-release --query principalId -o tsv)
+scope=$(az group show -n lifeos-public-study --query id -o tsv)
+az role assignment create --assignee-object-id "$principal" --assignee-principal-type ServicePrincipal --role Contributor --scope "$scope"
+az role assignment create --assignee-object-id "$principal" --assignee-principal-type ServicePrincipal --role 'Role Based Access Control Administrator' --scope "$scope"
+az identity federated-credential create --resource-group lifeos-public-study --identity-name lifeos-public-release --name github-main --issuer https://token.actions.githubusercontent.com --subject repo:jackaI1/lifeos-open:environment:azure-public-demo --audiences api://AzureADTokenExchange
+az identity federated-credential create --resource-group lifeos-public-study --identity-name lifeos-public-release --name github-preview --issuer https://token.actions.githubusercontent.com --subject repo:jackaI1/lifeos-open:pull_request --audiences api://AzureADTokenExchange
+az identity show -g lifeos-public-study -n lifeos-public-release --query '{clientId:clientId,tenantId:tenantId}'
+az account show --query id -o tsv
+```
+
+The workflow deploys only inside that dedicated group, so its identity needs no
+subscription-wide deployment role. The subscription template remains available
+for an operator's initial provisioning. The preview identity can change resources
+in this group, so I allow only trusted same-repository PRs and restrict main
+releases through GitHub environment rules. No stored client secret is created.
+The [OIDC login instructions](https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure-openid-connect)
+explain GitHub's short-lived identity exchange.
 
 Set repository variables `AZURE_DEMO_CLIENT_ID`, `AZURE_DEMO_TENANT_ID` and
 `AZURE_DEMO_SUBSCRIPTION_ID`. The workflow always compiles Bicep and checks the

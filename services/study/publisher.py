@@ -19,6 +19,12 @@ from redis import Redis
 from rq import Queue, Retry
 
 log = logging.getLogger("lifeos.publisher")
+if not log.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    log.addHandler(handler)
+log.setLevel(logging.INFO)
+log.propagate = False
 TRANSFORM_VERSION = "markdown-v1"
 MAX_FILES = 250
 MAX_BYTES = 2_000_000
