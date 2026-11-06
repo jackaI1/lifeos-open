@@ -23,6 +23,7 @@
     "test:e2e": "node tools/e2e.mjs",
     "db:import": "node --env-file-if-exists=.env tools/sqlite-to-postgres.mjs",
     "test:react": "vitest run",
+    "test:kubernetes": "node --test test/kubernetes.integration.mjs",
     "experiment:report": "node tools/experiment-report.mjs",
     "test:cache": "node --test test/redis-cache.test.mjs",
     "benchmark:cache": "node tools/cache-benchmark.mjs",
@@ -64,7 +65,8 @@
     "playwright": "^1.56.0",
     "typescript": "^5.9.0",
     "typescript-eslint": "^8.46.0",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.0",
+    "yaml": "2.9.1"
   },
   "license": "MIT"
 }

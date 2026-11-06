@@ -110,6 +110,13 @@ sets up the service, daily backups and upgrades that can switch back if startup
 fails. It also explains how to uninstall it and how to reach it through an SSH
 tunnel, an encrypted connection to that machine.
 
+If I already have a cluster, I can also run the workspace with
+[Kubernetes](docs/kubernetes.md), which keeps the app running and connects it to
+a separate disk. My notes stay on that disk when I replace the app. The guide
+starts with a local test cluster, shows how to open the workspace through a local
+tunnel, and covers backups, updates and switching back to an earlier version.
+This setup runs one copy of the app and briefly stops it during updates.
+
 SQLite, the default database, keeps records in a local file. PostgreSQL is an
 alternative database that runs as a separate service. For that setup,
 follow the [database guide](docs/postgresql.md), including the transfer command
@@ -194,6 +201,13 @@ npm run lint
 npm run typecheck
 npm run privacy
 ```
+
+With kubectl and kubeconform installed, `npm run test:kubernetes` runs eight
+manifest checks, including strict validation of five cluster objects in each
+configuration. CI also pulls the published app image into a fresh cluster, saves
+a fictional note, replaces the app and rolls back a revision while checking the
+same note. The [cluster guide](docs/kubernetes.md#repeat-the-checks) explains how
+to repeat these checks.
 
 The [local reference](docs/local-workspace.md#testing) also covers browser tests.
 I also keep a local build desk for checking a change before packaging it. Jenkins,
