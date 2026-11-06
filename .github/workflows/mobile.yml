@@ -1,39 +1,36 @@
 name: Mobile
 on:
   push:
-    paths-ignore:
-    - projects/**
+    paths-ignore: ['projects/**']
   pull_request:
-    paths-ignore:
-    - projects/**
+    paths-ignore: ['projects/**']
 permissions:
   contents: read
 jobs:
   today:
     name: React Native types, tests and bundles
+    # Match the web browser checks instead of following runner OS rollouts.
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
-    - uses: actions/checkout@v5
-    - uses: actions/setup-node@v5
-      with:
-        node-version: 24
-        cache: npm
-        cache-dependency-path: 'package-lock.json
-
-          mobile/package-lock.json
-
-          '
-    - run: npm ci
-    - run: npm ci
-      working-directory: mobile
-    - run: npm run typecheck
-      working-directory: mobile
-    - run: npm test
-      working-directory: mobile
-    - run: npm run export
-      working-directory: mobile
-    - name: Check generated demo feed is current
-      run: node tools/build-demo-feed.ts && git diff --exit-code -- public/demo/today.json
-    - run: npx playwright install --with-deps chromium
-    - run: node --test tools/mobile-browser.test.mjs
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            mobile/package-lock.json
+      - run: npm ci
+      - run: npm ci
+        working-directory: mobile
+      - run: npm run typecheck
+        working-directory: mobile
+      - run: npm test
+        working-directory: mobile
+      - run: npm run export
+        working-directory: mobile
+      - name: Check generated demo feed is current
+        run: node tools/build-demo-feed.ts && git diff --exit-code -- public/demo/today.json
+      - run: npx playwright install --with-deps chromium
+      - run: node --test tools/mobile-browser.test.mjs

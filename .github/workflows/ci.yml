@@ -1,22 +1,19 @@
 name: CI
 on:
   push:
-    paths-ignore:
-    - projects/**
+    paths-ignore: ['projects/**']
   pull_request:
-    paths-ignore:
-    - projects/**
+    paths-ignore: ['projects/**']
 permissions:
   contents: read
 jobs:
   verify:
+    # Keep browser dependencies on the same LTS runner as the retrieval job.
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        database:
-        - sqlite
-        - postgres
+        database: [sqlite, postgres]
     services:
       postgres:
         image: postgres:17-alpine
@@ -24,101 +21,100 @@ jobs:
           POSTGRES_USER: lifeos
           POSTGRES_PASSWORD: fictional-ci-password
           POSTGRES_DB: lifeos_test
-        ports:
-        - 5432:5432
-        options: --health-cmd "pg_isready -U lifeos -d lifeos_test" --health-interval 5s --health-timeout 5s --health-retries
-          10
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U lifeos -d lifeos_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
-    - uses: actions/checkout@v5
-    - uses: actions/setup-node@v5
-      with:
-        node-version: 24
-        cache: npm
-    - run: npm ci
-    - run: npm run build
-    - name: Replay fictional usage through the exported analytics configuration
-      run: npm run analytics:check
-    - name: Verify committed view bundles match their source
-      run: test -z "$(git status --porcelain -- public/react public/vendor/workload.mjs)" || { git status --short -- public/react
-        public/vendor/workload.mjs; exit 1; }
-    - name: Start the optional Redis cache with Compose
-      run: docker compose -p cache-ci --profile redis up -d --wait redis
-    - run: npm test
-      env:
-        TEST_REDIS_URL: redis://127.0.0.1:6379
-        TEST_DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql://lifeos:fictional-ci-password@127.0.0.1:5432/lifeos_test'
-          || '' }}
-    - name: Measure cached and database record reads
-      run: npm run benchmark:cache
-      env:
-        REDIS_URL: redis://127.0.0.1:6379
-        BENCH_DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql://lifeos:fictional-ci-password@127.0.0.1:5432/lifeos_test'
-          || '' }}
-    - name: Stop the disposable Redis fixture
-      if: always()
-      run: docker compose -p cache-ci --profile redis down --volumes
-    - run: npm run lint
-    - run: npm run typecheck
-    - run: npm run privacy
-    - run: npx playwright install --with-deps chromium
-    - run: node --test tools/analytics-browser.test.mjs tools/experiments-browser.test.mjs
-    - name: Exercise the local experiment analysis
-      run: npm run experiment:report
-    - run: npm run test:smoke
-    - name: Render workload charts and verify clock and lecture lifecycle
-      run: npm run test:e2e
-      env:
-        E2E_FOCUS: ^(25|26|27|28)-|^time-format
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Replay fictional usage through the exported analytics configuration
+        run: npm run analytics:check
+      - name: Verify committed view bundles match their source
+        run: test -z "$(git status --porcelain -- public/react public/vendor/workload.mjs)" || { git status --short -- public/react public/vendor/workload.mjs; exit 1; }
+      - name: Start the optional Redis cache with Compose
+        run: docker compose -p cache-ci --profile redis up -d --wait redis
+      - run: npm test
+        env:
+          TEST_REDIS_URL: redis://127.0.0.1:6379
+          TEST_DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql://lifeos:fictional-ci-password@127.0.0.1:5432/lifeos_test' || '' }}
+      - name: Measure cached and database record reads
+        run: npm run benchmark:cache
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
+          BENCH_DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql://lifeos:fictional-ci-password@127.0.0.1:5432/lifeos_test' || '' }}
+      - name: Stop the disposable Redis fixture
+        if: always()
+        run: docker compose -p cache-ci --profile redis down --volumes
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run privacy
+      - run: npx playwright install --with-deps chromium
+      - run: node --test tools/analytics-browser.test.mjs tools/experiments-browser.test.mjs
+      - name: Exercise the local experiment analysis
+        run: npm run experiment:report
+      - run: npm run test:smoke
+      - name: Render workload charts and verify clock and lecture lifecycle
+        run: npm run test:e2e
+        env:
+          E2E_FOCUS: '^(25|26|27|28)-|^time-format'
   whisper:
     name: Real offline Whisper public-clip test
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v5
-    - uses: actions/setup-node@v5
-      with:
-        node-version: 24
-        cache: npm
-    - uses: actions/setup-python@v6
-      with:
-        python-version: '3.12'
-        cache: pip
-        cache-dependency-path: tools/whisper/requirements.lock
-    - run: npm ci
-    - run: python -m pip install --require-hashes -r tools/whisper/requirements.lock
-    - name: Download public model weights (setup only)
-      run: python tools/whisper/transcribe.py --model tiny.en --download-only
-    - name: Recognize the fixture through the offline worker
-      run: npm run test:whisper
-      env:
-        WHISPER_PYTHON: python
-    - uses: actions/upload-artifact@v4
-      with:
-        name: whisper-public-clip-evaluation
-        path: .runtime/whisper/evaluation.json
-        retention-days: 7
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tools/whisper/requirements.lock
+      - run: npm ci
+      - run: python -m pip install --require-hashes -r tools/whisper/requirements.lock
+      - name: Download public model weights (setup only)
+        run: python tools/whisper/transcribe.py --model tiny.en --download-only
+      - name: Recognize the fixture through the offline worker
+        run: npm run test:whisper
+        env:
+          WHISPER_PYTHON: python
+      - uses: actions/upload-artifact@v4
+        with:
+          name: whisper-public-clip-evaluation
+          path: .runtime/whisper/evaluation.json
+          retention-days: 7
   retrieval:
     name: Local retrieval, citations and labelled recall
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v5
-    - uses: actions/setup-node@v5
-      with:
-        node-version: 24
-        cache: npm
-    - run: npm ci
-    - name: Download pinned public embedding weights (setup only)
-      run: npm run rag:download
-    - name: Exercise offline model and assistant, then measure recall
-      run: npm run test:rag
-    - name: Evaluate support routing, source hits and uncertain ticket escalation
-      run: npm run support:evaluate
-    - run: npx playwright install --with-deps --only-shell chromium
-    - run: npm run test:rag:browser
-    - uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: retrieval-labelled-evaluation
-        path: .runtime/retrieval/*evaluation.json
-        retention-days: 7
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Download pinned public embedding weights (setup only)
+        run: npm run rag:download
+      - name: Exercise offline model and assistant, then measure recall
+        run: npm run test:rag
+      - name: Evaluate support routing, source hits and uncertain ticket escalation
+        run: npm run support:evaluate
+      - run: npx playwright install --with-deps --only-shell chromium
+      - run: npm run test:rag:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: retrieval-labelled-evaluation
+          path: .runtime/retrieval/*evaluation.json
+          retention-days: 7
