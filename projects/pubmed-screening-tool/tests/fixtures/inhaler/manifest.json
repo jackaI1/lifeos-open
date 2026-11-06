@@ -1,0 +1,32 @@
+{
+  "captured_at": "2026-11-06T04:47:08.171327+00:00",
+  "query": "(\"Metered Dose Inhalers\"[MeSH Terms] OR inhaler[tiab]) AND (usability[tiab] OR \"human factors\"[tiab] OR \"handling errors\"[tiab])",
+  "max_records": 6,
+  "calls": [
+    {
+      "endpoint": "esearch.fcgi",
+      "params": {
+        "db": "pubmed",
+        "term": "(\"Metered Dose Inhalers\"[MeSH Terms] OR inhaler[tiab]) AND (usability[tiab] OR \"human factors\"[tiab] OR \"handling errors\"[tiab])",
+        "retmax": "6",
+        "retmode": "json",
+        "sort": "relevance",
+        "tool": "pubmed-screening-tool"
+      },
+      "file": "esearch.json",
+      "sha256": "98ceb6d442a17c0efd96144dfbdd5acc4f14d5678b692ff64cfa94f9fe097a97"
+    },
+    {
+      "endpoint": "efetch.fcgi",
+      "params": {
+        "db": "pubmed",
+        "id": "32500439,31264482,38059011,38412526,38630860,41348960",
+        "retmode": "xml",
+        "rettype": "abstract",
+        "tool": "pubmed-screening-tool"
+      },
+      "file": "efetch.xml",
+      "sha256": "237500c2068056286687369f520dd3434e19abae9744fb70f01a3cab089df2c0"
+    }
+  ]
+}

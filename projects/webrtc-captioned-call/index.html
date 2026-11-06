@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#17324d"><title>Captioned call</title></head>
+<body>
+  <main>
+    <header><a class="brand" href="/">Captioned call</a><span class="privacy">Your words stay between you two.</span></header>
+    <section class="join-area" aria-labelledby="title">
+      <div><h1 id="title">A conversation you can read.</h1><p>Join the same room as your partner. Turn on captions to send your words as you speak.</p></div>
+      <form id="join-form" novalidate>
+        <label for="room">Room code</label>
+        <div class="room-input"><input id="room" name="room" spellcheck="false" autocomplete="off" maxlength="64" aria-describedby="room-help"><button id="join" type="submit">Join call</button></div>
+        <p id="room-help">Share the code or <button id="copy" type="button" class="text-button">copy the invite link</button>. Two people per room.</p>
+      </form>
+    </section>
+    <p id="error" role="alert" hidden></p>
+    <div class="call-heading"><h2 id="call-state" data-testid="call-state" aria-live="polite">Ready when you are</h2><span id="copy-status" role="status"></span></div>
+    <div class="workspace">
+      <section class="stage" aria-label="Video call">
+        <div class="video-stage">
+          <div class="stage-empty" id="stage-empty"><span class="empty-mark" aria-hidden="true">CC</span><h3>Make room for a good conversation.</h3><p>Allow your camera and microphone when you join.<br>Use headphones if you are testing two tabs.</p></div>
+          <video id="remote-video" autoplay playsinline aria-label="Your partner's video"></video>
+          <span class="video-label partner-label">Partner</span>
+          <div class="local-preview" id="local-preview" hidden><video id="local-video" autoplay playsinline muted aria-label="Your video"></video><span class="video-label">You</span></div>
+        </div>
+        <div class="controls" aria-label="Call controls">
+          <button id="mic" type="button" class="secondary" disabled aria-pressed="false">Mute microphone</button>
+          <button id="camera" type="button" class="secondary" disabled aria-pressed="false">Turn camera off</button>
+          <button id="leave" type="button" class="danger" disabled>Leave call</button>
+        </div>
+        <details class="connection-details" open><summary>Connection details</summary>
+          <dl><div><dt>Peer connection</dt><dd id="connection-state" data-testid="connection-state">closed</dd></div><div><dt>ICE route</dt><dd id="ice-state">new</dd></div><div><dt>Caption channel</dt><dd id="data-state" data-testid="data-state">closed</dd></div><div><dt>Video bytes received</dt><dd id="received-bytes" data-testid="received-bytes">0</dd></div><div><dt>Round trip</dt><dd id="round-trip">Not measured</dd></div><div><dt>Video packets lost</dt><dd id="packets-lost">0</dd></div></dl>
+        </details>
+      </section>
+      <aside class="captions-panel" aria-labelledby="captions-title">
+        <div class="captions-header"><h2 id="captions-title">Live captions</h2><span id="caption-state" data-testid="caption-state" role="status">Captions off</span></div>
+        <p class="caption-help">Your microphone is transcribed on this computer. Only the text is sent to your partner.</p>
+        <button id="captions" class="secondary" type="button" disabled>Enable my captions</button>
+        <div id="transcript" data-testid="transcript" role="log" aria-label="Recent captions" aria-live="polite"><p class="transcript-empty">Words will appear here when either person turns on their captions.</p></div>
+        <p class="caption-note">English, a few seconds behind speech. Captions can make mistakes. The last 50 lines stay here until you leave.</p>
+      </aside>
+    </div>
+    <footer><p>No account. No recording. Captions run locally with Whisper.</p><p>For a call across networks, the host needs HTTPS and a relay. <a href="https://github.com/jackaI1/webrtc-captioned-call#calling-across-networks">Setup guide</a></p></footer>
+  </main>
+  <script type="module" src="/src/main.ts"></script>
+</body></html>

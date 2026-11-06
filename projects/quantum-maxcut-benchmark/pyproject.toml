@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "maxcut-benchmark"
+version = "0.1.0"
+description = "Reproducible Max-Cut baselines and QAOA simulations"
+requires-python = ">=3.10"
+dependencies = ["numpy<3", "scipy", "networkx", "qiskit>=1.2,<3", "qiskit-aer>=0.15", "pennylane>=0.40,<0.44", "matplotlib"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+maxcut-benchmark = "maxcut_benchmark.benchmark:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,4 @@
+<div id="progress"><table><thead><tr><th>Student</th><th>Completed lessons</th></tr></thead><tbody>
+<% course.enrollments.includes(:student, :completions).order(:id).each do |enrollment| %>
+<tr><td><%= enrollment.student.name %></td><td><%= enrollment.completions.size %> / <%= course.lessons.count %></td></tr>
+<% end %></tbody></table></div>

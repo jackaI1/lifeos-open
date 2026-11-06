@@ -1,0 +1,22 @@
+<h1><%= @course.title %></h1><p><%= @course.description %></p>
+<% if current_user.role == "instructor" %>
+  <p><%= link_to "View student progress", progress_course_path(@course) %></p>
+  <% unless @course.published? %><%= button_to "Publish course", publish_course_path(@course) %><% end %>
+  <h2>Add a lesson</h2>
+  <%= form_with url: course_lessons_path(@course), scope: :lesson do |f| %>
+    <p><%= f.label :title %> <%= f.text_field :title, required: true %></p>
+    <p><%= f.label :position, "Order number" %> <%= f.number_field :position, min: 1, required: true %></p>
+    <p><%= f.label :content %><br><%= f.text_area :content, required: true %></p>
+    <%= f.submit "Add lesson" %>
+  <% end %>
+<% elsif !@enrollment %>
+  <%= button_to "Enrol", enroll_course_path(@course) %>
+<% end %>
+<h2>Lessons</h2>
+<% @course.lessons.each do |lesson| %>
+  <article><h3><%= lesson.position %>. <%= lesson.title %></h3>
+  <% if current_user.role == "instructor" || @enrollment %><p><%= simple_format(lesson.content) %></p><% end %>
+  <% if @enrollment %>
+    <% if @enrollment.completions.exists?(lesson: lesson) %><p>Completed</p><% else %><%= button_to "Mark complete", complete_course_lesson_path(@course, lesson) %><% end %>
+  <% end %></article>
+<% end %>

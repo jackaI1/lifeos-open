@@ -1,0 +1,7 @@
+pmid,decision,reason
+32500439,exclude,Environmental sustainability is the main question rather than patient handling
+31264482,include,Device feedback and patient handling errors are discussed for COPD inhaler use
+38059011,exclude,General adherence overview rather than a focused device usability assessment
+38412526,exclude,Analgesia in combat rather than maintenance inhaler use for asthma or COPD
+38630860,include,Human factors design and critical errors in dry powder inhalers
+41348960,exclude,Televisit workflow design rather than the inhaler device itself

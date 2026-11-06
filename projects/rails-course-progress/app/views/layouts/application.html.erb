@@ -1,0 +1,4 @@
+<!DOCTYPE html>
+<html><head><title>Course Progress</title><meta name="viewport" content="width=device-width,initial-scale=1"><%= csrf_meta_tags %><%= csp_meta_tag %><%= stylesheet_link_tag :app, "data-turbo-track": "reload" %><%= javascript_importmap_tags %></head>
+<body><header><nav><%= link_to "Course Progress", root_path %> <% if current_user %><span><%= current_user.name %> (<%= current_user.role %>)</span> <%= button_to "Sign out", logout_path, method: :delete %><% end %></nav></header>
+<main><% if notice %><p class="notice"><%= notice %></p><% end %><% if alert %><p class="alert"><%= alert %></p><% end %><%= yield %></main></body></html>

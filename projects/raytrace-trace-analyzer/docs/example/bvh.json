@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "scene": "sphere-grid-v1/shadows",
+  "width": 320, "height": 180,
+  "mode": "bvh",
+  "frames": [
+    {"frame": 0, "build_ms": 0.050125, "render_ms": 8.134750, "encode_ms": 1.191042, "total_ms": 9.375917, "primary_rays": 57600, "shadow_rays": 38230, "primitive_tests": 364880, "box_tests": 1395288},
+    {"frame": 1, "build_ms": 0.054125, "render_ms": 8.608875, "encode_ms": 0.874167, "total_ms": 9.537167, "primary_rays": 57600, "shadow_rays": 38228, "primitive_tests": 364040, "box_tests": 1392158},
+    {"frame": 2, "build_ms": 0.042875, "render_ms": 7.629458, "encode_ms": 0.843167, "total_ms": 8.515500, "primary_rays": 57600, "shadow_rays": 38223, "primitive_tests": 363131, "box_tests": 1390101},
+    {"frame": 3, "build_ms": 0.043375, "render_ms": 7.710834, "encode_ms": 0.787666, "total_ms": 8.541875, "primary_rays": 57600, "shadow_rays": 38217, "primitive_tests": 361964, "box_tests": 1389041},
+    {"frame": 4, "build_ms": 0.049167, "render_ms": 7.913792, "encode_ms": 0.766875, "total_ms": 8.729834, "primary_rays": 57600, "shadow_rays": 38220, "primitive_tests": 361031, "box_tests": 1389368},
+    {"frame": 5, "build_ms": 0.047041, "render_ms": 7.789500, "encode_ms": 0.777917, "total_ms": 8.614458, "primary_rays": 57600, "shadow_rays": 38215, "primitive_tests": 360179, "box_tests": 1395699}
+  ]
+}

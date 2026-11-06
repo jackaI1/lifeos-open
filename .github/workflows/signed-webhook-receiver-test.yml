@@ -1,0 +1,42 @@
+name: signed-webhook-receiver / Test
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - projects/signed-webhook-receiver/**
+    - .github/workflows/signed-webhook-receiver-test.yml
+  pull_request:
+    paths:
+    - projects/signed-webhook-receiver/**
+    - .github/workflows/signed-webhook-receiver-test.yml
+  workflow_dispatch: {}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: webhooks
+        ports:
+        - 5432:5432
+        options: --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/webhooks
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: npm
+        cache-dependency-path: projects/signed-webhook-receiver/package-lock.json
+    - run: npm ci
+    - run: npm test
+    timeout-minutes: 20
+permissions:
+  contents: read
+defaults:
+  run:
+    working-directory: projects/signed-webhook-receiver

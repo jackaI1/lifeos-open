@@ -1,0 +1,12 @@
+node_modules/
+dist/
+public/models/
+public/wasm/
+test-results/
+playwright-report/
+.env
+.env.*
+!.env.example
+.DS_Store
+.superpowers/
+.impeccable/

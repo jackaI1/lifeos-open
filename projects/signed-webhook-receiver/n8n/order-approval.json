@@ -1,0 +1,140 @@
+{
+  "name": "Order intake and approval",
+  "nodes": [
+    {
+      "id": "intake",
+      "name": "Order intake",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "order-intake",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "order-intake",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "insert",
+      "name": "Prevent duplicate intake",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_approvals (order_id, callback_url) VALUES ($1, $2) ON CONFLICT (order_id) DO NOTHING RETURNING order_id, callback_url",
+        "options": {
+          "queryReplacement": "={{ [$json.body.order_id, $json.body.callback_url] }}"
+        }
+      }
+    },
+    {
+      "id": "request",
+      "name": "Request approval",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.APPROVAL_SERVICE_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({order_id: $json.order_id, callback_url: $execution.resumeUrl}) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "wait",
+      "name": "Wait for callback",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        0
+      ],
+      "webhookId": "approval-callback",
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "POST",
+        "options": {}
+      }
+    },
+    {
+      "id": "update",
+      "name": "Record decision",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE orders SET status = $1 WHERE id = $2 AND status = 'pending' AND $1 IN ('approved','rejected') RETURNING id,status",
+        "options": {
+          "queryReplacement": "={{ [$json.body.decision, $('Prevent duplicate intake').item.json.order_id] }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Order intake": {
+      "main": [
+        [
+          {
+            "node": "Prevent duplicate intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prevent duplicate intake": {
+      "main": [
+        [
+          {
+            "node": "Request approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request approval": {
+      "main": [
+        [
+          {
+            "node": "Wait for callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for callback": {
+      "main": [
+        [
+          {
+            "node": "Record decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
