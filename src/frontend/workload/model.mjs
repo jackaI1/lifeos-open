@@ -1,13 +1,10 @@
 import {scaleBand, scaleLinear, scaleQuantize} from 'd3-scale';
-import {addDays, weekStart, validDate, localDate, zonedDateTime, mergeIntervals} from '../../domain/time.mjs';
+import {addDays, weekStart, validDate, zonedDateTime, mergeIntervals} from '../../domain/time.mjs';
+import {deadlineDay} from '../../shared/today.ts';
 
-export {addDays, weekStart};
+export {addDays, weekStart, deadlineDay};
 const finished = new Set(['complete', 'completed', 'submitted', 'cancelled', 'archived']);
 const data = row => row.data ?? row;
-export function deadlineDay(task, timeZone) {
-  if (task.dueAt) return Number.isFinite(Date.parse(task.dueAt)) ? localDate(task.dueAt, timeZone) : null;
-  return validDate(task.dueDate) ? task.dueDate : null;
-}
 export function estimate(task) {
   const value = task.remainingMinutes ?? task.estimatedMinutes;
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
