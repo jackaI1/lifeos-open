@@ -97,6 +97,21 @@ test('lecture retrieval stays within the requested course and threshold settings
  }finally{index.close();}
 });
 
+test('sqlite-vec ranks by angle and scopes before limiting even above 4096 chunks',async()=>{
+ const index=new api.RetrievalIndex(':memory:',{embed:async texts=>texts.map(t=>t==='query'?[1,0]:t.includes('distant')?[1,1]:t.includes('close')?[10,1]:[1,0]),modelId:'angle'});
+ try{
+  await index.sync(Array.from({length:4100},(_,i)=>({key:'note/'+String(i).padStart(4,'0'),title:'Other',text:'unscoped',courseId:'other'})).concat([
+   {key:'note/a',title:'A',text:'distant',courseId:'allowed'},
+   {key:'note/b',title:'B',text:'close',courseId:'allowed'},
+  ]));
+  assert.ok(index.db.prepare('SELECT vec_version() AS version').get().version.startsWith('v0.1.'));
+  assert.equal(index.db.prepare('SELECT count(*) AS n FROM rag_vectors').get().n,4102);
+  const hits=await index.search('query',{courseId:'allowed',threshold:0.5,k:2});
+  assert.deepEqual(hits.map(h=>h.sourceKey),['note/b','note/a']);assert.ok(hits[0].score>hits[1].score);
+  assert.equal((await index.search('query',{threshold:0.9})).length,3);
+ }finally{index.close();}
+});
+
 test('incompatible index initialization closes every SQLite file handle before retry',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'lifeos-rag-schema-')),path=join(dir,'vectors.sqlite');
  try{

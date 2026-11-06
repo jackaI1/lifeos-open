@@ -1,0 +1,19 @@
+{
+  "description": "Manually labelled fictional LifeOS tickets. Rule routing and semantic SOP retrieval are measured separately. Small regression set, not a production benchmark.",
+  "tickets": [
+    {"text":"My retrieval embedding files are unavailable", "category":"retrieval", "status":"suggested", "source":"sop/retrieval"},
+    {"text":"How do I enable RAG for saved text questions?", "category":"retrieval", "status":"suggested", "source":"sop/retrieval"},
+    {"text":"How do I save a backup before an upgrade?", "category":"backup", "status":"suggested", "source":"sop/backup"},
+    {"text":"Where do I save a complete workspace backup?", "category":"backup", "status":"suggested", "source":"sop/backup"},
+    {"text":"How do I transcribe a recording in the notebook?", "category":"transcription", "status":"suggested", "source":"sop/transcription"},
+    {"text":"Whisper is unavailable. Which Python setting should I check?", "category":"transcription", "status":"suggested", "source":"sop/transcription"},
+    {"text":"Why are Teams reminders missing for tasks without a deadline?", "category":"m365", "status":"suggested", "source":"sop/m365"},
+    {"text":"How do I configure Microsoft 365 sync to SharePoint?", "category":"m365", "status":"suggested", "source":"sop/m365"},
+    {"text":"My satellite uplink is broken", "category":"unknown", "status":"escalated"},
+    {"text":"Both backup and transcription fail", "category":"unknown", "status":"escalated"},
+    {"text":"My backup has missing files", "category":"backup", "status":"escalated"},
+    {"text":"My SharePoint account is compromised", "category":"m365", "status":"escalated"},
+    {"text":"How do I enable quantum entanglement for the retrieval index?", "category":"retrieval", "status":"escalated"},
+    {"text":"What is the backup interplanetary teleportation code?", "category":"backup", "status":"escalated"}
+  ]
+}

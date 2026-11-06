@@ -115,12 +115,16 @@ Each question reads the current eligible records, embeds changed chunks in
 batches of 16, then updates SQLite in a transaction. Inference completes before
 any replacement, so a failed refresh cannot partly replace the index. The caller
 does not search an old index after a refresh failure. Lecture queries filter by
-course before ranking. Search computes cosine similarity, a measure of vector
-direction, sorts descending with deterministic ties, and returns up to three
-chunks scoring at least 0.40. An exact scan is simple for a personal workspace;
+course before ranking. The sqlite-vec extension stores float32 embeddings in a `vec0` virtual table.
+Search computes cosine similarity, a measure of vector direction, inside SQL,
+filters course scope before limiting, breaks ties by chunk ID, and returns up
+to three chunks scoring at least 0.40. Existing JSON-vector indexes are rebuilt
+into the virtual table on their next refresh. Extension loading is disabled
+after loading the installed sqlite-vec library. An exact scan is simple for a personal workspace;
 large archives would need indexed vector search and incremental background work.
 
-`retrieval-workspace.mjs` owns the model and index lifecycle. `service.ts` opens
+`retrieval-workspace.mjs` owns the model and index lifecycle. A LangChain
+`RunnableSequence` connects retrieval to answer generation and citation checking. `service.ts` opens
 that capability only when requested and closes it with the service.
 `services.ts` routes supported assistant jobs through retrieval before any chat
 request and saves citation metadata alongside the reply. Existing project,
@@ -140,13 +144,13 @@ npm run typecheck
 npm run privacy
 ```
 
-Ten retrieval checks cover chunk coverage/overlap, cosine ranking, persistence,
+Twelve retrieval checks cover chunk coverage/overlap, cosine ranking, persistence,
 cache reuse, edits/deletion, failed refreshes, model changes, course filtering,
-invalid citations, failed initialization cleanup, offline inference, a configured chat transport and the
+invalid citations, failed initialization cleanup, offline inference, compatible and Azure chat transports and the
 no-match path. The browser check types questions in desktop and phone layouts,
 checks visible citations and abstention, preserves the finance demo, and closes
 its server and browser in `finally` with process/port evidence. The full suite
-passes 346 Node tests and 19 React tests, with three optional Node tests skipped.
+passes 356 Node tests and 19 React tests, with three optional Node tests skipped.
 
 `test/fixtures/retrieval/questions.json` contains ten fictional records and 18
 manually labelled questions. `npm run rag:evaluate` runs the actual downloaded

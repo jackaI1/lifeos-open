@@ -5,7 +5,8 @@ permissions:
 jobs:
   today:
     name: React Native types, tests and bundles
-    runs-on: ubuntu-latest
+    # Match the web browser checks instead of following runner OS rollouts.
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v5

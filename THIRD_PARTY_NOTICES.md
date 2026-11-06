@@ -4,6 +4,11 @@ Audit snapshot: 2026-10-19. MIT applies to original LifeOS code and authored dem
 
 ## Runtime dependencies
 
+The local retrieval store adds `sqlite-vec` 0.1.9 and its optional platform
+packages, all under `MIT OR Apache` according to their package metadata. I use
+the MIT option; its [preserved terms](public/vendor/licenses/npm/sqlite-vec/LICENSE-MIT)
+come from the [v0.1.9 source](https://github.com/asg017/sqlite-vec/tree/v0.1.9).
+
 | Component | Version | License / class | Source | Preserved terms |
 |---|---|---|---|---|
 | @tiptap/core | 3.31.3 | MIT / permissive | [upstream](https://tiptap.dev) | [LICENSE.md](public/vendor/licenses/npm/@tiptap/core/LICENSE.md) |

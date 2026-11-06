@@ -35,7 +35,10 @@
     "rag:evaluate": "node tools/retrieval-evaluate.mjs",
     "test:rag": "node --test test/retrieval.test.mjs test/retrieval.integration.mjs && npm run rag:evaluate",
     "test:rag:browser": "node --test tools/retrieval-browser.test.mjs",
-    "test:browser": "node --test test/browser/*.test.mjs"
+    "test:browser": "node --test test/browser/*.test.mjs",
+    "support": "node --env-file-if-exists=.env src/support/cli.mjs",
+    "support:evaluate": "node tools/support-evaluate.mjs",
+    "test:support": "node --test test/support-assistant.test.mjs test/azure-provider.test.mjs"
   },
   "dependencies": {
     "@azure/msal-node": "7.1.2",
@@ -59,6 +62,7 @@
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "redis": "6.3.1",
+    "sqlite-vec": "^0.1.9",
     "web-push": "3.6.7"
   },
   "devDependencies": {

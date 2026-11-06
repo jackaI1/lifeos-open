@@ -20,6 +20,7 @@ try{
  }
  const known=results.filter(q=>q.relevant.length),unknown=results.filter(q=>!q.relevant.length);
  const report={model:MODEL_ID,threshold:DEFAULT_THRESHOLD,indexed,answerable:known.length,unknown:unknown.length,
+  hitRateAt3:known.filter(q=>q.recallAt3>0).length/known.length,
   recallAt1:known.reduce((n,q)=>n+q.recallAt1,0)/known.length,recallAt3:known.reduce((n,q)=>n+q.recallAt3,0)/known.length,
   unknownAbstention:unknown.filter(q=>q.abstained).length/unknown.length,results};
  await mkdir('.runtime/retrieval',{recursive:true});await writeFile('.runtime/retrieval/evaluation.json',JSON.stringify(report,null,2)+'\n');

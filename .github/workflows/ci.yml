@@ -4,7 +4,8 @@ permissions:
   contents: read
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    # Keep browser dependencies on the same LTS runner as the retrieval job.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -103,11 +104,13 @@ jobs:
         run: npm run rag:download
       - name: Exercise offline model and assistant, then measure recall
         run: npm run test:rag
+      - name: Evaluate support routing, source hits and uncertain ticket escalation
+        run: npm run support:evaluate
       - run: npx playwright install --with-deps --only-shell chromium
       - run: npm run test:rag:browser
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: retrieval-labelled-evaluation
-          path: .runtime/retrieval/evaluation.json
+          path: .runtime/retrieval/*evaluation.json
           retention-days: 7
