@@ -107,7 +107,7 @@ export async function handle(request,env){
  const handoff=await handoffRoute({path,req:request,body,store});if(handoff)return handoff;
  if(path==='/api/actions/upload-reconcile'&&request.method==='POST')return reconcileFinalizedUpload({store,body});
  if(path==='/api/actions/upload-finalize'&&request.method==='POST')return finalizeUpload({store,config,body,path});
- const route=await recordRoute({store,req:request,path,body,config});if(route)return route;
+ const route=await recordRoute({store,req:request,path,body,config,cache:env.RECORD_CACHE});if(route)return route;
  if(path==='/api/audit'&&request.method==='GET')return Response.json({items:(await store.sql('SELECT id,kind,record_id AS recordId,created_at AS createdAt,actor,undo_of AS undoOf FROM audit ORDER BY created_at DESC LIMIT 100').all()).results});
  if(path==='/api/health'&&request.method==='GET')return Response.json({status:'online',storage:'cloud',environment:env.ENVIRONMENT,version:env.RELEASE_COMMIT,automationPaused:!!await store.meta('automationPaused'),heartbeats:(await store.sql('SELECT name,at,last_success FROM heartbeats').all()).results});
  if(path==='/api/push/config'&&request.method==='GET')return Response.json({configured:!!config.pushPublicKey,...(config.pushPublicKey?{publicKey:config.pushPublicKey}:{})});

@@ -34,9 +34,20 @@ jobs:
         run: npm run analytics:check
       - name: Verify committed view bundles match their source
         run: test -z "$(git status --porcelain -- public/react public/vendor/workload.mjs)" || { git status --short -- public/react public/vendor/workload.mjs; exit 1; }
+      - name: Start the optional Redis cache with Compose
+        run: docker compose -p cache-ci --profile redis up -d --wait redis
       - run: npm test
         env:
+          TEST_REDIS_URL: redis://127.0.0.1:6379
           TEST_DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql://lifeos:fictional-ci-password@127.0.0.1:5432/lifeos_test' || '' }}
+      - name: Measure cached and database record reads
+        run: npm run benchmark:cache
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
+          BENCH_DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql://lifeos:fictional-ci-password@127.0.0.1:5432/lifeos_test' || '' }}
+      - name: Stop the disposable Redis fixture
+        if: always()
+        run: docker compose -p cache-ci --profile redis down --volumes
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run privacy

@@ -116,6 +116,15 @@ follow the [database guide](docs/postgresql.md), including the transfer command
 for an existing SQLite workspace. The transfer checks the copied records and
 files and refuses a populated destination. Keep a backup first.
 
+For repeated reads of saved tasks, reminders and coursework, I can turn on an
+optional Redis cache, a temporary copy kept in memory. Every saved change makes
+the previous copy unusable, and the API reads the database if Redis is down.
+After `npm ci`, `docker compose --profile redis up -d --wait redis` starts it;
+`REDIS_URL=redis://127.0.0.1:6379 npm run dev` uses it. I stop it with
+`docker compose --profile redis down`. The [cache guide](docs/redis-cache.md)
+shows how to check hits, test an outage and compare read latency. It stays off
+by default because a small local database can be faster without it.
+
 ## Optional connections
 
 If I want coursework reminders in Microsoft 365, the
@@ -187,7 +196,10 @@ npm run privacy
 ```
 
 The [local reference](docs/local-workspace.md#testing) also covers browser tests.
-Tests use fictional records and controlled providers. The task-label experiment
+Tests use fictional records and controlled providers. With Redis running,
+`TEST_REDIS_URL=redis://127.0.0.1:6379 npm run test:cache` checks 17 cache cases,
+and `REDIS_URL=redis://127.0.0.1:6379 npm run benchmark:cache` compares read
+latency. In a 60-read test, cache hits avoided all 60 record-payload queries. The task-label experiment
 adds 13 focused checks and a real browser walkthrough for both labels, consent,
 reloads and downloaded counts. CI runs these checks too. The
 [verification notes](docs/verification.md), [route inventory](docs/api-routes.json)
