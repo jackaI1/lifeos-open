@@ -1,0 +1,41 @@
+jenkins:
+  systemMessage: 'LifeOS local CI. Only run reviewed code on this trusted Docker host.'
+  numExecutors: 1
+  mode: NORMAL
+  globalNodeProperties:
+    - envVars:
+        env:
+          - key: LIFEOS_JENKINS_IMAGE
+            value: '${LIFEOS_JENKINS_IMAGE}'
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: admin
+          password: '${JENKINS_ADMIN_PASSWORD}'
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: false
+unclassified:
+  location:
+    url: 'http://127.0.0.1:8081/'
+jobs:
+  - script: |
+      pipelineJob('lifeos-open') {
+        description('Run the versioned LifeOS checks and build its local runtime image.')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('${LIFEOS_JENKINS_REPOSITORY}') }
+                branch('${LIFEOS_JENKINS_REF}')
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(false)
+          }
+        }
+      }

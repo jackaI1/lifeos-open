@@ -1,0 +1,33 @@
+name: Jenkins pipeline
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  pipeline:
+    name: Official linter and real Jenkins build
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The SCM job must build the same revision, including PR merge commits.
+          ref: '${{ github.event.pull_request.head.sha || github.sha }}'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Boot Jenkins, validate and run the versioned pipeline
+        env:
+          LIFEOS_JENKINS_REF: '${{ github.event.pull_request.head.sha || github.sha }}'
+          LIFEOS_JENKINS_REPOSITORY: '${{ github.event.pull_request.head.repo.clone_url || format(''https://github.com/{0}.git'', github.repository) }}'
+        run: bash deploy/jenkins/test.sh
+      - name: Keep Jenkins evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jenkins-test-reports
+          path: test-results/jenkins
+          if-no-files-found: ignore
+          retention-days: 7

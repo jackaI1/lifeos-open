@@ -196,6 +196,24 @@ npm run privacy
 ```
 
 The [local reference](docs/local-workspace.md#testing) also covers browser tests.
+I also keep a local build desk for checking a change before packaging it. Jenkins,
+a tool that runs saved build steps, reads my [Jenkinsfile](Jenkinsfile) from Git.
+After installing dependencies, it runs lint (code checks), type checking, unit
+tests and the privacy scan in parallel, saves the test reports, then builds the
+same runtime Docker image I use locally. I can start it with
+`docker compose -f deploy/jenkins/compose.yaml up --build -d --wait` after setting
+a local admin password, then open <http://127.0.0.1:8081> and choose
+**lifeos-open → Build Now**. The [Jenkins guide](docs/jenkins.md) has the exact setup,
+linter command and cleanup steps.
+
+This mirrors the install, lint, type, test and privacy commands in my
+[GitHub Actions workflow](.github/workflows/ci.yml), which runs checks on GitHub
+when I push a change. Jenkins uses SQLite and adds saved JUnit reports, a standard
+test-results format; GitHub Actions also checks PostgreSQL, browser behavior and
+real offline transcription. A separate [Jenkins workflow](.github/workflows/jenkins.yml)
+starts the real server, uses its official linter and runs the whole pipeline on
+each pull request and on main. This checks that the local setup keeps working.
+
 Tests use fictional records and controlled providers. With Redis running,
 `TEST_REDIS_URL=redis://127.0.0.1:6379 npm run test:cache` checks 18 cache cases,
 and `REDIS_URL=redis://127.0.0.1:6379 npm run benchmark:cache` compares read
