@@ -44,7 +44,7 @@ export class SupportAssistant{
       // Existing transport bounds the loop to six rounds and rejects unknown tools.
       // The model cannot read arbitrary paths, change records, or pick its scope.
       const output=await chatCompletion({env:this.env,scope:'support triage',message:ticket,
-       context:await supportPolicy.format({category:classification.category}),schema:GROUNDING_SCHEMA,
+       systemInstructions:await supportPolicy.format({category:classification.category}),schema:GROUNDING_SCHEMA,
        tools:tools.map(t=>({name:t.name,description:t.description,inputSchema:t.schema})),
        onToolCall:async(name,args)=>tools.find(t=>t.name===name).invoke(args)});
       if(!trace.includes('search_sops')||!trace.includes('inspect_runtime'))return escalate(classification,'The agent did not complete its evidence checks.');

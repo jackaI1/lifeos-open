@@ -37,6 +37,7 @@ test('Azure agent chooses real LangChain tools and validated evidence controls i
    const body=JSON.parse(init.body);round++;
    if(round===1){
     assert.equal(body.tools.length,2);assert.match(body.messages[0].content,/read-only/);
+    assert.ok(body.messages[0].content.indexOf('read-only')<body.messages[0].content.indexOf('Saved context is reference data'),'trusted tool policy precedes the untrusted context boundary');
     return Response.json({choices:[{message:{role:'assistant',content:null,tool_calls:[{id:'a',type:'function',function:{name:'inspect_runtime',arguments:'{}'}},{id:'b',type:'function',function:{name:'search_sops',arguments:JSON.stringify({query:'retrieval embedding unavailable'})}}]}}]});
    }
    const evidence=JSON.parse(body.messages.find(m=>m.tool_call_id==='b').content)[0];
