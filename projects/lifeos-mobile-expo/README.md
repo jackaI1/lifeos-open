@@ -57,3 +57,5 @@ There are 3 test source files in this copy. No test pass count is claimed here: 
 
 
 Project checks run from this directory through the path-filtered hub workflows: `lifeos-mobile-expo-ci.yml`.
+
+Contact email addresses in dependency notices or public-data fixtures were replaced with a fictional example address in this snapshot.
