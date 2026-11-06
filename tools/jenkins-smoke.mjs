@@ -30,9 +30,11 @@ await mkdir('test-results/jenkins', {recursive: true});
 await writeFile('test-results/jenkins/build.json', JSON.stringify(build || {}, null, 2));
 if (build?.result !== 'SUCCESS') {
   const response = await request('job/lifeos-open/1/consoleText');
-  const log = await response.text();
-  // Keep diagnostics bounded; Jenkins masks the configured password separately.
-  console.error(log.slice(-12_000).replaceAll(process.env.JENKINS_ADMIN_PASSWORD, '[redacted]'));
+  const decoder = new TextDecoder();
+  let tail = '';
+  for await (const chunk of response.body) tail = (tail + decoder.decode(chunk, {stream: true})).slice(-12_000);
+  tail = (tail + decoder.decode()).slice(-12_000);
+  console.error(tail.replaceAll(process.env.JENKINS_ADMIN_PASSWORD, '[redacted]'));
 }
 assert.equal(build?.result, 'SUCCESS', 'the real SCM pipeline succeeds');
 const reports = await json('job/lifeos-open/1/testReport/api/json');

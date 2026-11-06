@@ -57,6 +57,8 @@ pipeline {
     post {
         always {
             archiveArtifacts artifacts: 'test-results/**', allowEmptyArchive: true, fingerprint: true
+        }
+        cleanup {
             deleteDir()
         }
     }

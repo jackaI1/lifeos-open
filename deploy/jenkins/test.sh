@@ -13,7 +13,17 @@ compose() { docker compose -p "$project" -f deploy/jenkins/compose.yaml "$@"; }
 cleanup() {
   result=$?
   trap - EXIT
-  if [ "$result" -ne 0 ]; then compose logs --tail 50 2>&1 | sed "s/$JENKINS_ADMIN_PASSWORD/[redacted]/g"; fi
+  if [ "$result" -ne 0 ]; then
+    # Diagnostics must never prevent teardown; passwords are literal strings.
+    compose logs --tail 200 2>&1 | node --input-type=module -e '
+      let log = "";
+      for await (const chunk of process.stdin) log = (log + chunk).slice(-40000);
+      process.stdout.write(log.replaceAll(process.env.JENKINS_ADMIN_PASSWORD, "[redacted]"));
+    ' || true
+  fi
+  for owned in $(compose ps -aq 2>/dev/null); do
+    docker inspect --format "owner=$project id={{.Id}} pid={{.State.Pid}} start={{.State.StartedAt}}" "$owned" || true
+  done
   compose down --volumes --remove-orphans || result=1
   if docker image inspect "$project:jenkins-1" >/dev/null 2>&1; then
     docker image rm "$project:jenkins-1" >/dev/null || result=1
