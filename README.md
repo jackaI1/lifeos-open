@@ -39,6 +39,11 @@ workspace running. From `integrations/azure-feed`, I run `npm ci`,
 copy and prints its address; Ctrl-C cleans it up. The same guide covers running
 it on Azure and pointing the phone client at its address.
 
+I also keep a small browser check for the public demo. It opens the main screens,
+adds and completes a fictional task, and checks basic page landmarks. If a change
+breaks the journey, the automated check saves a screenshot and a trace, a recording
+of the browser steps, to help me investigate.
+
 ## Run it locally
 
 Install Node.js 24 or newer, then run:
@@ -298,3 +303,17 @@ https://github.com/user-attachments/assets/5397817a-6c90-41f8-9ad9-6138a0c4023d
 MIT; see [LICENSE](LICENSE). Dependency and asset terms are in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), with synthetic media provenance
 in [ASSET_PROVENANCE.md](ASSET_PROVENANCE.md).
+
+## Browser checks
+
+After installing the app, run `npx playwright install chromium` once, then
+`npm run test:browser`. The checks use a temporary local copy of the public demo
+and fictional data. On my local run, 2 tests passed in 1.7 seconds. GitHub Actions
+runs them for each pull request and saves a screenshot and trace when the demo
+journey fails. Open a trace with `npx playwright show-trace test-results/browser/trace.zip`.
+
+I can also make a small inventory of public pages with
+`node tools/page-inventory.mjs https://example.com /`. It writes titles and first
+headings to `page-inventory.json`; rerunning replaces the file. It checks the site's
+robots.txt instructions, waits between requests, retries temporary failures and
+only visits the paths I provide. Use it only on public pages I am allowed to read.

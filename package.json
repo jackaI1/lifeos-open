@@ -34,7 +34,8 @@
     "rag:download": "node tools/retrieval-download.mjs",
     "rag:evaluate": "node tools/retrieval-evaluate.mjs",
     "test:rag": "node --test test/retrieval.test.mjs test/retrieval.integration.mjs && npm run rag:evaluate",
-    "test:rag:browser": "node --test tools/retrieval-browser.test.mjs"
+    "test:rag:browser": "node --test tools/retrieval-browser.test.mjs",
+    "test:browser": "node --test test/browser/*.test.mjs"
   },
   "dependencies": {
     "@azure/msal-node": "7.1.2",
@@ -73,6 +74,7 @@
     "eslint": "^9.39.0",
     "jsdom": "^30.1.3",
     "playwright": "^1.56.0",
+    "robots-parser": "^3.0.1",
     "typescript": "^5.9.0",
     "typescript-eslint": "^8.46.0",
     "vitest": "^5.1.0",
