@@ -31,7 +31,7 @@ test('empty evidence and tool failure escalate instead of proposing a fix',async
 });
 test('Azure agent chooses real LangChain tools and validated evidence controls its final answer',async()=>{
  await fixture(async(_,index)=>{
-  const original=globalThis.fetch;let round=0;
+  const original=globalThis.fetch;let round=0,invalid=false;
   globalThis.fetch=async(url,init)=>{
    assert.match(String(url),/openai\/deployments\/support/);assert.equal(init.headers['api-key'],'synthetic');
    const body=JSON.parse(init.body);round++;
@@ -41,11 +41,12 @@ test('Azure agent chooses real LangChain tools and validated evidence controls i
    }
    const evidence=JSON.parse(body.messages.find(m=>m.tool_call_id==='b').content)[0];
    assert.equal(evidence.sourceKey,'sop/retrieval');
-   return Response.json({choices:[{message:{content:JSON.stringify({claims:[{text:'Check the local embedding setup.',source:evidence.id,quote:evidence.text}]})}}]});
+   return Response.json({choices:[{message:{content:JSON.stringify({claims:[{text:'Check the local embedding setup.',source:invalid?'invented':evidence.id,quote:evidence.text}]})}}]});
   };
   try{
    const assistant=new SupportAssistant({index,env:{LLM_MODE:'real',LLM_PROVIDER:'azure',LLM_BASE_URL:'https://synthetic.openai.azure.com',LLM_MODEL:'support',LLM_API_KEY:'synthetic'}});
    const result=await assistant.ask('My retrieval embedding is unavailable');assert.equal(round,2);assert.equal(result.status,'suggested');assert.match(result.text,/Check the local embedding setup/);assert.equal(result.citations[0].sourceKey,'sop/retrieval');
+   invalid=true;round=0;const rejected=await assistant.ask('My retrieval embedding is unavailable');assert.equal(round,2);assert.equal(rejected.status,'escalated');assert.deepEqual(rejected.citations,[]);
   }finally{globalThis.fetch=original;}
  });
 });
