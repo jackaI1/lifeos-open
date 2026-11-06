@@ -159,7 +159,10 @@ strict Kubernetes 1.35 schemas, reject a deliberately invalid field, and check
 that storage, settings, selectors and probes agree. An image-override check also
 proves that selecting an exact release preserves the complete resource bundle. Missing tools or schemas fail
 the command. `npm test` also exercises the smoke check against a real SQLite file
-across two fresh application sessions, including a missing-note failure.
+across two fresh application sessions, including a missing-note failure. A real
+HTTP transport check verifies the required Host header reaches the server. The
+smoke client uses Node's HTTP API because fetch replaces that header with the
+destination host.
 
 The [Kubernetes workflow](../.github/workflows/kubernetes.yml) publishes the real
 standalone image to GitHub Container Registry. Trusted repository PRs and main
