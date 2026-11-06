@@ -43,6 +43,14 @@ versioning retains earlier objects for manual recovery. This static host uses
 CloudFront's own domain, not the existing demo's DNS. The browser data remains
 on each visitor's device and is not in S3.
 
+The scanner exceptions are limited to this public static template: I use S3's
+built-in encryption instead of a billed customer key, and omit a paid WAF because
+this host accepts only file reads and has no server API or uploads. The default
+CloudFront certificate uses AWS's TLSv1 minimum policy, even though modern clients
+negotiate newer TLS. A custom domain and ACM certificate are needed to enforce a
+newer minimum. [AWS documents that default certificate limitation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistValuesGeneral.html).
+These exceptions do not apply to private or authenticated hosting.
+
 Free-tier eligibility depends on the account and current AWS terms. This setup
 has no always-on compute, but storage, requests, cache invalidations and retained
 versions can still cost money. Set an account budget and review free-tier

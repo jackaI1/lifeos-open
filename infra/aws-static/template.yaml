@@ -5,6 +5,8 @@ Parameters:
     Type: String
     Description: Existing account GitHub OIDC provider ARN
 Resources:
+  # Only fictional public assets are stored here. SSE-S3 avoids a billed customer key.
+  #trivy:ignore:AVD-AWS-0132
   Assets:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
@@ -47,6 +49,10 @@ Resources:
           ContentSecurityPolicy:
             Override: true
             ContentSecurityPolicy: "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; worker-src 'self'; frame-src https://widget.operationworld.org; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors https://jacklai.ca"
+  # This static read-only example has no server API or user uploads; no paid WAF is provisioned.
+  # AWS fixes the default cloudfront.net certificate policy to TLSv1. See docs/study-cloud.md.
+  #trivy:ignore:AVD-AWS-0011
+  #trivy:ignore:AVD-AWS-0013
   Distribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -55,6 +61,8 @@ Resources:
         DefaultRootObject: index.html
         HttpVersion: http2
         PriceClass: PriceClass_100
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
         Origins:
           - Id: private-assets
             DomainName: !GetAtt Assets.RegionalDomainName

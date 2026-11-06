@@ -6,6 +6,7 @@ COPY *.go schema.sql ./
 RUN CGO_ENABLED=0 go build -trimpath -o /ledger .
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /ledger /ledger
+USER 65532:65532
 ENV LEDGER_ADDRESS=0.0.0.0:8082
 EXPOSE 8082
 ENTRYPOINT ["/ledger"]
