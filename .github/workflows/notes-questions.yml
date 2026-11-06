@@ -1,0 +1,17 @@
+name: Notes questions
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  local-notes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Check retrieval, citations, refusals and Ollama protocol without model downloads
+        run: npm run test:notes

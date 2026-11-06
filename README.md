@@ -93,6 +93,15 @@ segments with 0.0% word error rate. That is one clean English recording, so I st
 check lecture transcripts against the audio. The [transcription guide](docs/whisper.md)
 includes the repeatable evaluation, setup and worker design.
 
+I can ask a question about my saved notes from the local checkout. After the
+[local model setup](docs/notes-questions.md#try-it-locally), I run
+`npm run notes -- ask "How does negative feedback work?"`. It searches my typed
+notes, study notes and saved lecture transcripts, then shows exact quotes with
+the source note title and passage number. If it finds no relevant evidence,
+it says it does not know. This runs on my computer with a separate local model;
+the browser demo does not answer these questions. I still open the source to
+check whether a quote answers what I meant.
+
 The default assistant uses scripted example replies. Real chat needs a configured
 provider, which receives the selected context and images. Live email sending is
 not implemented; drafts can be composed and exported.
@@ -208,6 +217,13 @@ configuration. CI also pulls the published app image into a fresh cluster, saves
 a fictional note, replaces the app and rolls back a revision while checking the
 same note. The [cluster guide](docs/kubernetes.md#repeat-the-checks) explains how
 to repeat these checks.
+
+The [notes question guide](docs/notes-questions.md) explains the LangChain pipeline,
+which connects the search steps and local models. `npm run test:notes` runs 14
+focused tests, including the real Ollama adapters against a fake local server.
+CI runs these tests without model downloads. In a separate check with two real
+local models and three fictional notes, both supported questions returned the
+right source quote and an unrelated question returned the unknown answer.
 
 The [local reference](docs/local-workspace.md#testing) also covers browser tests.
 I also keep a local build desk for checking a change before packaging it. Jenkins,
