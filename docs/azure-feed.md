@@ -185,7 +185,8 @@ A successful response has a SHA-256 ETag, a label for that exact snapshot.
 new label and a full response. Cache lifetime is 60 seconds. Readiness validates
 the same feed and exercises an actual blob output binding.
 
-The package has five handler tests. The integration suite checks eight cases:
+The package has five handler tests and three connection/lifecycle regression
+tests. The integration suite checks eight cases:
 repeatable schema/publication, database constraints, restricted SQL permissions,
 actual HTTP/304 behavior, the Azurite heartbeat, missing-feed recovery, changed
 snapshots, and fixture cleanup after a deliberate caller failure. The cleanup

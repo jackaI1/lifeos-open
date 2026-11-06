@@ -1,6 +1,6 @@
 import {spawn, execFile as execFileCallback, type ChildProcess} from 'node:child_process';
 import {promisify} from 'node:util';
-import {mkdtemp, open, readFile, rm, writeFile} from 'node:fs/promises';
+import {mkdtemp, open, rm, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createServer} from 'node:net';
@@ -21,11 +21,16 @@ async function port(): Promise<number> {
   await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
   return value;
 }
-async function until(check: () => Promise<unknown>, description: string, children: ChildProcess[], timeout = 120000) {
+export async function until(check: () => Promise<unknown>, description: string, children: ChildProcess[], timeout = 120000, signal?: AbortSignal) {
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
-    if (children.some(child => child.exitCode !== null)) throw new Error(`Fixture exited while waiting for ${description}`);
-    try {await check(); return;} catch {await delay(500);}
+    if (signal?.aborted) throw new Error('Interrupted');
+    if (children.some(child => child.exitCode !== null || child.signalCode !== null)) throw new Error(`Fixture exited while waiting for ${description}`);
+    try {await check(); if (signal?.aborted) throw new Error('Interrupted'); return;}
+    catch {
+      if (signal?.aborted) throw new Error('Interrupted');
+      await delay(500, undefined, {signal}).catch(() => {throw new Error('Interrupted');});
+    }
   }
   throw new Error(`Timed out waiting for ${description}`);
 }
@@ -46,8 +51,10 @@ export async function withEmulators<T>(use: (fixture: {url: string; storage: str
   const signals = ['SIGINT', 'SIGTERM'] as const;
   const abort = new AbortController();
   const onSignal = () => abort.abort();
+  const runStartup = (file: string, args: string[], runEnv = process.env) => execFile(file, args, {cwd, env: runEnv, signal: abort.signal, maxBuffer: 1024 * 1024, timeout: 120000});
   for (const signal of signals) process.once(signal, onSignal);
   async function start(file: string, args: string[], ports: number[], childEnv = process.env) {
+    if (abort.signal.aborted) throw new Error('Interrupted');
     const log = await open(join(directory, children.length + '.log'), 'a');
     files.push(log);
     const child = spawn(file, args, {cwd, env: childEnv, detached: true, stdio: ['ignore', log.fd, log.fd]});
@@ -59,7 +66,10 @@ export async function withEmulators<T>(use: (fixture: {url: string; storage: str
     await writeFile(join(directory, 'ownership.json'), JSON.stringify(ownership, null, 2));
   }
   try {
-    await run('docker', [...compose, 'up', '-d', 'sql'], env);
+    ownership.push({project, cleanup: `docker compose -p ${project} -f compose.yaml down --volumes`});
+    await writeFile(join(directory, 'ownership.json'), JSON.stringify(ownership, null, 2));
+    console.log(`Starting owned fixture ${project}. Recovery metadata: ${directory}/ownership.json`);
+    await runStartup('docker', [...compose, 'up', '-d', 'sql'], env);
     const id = (await run('docker', [...compose, 'ps', '-q', 'sql'], env)).stdout.trim();
     const [container] = JSON.parse((await run('docker', ['inspect', id])).stdout);
     const sqlPort = Number(container.NetworkSettings.Ports['1433/tcp'][0].HostPort);
@@ -71,7 +81,7 @@ export async function withEmulators<T>(use: (fixture: {url: string; storage: str
       const pool = new sql.ConnectionPool({server: '127.0.0.1', port: sqlPort, user: 'sa', password: env.AZURE_FEED_TEST_SQL_PASSWORD, database: 'master', options: {encrypt: true, trustServerCertificate: true}, connectionTimeout: 1500});
       try {await pool.connect(); await pool.request().query("IF DB_ID('lifeos_demo') IS NULL CREATE DATABASE lifeos_demo");}
       finally {await pool.close();}
-    }, 'SQL Server', children);
+    }, 'SQL Server', children, 120000, abort.signal);
     const readerPassword = randomBytes(24).toString('base64') + 'aA1!';
     redact.push(readerPassword);
     const owner = await connect();
@@ -85,7 +95,7 @@ export async function withEmulators<T>(use: (fixture: {url: string; storage: str
     const storage = `DefaultEndpointsProtocol=http;AccountName=lifeosdemo;AccountKey=${key};BlobEndpoint=http://127.0.0.1:${blobPort}/lifeosdemo;QueueEndpoint=http://127.0.0.1:${queuePort}/lifeosdemo;TableEndpoint=http://127.0.0.1:${tablePort}/lifeosdemo;`;
     Object.assign(process.env, {AZURITE_ACCOUNTS: `lifeosdemo:${key}`, AzureWebJobsStorage: storage, FUNCTIONS_WORKER_RUNTIME: 'node', FUNCTIONS_NODE_BLOCK_ON_ENTRY_POINT_ERROR: 'true'});
     await start(join(cwd, 'node_modules/.bin/azurite'), ['--silent', '--location', join(directory, 'storage'), '--blobPort', String(blobPort), '--queuePort', String(queuePort), '--tablePort', String(tablePort)], [blobPort, queuePort, tablePort]);
-    await until(async () => {await fetch(`http://127.0.0.1:${blobPort}/`, {signal: AbortSignal.timeout(1000)});}, 'Azurite', children);
+    await until(async () => {await fetch(`http://127.0.0.1:${blobPort}/`, {signal: AbortSignal.timeout(1000)});}, 'Azurite', children, 120000, abort.signal);
     const functionEnv = {...process.env, SQL_USER: 'demo_reader', SQL_PASSWORD: readerPassword};
     if (functionContainer) {
       await start('docker', ['run', '--rm', '--name', functionContainer, '--label', `lifeos.azure.fixture=${project}`, '--network', 'host',
@@ -95,12 +105,21 @@ export async function withEmulators<T>(use: (fixture: {url: string; storage: str
       await start(process.env.AZURE_FUNCTIONS_CORE_TOOLS || 'func', ['start', '--port', String(httpPort)], [httpPort], functionEnv);
     }
     const url = `http://127.0.0.1:${httpPort}`;
-    await until(async () => {const response = await fetch(url + '/api/demo/today', {signal: AbortSignal.timeout(2000)}); if (response.status !== 503) throw new Error('Function not ready');}, 'Functions host', children);
+    await until(async () => {const response = await fetch(url + '/api/demo/today', {signal: AbortSignal.timeout(2000)}); if (response.status !== 503) throw new Error('Function not ready');}, 'Functions host', children, 120000, abort.signal);
     console.log(`Owned fixture ${project}: SQL ${sqlPort}, HTTP ${httpPort}; ${children.length} process groups. Cleanup metadata: ${directory}/ownership.json`);
+    if (abort.signal.aborted) throw new Error('Interrupted');
     return await Promise.race([use({url, storage}), new Promise<never>((_, reject) => abort.signal.addEventListener('abort', () => reject(new Error('Interrupted')), {once: true}))]);
   } catch (error) {
+    if (abort.signal.aborted) throw new Error('Interrupted');
     for (let index = 0; index < children.length; index++) {
-      let tail = (await readFile(join(directory, index + '.log'), 'utf8')).slice(-3500);
+      const log = await open(join(directory, index + '.log'), 'r');
+      let tail: string;
+      try {
+        const {size} = await log.stat();
+        const buffer = Buffer.alloc(Math.min(size, 3500));
+        const {bytesRead} = await log.read(buffer, 0, buffer.length, Math.max(0, size - buffer.length));
+        tail = buffer.subarray(0, bytesRead).toString();
+      } finally {await log.close();}
       for (const secret of redact) tail = tail.replaceAll(secret, '[redacted]');
       console.error(tail);
     }

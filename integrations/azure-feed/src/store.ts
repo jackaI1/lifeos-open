@@ -2,19 +2,23 @@ import sql from 'mssql';
 import {readFile} from 'node:fs/promises';
 import {parseFeed} from '../../../src/shared/today.ts';
 
-export async function connect(): Promise<sql.ConnectionPool> {
+export function createPool(): sql.ConnectionPool {
   const server = process.env.SQL_SERVER;
   const database = process.env.SQL_DATABASE;
   if (!server || !database) throw new Error('SQL_SERVER and SQL_DATABASE are required');
   const local = Boolean(process.env.SQL_USER);
-  return new sql.ConnectionPool({
+  const pool = new sql.ConnectionPool({
     server, database, port: Number(process.env.SQL_PORT || 1433),
     ...(local ? {user: process.env.SQL_USER, password: process.env.SQL_PASSWORD} : {authentication: {type: 'azure-active-directory-default' as const, options: {}}}),
     options: {encrypt: true, trustServerCertificate: local && process.env.SQL_TRUST_SERVER_CERTIFICATE === 'true'},
     pool: {max: 5, min: 0, idleTimeoutMillis: 30000},
     connectionTimeout: 10000, requestTimeout: 10000,
-  }).connect();
+  });
+  // mssql can emit pool errors outside a request. Never crash or log credentials.
+  pool.on('error', () => console.warn('Public demo SQL connection failed'));
+  return pool;
 }
+export async function connect(): Promise<sql.ConnectionPool> {return createPool().connect();}
 export async function migrate(pool: sql.ConnectionPool): Promise<void> {
   const source = await readFile(new URL('../sql/schema.sql', import.meta.url), 'utf8');
   for (const batch of source.split(/^GO\s*$/im).filter(value => value.trim())) await pool.request().batch(batch);

@@ -10,7 +10,7 @@
   "scripts": {
     "build": "node build.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test test/handlers.test.ts",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
     "test:integration": "node --experimental-strip-types test/integration.ts",
     "start": "func start",
     "dev": "node --experimental-strip-types test/preview.ts",
