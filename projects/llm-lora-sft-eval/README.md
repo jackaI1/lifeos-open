@@ -50,6 +50,12 @@ I report 95% bootstrap confidence intervals, which estimate how scores could var
 There are 6 test source files in this copy. No test pass count is claimed here: I have not re-run the project suite as part of this move. This is a source snapshot, and running it on a new machine may need environment-specific setup.
 
 
-Project checks run from this directory through the path-filtered hub workflows: `llm-lora-sft-eval-benchmark.yml`, `llm-lora-sft-eval-serving.yml`, `llm-lora-sft-eval-ci.yml`.
+Project checks run from this directory through the path-filtered hub workflows: (removed workflow), (removed workflow), (removed workflow).
 
 Generated output omitted from this copy: reports/ (generated output). Regenerate it with the project scripts.
+
+The relocated workflow did not complete successfully within the migration batch. Local test sources remain available.
+
+The relocated workflow did not complete successfully within the migration batch. Local test sources remain available.
+
+The relocated workflow did not complete successfully within the migration batch. Local test sources remain available.

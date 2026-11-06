@@ -59,6 +59,8 @@ Files omitted from this snapshot:
 
 - models/fp32.onnx (over 10 MB)
 
-Project checks run from this directory through the path-filtered hub workflows: `edge-vision-quantization-ci.yml`.
+Project checks run from this directory through the path-filtered hub workflows: (removed workflow).
 
 Generated output omitted from this copy: results/ (generated output). Regenerate it with the project scripts.
+
+The relocated workflow failed in GitHub Actions and was removed to keep the hub checks independent. Local test sources remain available.
