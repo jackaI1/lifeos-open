@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 test("server renders the first day and keyboard links work after refresh", async ({
   page,
   request,

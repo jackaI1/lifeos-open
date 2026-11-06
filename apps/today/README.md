@@ -50,5 +50,6 @@ npm run test:e2e
 
 The browser runner starts one Next.js server and one Flask server, writes their
 PID, start time, port and cleanup command, and stops both on completion or failure.
-Its temporary SQLite run history is removed. It uses a fresh browser context for
+It also records the test browser process and verifies its exit. Its temporary
+SQLite run history is removed. It uses a fresh browser context for
 each test. The pgvector browser check runs when `CONSOLE_DATABASE_URL` is set.
