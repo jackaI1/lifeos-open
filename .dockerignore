@@ -43,3 +43,13 @@ infra/aws/*.tfstate
 infra/aws/*.tfstate.*
 infra/aws/*.tfvars
 infra/aws/*.tfplan
+
+# Independent integrations have their own dependencies and local settings.
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+**/local.settings.json
+integrations/azure-feed/infra/*.bicepparam
+integrations/azure-feed/infra/*.parameters.json

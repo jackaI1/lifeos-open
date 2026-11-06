@@ -30,6 +30,15 @@ and open it in Expo Go, an app that runs the phone preview. **Refresh** download
 the public examples; the last saved copy stays available without a connection.
 The [phone guide](docs/mobile.md) covers setup, retry states and the browser preview.
 
+I can also serve those public examples from a small cloud endpoint, a web address
+that returns the schedule and deadlines. It reads a separate database containing
+only the fictional feed, so the phone demo can refresh without my personal
+workspace running. From `integrations/azure-feed`, I run `npm ci`,
+`npm run build` and `npm run dev` after the
+[feed setup](docs/azure-feed.md#try-it-locally). That starts a disposable local
+copy and prints its address; Ctrl-C cleans it up. The same guide covers running
+it on Azure and pointing the phone client at its address.
+
 ## Run it locally
 
 Install Node.js 24 or newer, then run:

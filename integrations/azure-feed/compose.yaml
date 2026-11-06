@@ -1,0 +1,11 @@
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-CU23-ubuntu-22.04
+    platform: linux/amd64
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${AZURE_FEED_TEST_SQL_PASSWORD:?Set a disposable test password}
+    ports:
+      - '127.0.0.1::1433'
+    mem_limit: 2g
