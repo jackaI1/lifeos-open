@@ -28,10 +28,15 @@
     "test:cache": "node --test test/redis-cache.test.mjs",
     "benchmark:cache": "node tools/cache-benchmark.mjs",
     "test:ci": "node --test --test-reporter=junit --test-reporter-destination=test-results/node.xml test/*.test.mjs integrations/m365/test/*.test.ts && npm run test:react -- --reporter=default --reporter=junit --outputFile.junit=test-results/react.xml",
-    "jenkins:lint": "node tools/jenkins-lint.mjs"
+    "jenkins:lint": "node tools/jenkins-lint.mjs",
+    "notes": "node --env-file-if-exists=.env src/notes/cli.mjs",
+    "test:notes": "node --test test/notes-question.test.mjs"
   },
   "dependencies": {
     "@azure/msal-node": "7.1.2",
+    "@langchain/core": "1.3.5",
+    "@langchain/ollama": "1.3.0",
+    "@langchain/textsplitters": "1.0.2",
     "@tiptap/core": "3.31.3",
     "@tiptap/extension-highlight": "3.31.3",
     "@tiptap/extension-table": "3.31.3",
