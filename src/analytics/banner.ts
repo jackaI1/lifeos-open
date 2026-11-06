@@ -7,7 +7,7 @@ export const DOCS_URL = 'https://github.com/jackaI1/lifeos-open/blob/main/docs/a
  * visitor decides), both choices are explicit, and the preference can
  * be changed later from the small "Analytics" button.
  */
-export function mountConsentBanner(doc: Document, analytics: Analytics): { destroy(): void; open(): void } {
+export function mountConsentBanner(doc: Document, analytics: Analytics, options: {localOnly?: boolean; experiments?: boolean} = {}): { destroy(): void; open(): void } {
   const root = doc.createElement('div');
   root.className = 'analytics-consent-root';
   doc.body.append(root);
@@ -31,6 +31,8 @@ export function mountConsentBanner(doc: Document, analytics: Analytics): { destr
       title.id = 'analytics-consent-title';
       region.setAttribute('aria-labelledby', title.id);
       const body = node('p', 'analytics-consent-text', 'This public demo can use Google Analytics, loaded through Google Tag Manager, to count which pages and features visitors use. It never sends what you type: no titles, notes, names, amounts or dates. Nothing loads from Google unless you accept, and you can change your mind at any time. Your demo data stays in this browser either way.');
+      if (options.localOnly) body.textContent = 'Allow local experiment counts? This demo compares two task button labels and counts whether I save a task after seeing one. It stores a random browser identifier and two events on this device only. Nothing is uploaded. No task titles, notes or other workspace contents are recorded. I can withdraw permission at any time; this erases the experiment log.';
+      else if (options.experiments) body.textContent += ' Permission also allows an on-device task-label experiment with a random browser identifier and local exposure and save counts. Its log is erased when I withdraw.';
       const link = node('a', 'analytics-consent-link', 'See exactly what is measured');
       link.setAttribute('href', DOCS_URL);
       link.setAttribute('target', '_blank');
@@ -54,5 +56,6 @@ export function mountConsentBanner(doc: Document, analytics: Analytics): { destr
     root.append(reopen);
   }
   render(false);
-  return { destroy: () => root.remove(), open: () => render(true) };
+  const stop = analytics.onConsent(() => render(false));
+  return { destroy: () => {stop(); root.remove();}, open: () => render(true) };
 }

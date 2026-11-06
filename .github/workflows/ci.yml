@@ -41,7 +41,9 @@ jobs:
       - run: npm run typecheck
       - run: npm run privacy
       - run: npx playwright install --with-deps chromium
-      - run: node --test tools/analytics-browser.test.mjs
+      - run: node --test tools/analytics-browser.test.mjs tools/experiments-browser.test.mjs
+      - name: Exercise the local experiment analysis
+        run: npm run experiment:report
       - run: npm run test:smoke
       - name: Render workload charts and verify clock and lecture lifecycle
         run: npm run test:e2e
