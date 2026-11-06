@@ -1,8 +1,14 @@
 # LifeOS study desk
 
-I built a small study desk because I wanted to try another way of reading my
-LifeOS day and learn how a server can prepare a page before I open it.
-It uses fictional schedule entries and public instructions, not my private notes.
+I built a schedule and report planner because keeping my schedule, coursework
+and lecture notes in separate places made it hard to plan my day. This is a
+separate view of my LifeOS planner, using fictional commitments and public
+instructions instead of private notes.
+
+I can read the day and its deadlines, put a lab report's tasks in order, look up
+public instructions with source links, and compare simulated pick runs. I also
+use this prototype to learn how a server prepares the first page before the
+browser opens it.
 
 From the repository root:
 

@@ -1,9 +1,13 @@
 # My optional study desk
 
-I built a separate view of my day because I wanted to learn how a server prepares
-a useful first page before the browser asks for more data. I also keep a few
-practice services here to compare simulated lab runs and learn how repeated
-account requests behave. All their records are fictional.
+I built a schedule and report planner because keeping my schedule, coursework
+and lecture notes in separate places made it hard to plan my day. This optional
+view of LifeOS puts a fictional day, its deadlines and a report plan together.
+It can also quote public instructions and compare simulated lab runs.
+
+I keep the account and publishing services here to learn how repeated requests
+and queued work behave. They use fictional records. The normal LifeOS workspace
+and its private notes are separate from these examples.
 
 ## Read the day and plan a report
 
