@@ -415,3 +415,20 @@ bundled in this repository. Upstream code and model terms apply:
 [OpenAI Whisper models](https://github.com/openai/whisper).
 The public-domain historical audio fixture is documented separately in
 `test/fixtures/whisper/README.md` and `ASSET_PROVENANCE.md`.
+
+## Workload chart dependencies
+
+The locally bundled chart modules and their dependencies retain these terms.
+
+| Component | Version | License | Source | Preserved terms |
+|---|---|---|---|---|
+| d3-array | 3.2.5 | ISC | [upstream](https://www.npmjs.com/package/d3-array/v/3.2.5) | [LICENSE](public/vendor/licenses/npm/d3-array/LICENSE) |
+| d3-axis | 3.0.0 | ISC | [upstream](https://www.npmjs.com/package/d3-axis/v/3.0.0) | [LICENSE](public/vendor/licenses/npm/d3-axis/LICENSE) |
+| d3-color | 3.1.1 | ISC | [upstream](https://www.npmjs.com/package/d3-color/v/3.1.1) | [LICENSE](public/vendor/licenses/npm/d3-color/LICENSE) |
+| d3-format | 3.1.3 | ISC | [upstream](https://www.npmjs.com/package/d3-format/v/3.1.3) | [LICENSE](public/vendor/licenses/npm/d3-format/LICENSE) |
+| d3-interpolate | 3.0.2 | ISC | [upstream](https://www.npmjs.com/package/d3-interpolate/v/3.0.2) | [LICENSE](public/vendor/licenses/npm/d3-interpolate/LICENSE) |
+| d3-scale | 4.0.2 | ISC | [upstream](https://www.npmjs.com/package/d3-scale/v/4.0.2) | [LICENSE](public/vendor/licenses/npm/d3-scale/LICENSE) |
+| d3-selection | 3.0.0 | ISC | [upstream](https://www.npmjs.com/package/d3-selection/v/3.0.0) | [LICENSE](public/vendor/licenses/npm/d3-selection/LICENSE) |
+| d3-time | 3.1.1 | ISC | [upstream](https://www.npmjs.com/package/d3-time/v/3.1.1) | [LICENSE](public/vendor/licenses/npm/d3-time/LICENSE) |
+| d3-time-format | 4.1.1 | ISC | [upstream](https://www.npmjs.com/package/d3-time-format/v/4.1.1) | [LICENSE](public/vendor/licenses/npm/d3-time-format/LICENSE) |
+| internmap | 2.0.3 | ISC | [upstream](https://www.npmjs.com/package/internmap/v/2.0.3) | [LICENSE](public/vendor/licenses/npm/internmap/LICENSE) |
