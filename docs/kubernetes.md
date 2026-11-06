@@ -14,7 +14,7 @@ the demo service, so I use a cluster I control and keep personal records out of 
 ## Start with kind
 
 Install Docker, kubectl (the cluster command-line tool), and kind (a small local
-Kubernetes cluster running in Docker). Docker must be running. The local build works on both Intel/AMD and Apple Silicon machines; CI also
+Kubernetes cluster running in Docker). Docker must be running. The local build works on both Intel/AMD and Apple Silicon machines; main also
 publishes both image versions.
 
 On macOS, after installing and starting Docker:
@@ -165,8 +165,9 @@ smoke client uses Node's HTTP API because fetch replaces that header with the
 destination host.
 
 The [Kubernetes workflow](../.github/workflows/kubernetes.yml) publishes the real
-standalone image to GitHub Container Registry. Trusted repository PRs and main
-then create a fresh kind cluster and pull that image by digest, without loading a
+standalone image to GitHub Container Registry. PRs build the Linux/AMD64 image
+used by the test runner; main publishes both AMD64 and ARM64 images. Trusted
+repository PRs and main then create a fresh kind cluster and pull that image by digest, without loading a
 local build. A temporary image-pull secret uses that job's GitHub token, is supplied
 only at runtime and disappears with the cluster. Fork PRs run schema
 validation and the existing Docker build without publishing. Tagged image releases
