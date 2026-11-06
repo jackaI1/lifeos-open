@@ -24,7 +24,7 @@ test("server renders the first day and keyboard links work after refresh", async
     route.fulfill({ status: 503, json: { error: "offline" } }),
   );
   await page.getByRole("button", { name: "Refresh day" }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.getByRole("main").getByRole("alert")).toBeVisible();
 });
 test("edits the report plan, detects cycles and downloads CSV", async ({
   page,

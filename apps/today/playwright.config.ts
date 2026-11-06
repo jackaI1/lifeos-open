@@ -11,6 +11,7 @@ export default defineConfig({
   },
   webServer: {
     command: "node scripts/test-server.mjs",
+    stdout: "pipe",
     url: "http://127.0.0.1:3217",
     reuseExistingServer: false,
     timeout: 120000,
