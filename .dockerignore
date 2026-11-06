@@ -53,3 +53,11 @@ infra/aws/*.tfplan
 **/local.settings.json
 integrations/azure-feed/infra/*.bicepparam
 integrations/azure-feed/infra/*.parameters.json
+
+# Optional study tools are built by their own workflows.
+apps
+services
+integrations/payments
+infra/azure-demo
+infra/aws-static
+compose.study.yaml

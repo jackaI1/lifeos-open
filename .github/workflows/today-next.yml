@@ -1,0 +1,47 @@
+name: Next.js study desk
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  today:
+    runs-on: ubuntu-latest
+    services:
+      vectors:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: study
+          POSTGRES_PASSWORD: fictional-study
+          POSTGRES_DB: study
+        ports: ['5433:5432']
+        options: --health-cmd "pg_isready -U study -d study" --health-interval 2s --health-timeout 2s --health-retries 20
+    env:
+      CONSOLE_DATABASE_URL: postgresql://study:fictional-study@127.0.0.1:5433/study
+    defaults:
+      run:
+        working-directory: apps/today
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/today/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run seed
+      - run: npm run evaluate | tee evaluation.json
+      - run: npm run build
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen --directory ../../services/study --python 3.12
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: study-desk-results
+          path: |
+            apps/today/evaluation.json
+            apps/today/test-results
+          retention-days: 7

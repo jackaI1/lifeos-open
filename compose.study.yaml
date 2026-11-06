@@ -1,0 +1,63 @@
+# Optional fictional study services. No private LifeOS volumes are mounted.
+services:
+  vectors:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: study
+      POSTGRES_PASSWORD: fictional-study
+      POSTGRES_DB: study
+    ports: ['127.0.0.1:5433:5432']
+    volumes: [vectors:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U study -d study']
+      interval: 2s
+      timeout: 2s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    command: [redis-server, --appendonly, 'yes']
+    ports: ['127.0.0.1:6380:6379']
+    volumes: [queue:/data]
+  publisher:
+    build: services/study
+    environment: &publishing
+      PUBLISH_GIT_SOURCE: https://github.com/jackaI1/lifeos-open.git
+      PUBLISH_DOCS_PATH: docs/public-guide
+      PUBLISH_REDIS_URL: redis://redis:6379/0
+      PUBLISH_DATABASE: /state/published.sqlite
+      PUBLISH_TOKEN: fictional-publisher
+    ports: ['127.0.0.1:8001:8000']
+    volumes: [published:/state]
+    depends_on: [redis]
+  worker:
+    build: services/study
+    command: [rq, worker, --url, 'redis://redis:6379/0', --with-scheduler, lifeos-docs]
+    environment: *publishing
+    volumes: [published:/state]
+    depends_on: [redis]
+  picks:
+    build: services/study
+    command: [flask, --app, 'robot:create_app()', run, --host, '0.0.0.0', --port, '5001']
+    environment:
+      PICK_DATABASE: /state/picks.sqlite
+    ports: ['127.0.0.1:5001:5001']
+    volumes: [picks:/state]
+  ledger:
+    build: services/ledger
+    environment:
+      LEDGER_DATABASE_URL: postgresql://study:fictional-study@vectors:5432/study?sslmode=disable
+    ports: ['127.0.0.1:8082:8082']
+    depends_on:
+      vectors:
+        condition: service_healthy
+  localstack:
+    image: localstack/localstack:4
+    profiles: [payments]
+    environment:
+      SERVICES: dynamodb
+    ports: ['127.0.0.1:4566:4566']
+volumes:
+  vectors:
+  queue:
+  published:
+  picks:

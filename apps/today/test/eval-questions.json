@@ -1,0 +1,11 @@
+[
+ {"question":"When does the LifeOS day start?","expected":"schedule.md#p1"},
+ {"question":"What happens to completed and archived tasks?","expected":"schedule.md#p2"},
+ {"question":"What should I back up before an upgrade?","expected":"backup.md#p1"},
+ {"question":"Does uninstall preserve data and configuration?","expected":"backup.md#p2"},
+ {"question":"Can clearing browser data erase demo changes?","expected":"privacy.md#p1"},
+ {"question":"Is there cross-device sync?","expected":"privacy.md#p2"},
+ {"question":"What is the critical path of dependent tasks?","expected":"plan.md#p1"},
+ {"question":"What does negative slack mean for a deadline?","expected":"plan.md#p2"},
+ {"question":"xylophone zeppelin zirconium","expected":null}
+]

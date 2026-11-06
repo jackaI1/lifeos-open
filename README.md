@@ -18,6 +18,20 @@ with the commands below. In the demo, open **School → Lectures** and a sample
 notebook to try its labelled transcript. Open **Academics → Week workload** to
 compare the week’s commitments and see which courses have deadlines together.
 
+I also made a small [Today view](apps/today) that shows the fictional schedule
+and upcoming deadlines. To try it locally, run `npm ci --prefix apps/today`,
+then `npm run dev --prefix apps/today` and open http://localhost:3000. The
+refresh button reloads the public sample, and the links above the list work
+with a keyboard. This separate view does not change the hosted demo.
+
+In that study desk, **Report plan** helps me try a fictional lab report's task
+order and see which delays move the finish. **Public guide** answers questions
+with linked quotations from my public instructions. **Pick trials** lets me
+compare simulated camera error and gripper tolerance. The
+[study desk guide](docs/study-desk.md) explains the optional database and Python
+service, with exact commands. These examples do not read my private notes or
+control real equipment.
+
 I can ask the local assistant about saved notes and calendar entries, then check
 the passages behind its answer. If nothing is relevant enough, it says it does
 not know. The [saved-text setup](docs/retrieval.md#try-it) takes two commands after
@@ -182,6 +196,13 @@ After `npm ci`, `docker compose --profile redis up -d --wait redis` starts it;
 shows how to check hits, test an outage and compare read latency. It stays off
 by default because a small local database can be faster without it.
 
+I also made a [public instruction publisher](docs/study-desk.md#publish-public-instructions)
+so I could learn how to turn a versioned set of Markdown pages into a checked,
+searchable site. It rejects broken local links, queues builds, and reuses unchanged
+pages. The separate [account examples](docs/study-accounts.md) let me try repeated
+requests, concurrent settlements and selective access to fictional balances.
+They are learning tools beside LifeOS, with no real accounts or money.
+
 ## Optional connections
 
 If I want coursework reminders in Microsoft 365, the
@@ -228,7 +249,7 @@ LifeOS service and include no private credentials or records.
 There is also an [optional Amazon Web Services (AWS) hosting guide](docs/deploy-aws.md) for the
 browser-only demo. It prepares the infrastructure and tagged releases for a
 separate host; it has not been deployed or checked against a live AWS account.
-Running it needs an AWS account and can incur charges. The usual public demo
+Running it needs an AWS account and can incur charges. A smaller [static AWS option and an optional Azure container deployment](docs/study-cloud.md) have separate templates and deployment workflows. Both are account-configured options; neither has been provisioned by these tests. The usual public demo
 continues to use Cloudflare, the service hosting its public files.
 
 ## Checks and documentation

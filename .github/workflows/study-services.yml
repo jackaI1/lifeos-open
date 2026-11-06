@@ -1,0 +1,80 @@
+name: Study services
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ['6380:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 2s --health-timeout 2s --health-retries 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen --directory services/study --python 3.12
+      - run: uv run --directory services/study ruff check . --output-format concise
+      - run: uv run --directory services/study pytest -q
+        env:
+          PUBLISH_REDIS_URL: redis://127.0.0.1:6380/15
+      - name: Build the publisher and pick-service image
+        run: docker build -t lifeos-study-test services/study
+  ledger:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: study
+          POSTGRES_PASSWORD: fictional-study
+          POSTGRES_DB: ledger_test
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U study -d ledger_test" --health-interval 2s --health-timeout 2s --health-retries 20
+    defaults:
+      run:
+        working-directory: services/ledger
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          cache-dependency-path: services/ledger/go.sum
+      - run: test -z "$(gofmt -l *.go)"
+      - run: go vet ./...
+      - run: go test -race -count=1 -v ./...
+        env:
+          LEDGER_DATABASE_URL: postgresql://study:fictional-study@127.0.0.1:5432/ledger_test?sslmode=disable
+      - run: docker build -t lifeos-ledger-test .
+  payments:
+    runs-on: ubuntu-latest
+    services:
+      localstack:
+        image: localstack/localstack:4
+        env:
+          SERVICES: dynamodb
+        ports: ['4566:4566']
+        options: --health-cmd "curl -f http://localhost:4566/_localstack/health" --health-interval 5s --health-timeout 3s --health-retries 20
+    defaults:
+      run:
+        working-directory: integrations/payments
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      AWS_ENDPOINT_URL: http://127.0.0.1:4566
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: integrations/payments/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - uses: aws-actions/setup-sam@v2
+      - run: sam validate --lint --template-file template.yaml
+      - run: sam build --template-file template.yaml

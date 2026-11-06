@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Fictional LifeOS payments with a simulated provider, no real money
+Resources:
+  PaymentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+  Payments:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: handler.handler
+      Runtime: nodejs22.x
+      Timeout: 15
+      MemorySize: 128
+      Environment:
+        Variables:
+          PAYMENTS_TABLE: !Ref PaymentsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaymentsTable
+      Events:
+        Create:
+          Type: Api
+          Properties:
+            Path: /payments
+            Method: post
+        Retry:
+          Type: Api
+          Properties:
+            Path: /payments/{id}/retry
+            Method: post
+        Refund:
+          Type: Api
+          Properties:
+            Path: /payments/{id}/refund
+            Method: post
+Outputs:
+  ApiUrl:
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/payments'
