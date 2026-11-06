@@ -197,7 +197,7 @@ npm run privacy
 
 The [local reference](docs/local-workspace.md#testing) also covers browser tests.
 Tests use fictional records and controlled providers. With Redis running,
-`TEST_REDIS_URL=redis://127.0.0.1:6379 npm run test:cache` checks 17 cache cases,
+`TEST_REDIS_URL=redis://127.0.0.1:6379 npm run test:cache` checks 18 cache cases,
 and `REDIS_URL=redis://127.0.0.1:6379 npm run benchmark:cache` compares read
 latency. In a 60-read test, cache hits avoided all 60 record-payload queries. The task-label experiment
 adds 13 focused checks and a real browser walkthrough for both labels, consent,

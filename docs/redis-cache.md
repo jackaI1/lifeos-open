@@ -62,7 +62,7 @@ read checks that revision in SQL before looking in Redis. A write makes the old
 key unreachable even when Redis is offline, so invalidation does not rely on
 sending a deletion message. It applies to changes in the cached record type;
 unrelated record types keep their useful copies. The original insert/update
-triggers already existed; migration 0002 adds raw-delete coverage for both
+triggers already existed; migration 0002 adds raw-delete and record-type-move coverage for both
 SQLite and PostgreSQL.
 
 I check the revision again before returning a hit or saving a fill. If a write
@@ -105,7 +105,7 @@ TEST_REDIS_URL=redis://127.0.0.1:6379 npm test
 REDIS_URL=redis://127.0.0.1:6379 npm run benchmark:cache
 ```
 
-The focused suite has 17 checks, including its group, for real hits and misses,
+The focused suite has 18 checks, including its group, for real hits and misses,
 API writes, worker updates, raw deletes, recreation, rollback, pagination,
 workspace isolation, authentication, corrupt entries, response size, racing
 writes, database failure, lost connections, stalled handshakes and stalled

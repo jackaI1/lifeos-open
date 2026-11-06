@@ -76,6 +76,13 @@ test('real Redis record cache', {skip:!redisUrl},async t=>{
   assert.deepEqual((await (await f.get()).json()).items,[]);assert.equal((await f.get('/api/records/task/worker')).status,404);
   await insert(f.app,'worker','Recreated');assert.equal((await (await f.get('/api/records/task/worker')).json()).item.data.title,'Recreated');
  });
+ await t.test('moving a record to another kind invalidates both old list and detail',async t=>{
+  const f=await fixture(t,{REDIS_URL:redisUrl});await insert(f.app,'move','Moved record');await f.get();await f.get('/api/records/task/move');
+  await f.app.db.prepare('UPDATE records SET kind=? WHERE kind=? AND id=?').bind('course','task','move').run();
+  assert.deepEqual((await (await f.get()).json()).items,[]);
+  assert.equal((await f.get('/api/records/task/move')).status,404);
+  assert.equal((await (await f.get('/api/records/course/move')).json()).item.data.title,'Moved record');
+ });
  await t.test('failed database transactions leave warm entries valid',async t=>{
   const f=await fixture(t,{REDIS_URL:redisUrl});await insert(f.app,'rollback');await f.get();
   await assert.rejects(()=>f.app.db.batch([f.app.db.prepare("UPDATE records SET data='{}' WHERE kind='task'"),f.app.db.prepare('INSERT INTO assertions VALUES(?,0)').bind('fail')]));
