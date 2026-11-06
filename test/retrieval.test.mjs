@@ -5,6 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {DatabaseSync} from 'node:sqlite';
 import {execFileSync} from 'node:child_process';
+import {readdirSync,readlinkSync,realpathSync} from 'node:fs';
 
 const api=await import('../src/local/retrieval.mjs').catch(()=>({}));
 const source=(id,text,extra={})=>({kind:'private-note',id,data:{title:id,text,...extra}});
@@ -101,9 +102,16 @@ test('incompatible index initialization closes every SQLite file handle before r
  try{
   const fixture=new DatabaseSync(path);fixture.exec('CREATE TABLE rag_meta(wrong TEXT)');fixture.close();
   for(let i=0;i<3;i++)assert.throws(()=>new api.RetrievalIndex(path,{embed,modelId:'v1'}));
-  let files='';
-  try{files=execFileSync('lsof',['-a','-p',String(process.pid),'-Fn',path],{encoding:'utf8'});}
-  catch(error){if(error.status!==1)throw error;files=String(error.stdout??'');}
-  assert.ok(!files.split('\n').some(line=>line.startsWith('n')),'failed constructors leaked handles to the index file');
+  let open=false;
+  if(process.platform==='linux'){
+   const target=realpathSync(path);
+   open=readdirSync('/proc/self/fd').some(fd=>{try{return readlinkSync('/proc/self/fd/'+fd)===target;}catch{return false;}});
+  }else{
+   let files='';
+   try{files=execFileSync('lsof',['-a','-p',String(process.pid),'-Fn',path],{encoding:'utf8'});}
+   catch(error){if(error.status!==1)throw error;files=String(error.stdout??'');}
+   open=files.split('\n').some(line=>line.startsWith('n'));
+  }
+  assert.equal(open,false,'failed constructors leaked handles to the index file');
  }finally{await rm(dir,{recursive:true,force:true});}
 });
