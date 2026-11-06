@@ -209,7 +209,7 @@ linter command and cleanup steps.
 This mirrors the install, lint, type, test and privacy commands in my
 [GitHub Actions workflow](.github/workflows/ci.yml), which runs checks on GitHub
 when I push a change. Jenkins uses SQLite and adds saved JUnit reports, a standard
-test-results format; GitHub Actions also checks PostgreSQL, browser behavior and
+test-results format; GitHub Actions also checks PostgreSQL, the optional Redis cache, browser behavior and
 real offline transcription. A separate [Jenkins workflow](.github/workflows/jenkins.yml)
 starts the real server, uses its official linter and runs the whole pipeline on
 each pull request and on main. This checks that the local setup keeps working.

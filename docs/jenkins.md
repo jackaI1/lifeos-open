@@ -65,7 +65,7 @@ The linter checks pipeline syntax; only an actual build checks command behavior.
 | Dependencies | Node 24, `npm ci` once before checks | Node 24, `npm ci` for each database job |
 | Lint | `npm run lint`, parallel branch | Same command |
 | Types | `npm run typecheck`, parallel branch | Same command |
-| Tests | `npm run test:ci`, same Node and React suites with JUnit reports | `npm test`, SQLite and PostgreSQL |
+| Tests | `npm run test:ci`, same Node and React suites with JUnit reports | `npm test`, SQLite and PostgreSQL, with Redis enabled |
 | Privacy | `npm run privacy`, parallel branch, saved JSON | Same scan |
 | App | `npm run build`, analytics check, committed bundle check | Same checks |
 | Container | Existing Dockerfile's `runtime` target, local image | Docker workflow also smoke-tests, scans and publishes version tags |
@@ -78,6 +78,10 @@ skips packaging when any check fails. It retains ten builds and five sets of
 artifacts, limits a run to 25 minutes, prevents overlapping runs, and removes its
 checkout after each run. The controller has one executor; the four check branches
 still run concurrently within that build.
+
+The local Jenkins job leaves the optional Redis cache off. Its normal and fallback
+tests still run; live Redis integration tests are skipped there. GitHub Actions
+starts a real Redis service for those tests and the cache benchmark.
 
 `deploy/jenkins/Dockerfile` includes Node 24, the Docker command and Buildx (the
 image builder). `plugins.txt` pins the directly selected plugins. Jenkins
