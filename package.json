@@ -25,7 +25,9 @@
     "test:react": "vitest run",
     "experiment:report": "node tools/experiment-report.mjs",
     "test:cache": "node --test test/redis-cache.test.mjs",
-    "benchmark:cache": "node tools/cache-benchmark.mjs"
+    "benchmark:cache": "node tools/cache-benchmark.mjs",
+    "test:ci": "node --test --test-reporter=junit --test-reporter-destination=test-results/node.xml test/*.test.mjs integrations/m365/test/*.test.ts && npm run test:react -- --reporter=default --reporter=junit --outputFile.junit=test-results/react.xml",
+    "jenkins:lint": "node tools/jenkins-lint.mjs"
   },
   "dependencies": {
     "@azure/msal-node": "7.1.2",

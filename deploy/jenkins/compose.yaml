@@ -1,0 +1,26 @@
+name: lifeos-jenkins
+services:
+  jenkins:
+    build:
+      context: ../..
+      dockerfile: deploy/jenkins/Dockerfile
+    ports:
+      - '127.0.0.1:${JENKINS_PORT:-8081}:8080'
+    environment:
+      JAVA_OPTS: '-Djenkins.install.runSetupWizard=false -Xmx768m'
+      JENKINS_ADMIN_PASSWORD: '${JENKINS_ADMIN_PASSWORD:?Set a local Jenkins admin password}'
+      LIFEOS_JENKINS_REF: '${LIFEOS_JENKINS_REF:-main}'
+      LIFEOS_JENKINS_REPOSITORY: '${LIFEOS_JENKINS_REPOSITORY:-https://github.com/jackaI1/lifeos-open.git}'
+      LIFEOS_JENKINS_IMAGE: '${LIFEOS_JENKINS_IMAGE:-lifeos-open}'
+    group_add:
+      - '${JENKINS_DOCKER_GID:-0}'
+    volumes:
+      - jenkins-home:/var/jenkins_home
+      # Trusted local builds only: this socket grants control of the Docker host.
+      - '${JENKINS_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock'
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    init: true
+    mem_limit: 2g
+volumes:
+  jenkins-home:
