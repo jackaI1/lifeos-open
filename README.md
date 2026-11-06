@@ -134,6 +134,21 @@ checks the saved tag configuration and prints the resulting counts. The
 [analytics guide](docs/analytics.md) explains the local report, live setup and
 how I can compare a screen visit with a later action.
 
+I also want to know whether the task button makes sense to a new visitor. In the
+browser demo, **Academics** compares **New task** with **Plan a task** and counts
+whether I save a task after seeing it. After I allow analytics, a random browser
+identifier keeps the same version on reload. The counts stay on this device;
+**Task label experiment** shows them and lets me download them. Declining keeps
+counting off, and withdrawing permission erases the experiment log.
+
+After `npm ci`, `npm run experiment:report` runs a small and a large fictional
+comparison. The small one says **not enough data**. A real comparison needs at
+least 1,094 exposed browsers per version and a completed observation window;
+one browser cannot establish a winner. The [experiment guide](docs/experiments.md)
+shows how to run the demo, read conversion rates and their uncertainty, and use
+the two-proportion test, a check for a difference between two conversion fractions.
+There is no central collection service in this version.
+
 For a browser-only build or hosting the fictional demo, see
 [HOSTED_DEMO.md](HOSTED_DEMO.md). These options are separate from the private
 LifeOS service and include no private credentials or records.
@@ -158,7 +173,9 @@ npm run privacy
 ```
 
 The [local reference](docs/local-workspace.md#testing) also covers browser tests.
-Tests use fictional records and controlled providers. The
+Tests use fictional records and controlled providers. The task-label experiment
+adds 13 focused checks and a real browser walkthrough for both labels, consent,
+reloads and downloaded counts. CI runs these checks too. The
 [verification notes](docs/verification.md), [route inventory](docs/api-routes.json)
 and [demo audit](docs/demo-audit-2026-10-22.md) describe the checked paths and limits.
 The [contribution guide](CONTRIBUTING.md) explains changes to the project.

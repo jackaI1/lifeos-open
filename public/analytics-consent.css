@@ -1,4 +1,4 @@
-/* Public demo only: loaded by the analytics module when a build has real GTM/GA4 ids. */
+/* Public demo consent and on-device experiment report. */
 .analytics-consent-root{position:fixed;z-index:60;left:0;right:0;bottom:0;pointer-events:none;font:14px/1.45 system-ui,sans-serif}
 .analytics-consent{pointer-events:auto;box-sizing:border-box;max-width:34rem;margin:0 auto 12px;padding:14px 16px;border:1px solid var(--seam,#45494e);border-radius:12px;background:var(--plate,#34373b);color:var(--ink,#f1f1ee);box-shadow:0 8px 32px rgb(0 0 0 / .4)}
 .analytics-consent-title{margin:0 0 6px;font-size:15px}
@@ -11,3 +11,10 @@
 .analytics-consent-reopen{pointer-events:auto;position:absolute;left:8px;bottom:8px;min-height:24px;padding:0 8px;border:1px solid var(--seam,#45494e);border-radius:999px;background:var(--plate,#34373b);color:var(--dim,#b1b5ba);font:11px/1 system-ui,sans-serif;opacity:.7;cursor:pointer}
 .analytics-consent-reopen:hover{opacity:1}
 @media (max-width:800px){.analytics-consent-reopen{bottom:calc(76px + env(safe-area-inset-bottom,0px))}.analytics-consent{margin:0 8px calc(8px + env(safe-area-inset-bottom,0px))}}
+
+.experiment-report-button{position:fixed;left:auto;right:8px;z-index:59;bottom:8px}
+.experiment-report{max-width:34rem;width:calc(100% - 32px);box-sizing:border-box;max-height:80vh;overflow:auto;background:var(--plate,#34373b);color:var(--ink,#f1f1ee);border:1px solid var(--seam,#45494e);border-radius:12px;padding:20px}
+.experiment-report h2{font-size:20px;margin-top:0}
+.experiment-report pre{white-space:pre-wrap}
+.experiment-report button{min-height:40px;margin:4px;padding:8px;cursor:pointer}
+@media(max-width:800px){.experiment-report-button{bottom:calc(76px + env(safe-area-inset-bottom,0px))}}

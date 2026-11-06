@@ -4,11 +4,10 @@ import {createBrowserWorkspace} from './vendor/browser-demo/client.mjs';
 // Local persistence is established before any app module can recover a draft.
 window.__LIFEOS_BROWSER_DEMO__=true;
 const workspace=createBrowserWorkspace(),nativeFetch=window.fetch.bind(window);
-// Optional product analytics (see docs/analytics.md). Present only in hosted builds made with real
-// GTM/GA4 ids; never throws into the demo. Consent is kept in the real localStorage, captured before
-// installDemoStorage scopes it, so it is not part of the visitor's workspace data.
+// The public demo keeps experiment counts locally; optional Google reporting is separate.
+// Capture real localStorage before workspace scoping. Measurement failures never block the app.
 let analytics=null;
-if(document.querySelector('meta[name="lifeos-analytics-gtm"]')){try{analytics=(await import('./vendor/analytics.mjs')).startAnalytics(window,window.localStorage);}catch{analytics=null;}}
+try{analytics=(await import('./vendor/analytics.mjs')).startAnalytics(window,window.localStorage,{experiments:true});}catch{analytics=null;}
 try{
  await workspace.ready;
  installDemoStorage(window,'lifeos-browser-local-workspace-v1'.padEnd(43,'_'));

@@ -3,8 +3,10 @@
 LifeOS has an optional Google Analytics 4 integration loaded through Google Tag Manager.
 It is enabled **only in the generated public demo shell**, using build-time identifiers.
 The checked-in shell and standalone/private app do not load it, even when those environment
-variables are set. No real Google identifiers are committed. Until Jack creates the property
-and container and rebuilds the public demo, analytics stays off and there is no consent banner.
+variables are set. No real Google identifiers are committed. Without a configured property and container, Google reporting stays off.
+The browser demo still offers consent for an [on-device task-label experiment](experiments.md);
+its counts and random identifier stay local and are never sent through these tags.
+The standalone app has neither experiment logging nor a consent banner.
 
 ## Check the reporting setup locally
 

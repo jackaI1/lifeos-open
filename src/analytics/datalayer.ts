@@ -5,7 +5,7 @@ export const CONSENT_KEY = 'lifeos-analytics-consent';
 
 export interface StorageLike { getItem(key: string): string | null; setItem(key: string, value: string): void }
 export interface AnalyticsEnv {
-  config: AnalyticsConfig;
+  config: AnalyticsConfig | null;
   origin?: string;
   /** Sets the GA4 disable flag immediately when consent is withdrawn. */
   setDisabled?: (disabled: boolean) => void;
@@ -67,7 +67,7 @@ export function createAnalytics(env: AnalyticsEnv): Analytics {
   env.setDisabled?.(state !== 'granted');
 
   function loadContainer(): void {
-    if (loaded) return;
+    if (loaded || !env.config) return;
     loaded = true;
     if (env.config.ga4Id) env.dataLayer.push({ ga4_measurement_id: env.config.ga4Id });
     env.dataLayer.push({ 'gtm.start': now(), event: 'gtm.js' });

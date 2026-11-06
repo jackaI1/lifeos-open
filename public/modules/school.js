@@ -26,7 +26,7 @@ export async function mount(root, ctx) {
     modal(kind==='course'?'New course':'New task',el('div',{class:'form-stack'},title.node,...(kind==='course'?[code.node,term.node]:[course.node,due.node,minutes.node]),button('Save '+kind,e=>busy(e.currentTarget,async()=>{if(!title.input.reportValidity()||kind==='task'&&!minutes.input.reportValidity())return;const data=kind==='course'?{title:title.input.value,code:code.input.value,term:term.input.value}:{title:title.input.value,courseId:course.input.value,...(due.input.value?{dueDate:due.input.value}:{}),remainingMinutes:Number(minutes.input.value),status:'todo'};const result=await ctx.save(kind,{id:crypto.randomUUID(),version:0},data);if(result.pending)return showResult(result);document.querySelector('#dialog').close();await ctx.refresh({redraw:true});}))));
   }
   courseHost.append(button('New course',()=>newAcademic('course'),'quiet'));
-  const newTask=button('New task',()=>newAcademic('task'),'quiet');newTask.disabled=!courses.some(r=>!r.data.archived);
+  const newTask=button('New task',()=>newAcademic('task'),'quiet');newTask.dataset.taskEntryExperiment='';newTask.disabled=!courses.some(r=>!r.data.archived);
   let next,nextData={};const best=panel(null);let heroMenu=null,heroInfo=null;
   const liveNotes=button('Live notes',()=>ctx.go('school?lectures'),'quiet compact');
   function taskRow(record,{hero=false}={}){
