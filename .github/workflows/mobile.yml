@@ -1,0 +1,31 @@
+name: Mobile
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  today:
+    name: React Native types, tests and bundles
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            mobile/package-lock.json
+      - run: npm ci
+      - run: npm ci
+        working-directory: mobile
+      - run: npm run typecheck
+        working-directory: mobile
+      - run: npm test
+        working-directory: mobile
+      - run: npm run export
+        working-directory: mobile
+      - name: Check generated demo feed is current
+        run: node tools/build-demo-feed.ts && git diff --exit-code -- public/demo/today.json
+      - run: npx playwright install --with-deps chromium
+      - run: node --test tools/mobile-browser.test.mjs

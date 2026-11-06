@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "fictional": true,
+  "anchorDate": "2026-10-06",
+  "timeZone": "America/Toronto",
+  "events": [
+    {
+      "id": "demo-workshop",
+      "title": "Workshop",
+      "start": "2026-10-06T14:05:00Z",
+      "end": "2026-10-06T15:30:00Z",
+      "location": "Fictional design studio"
+    },
+    {
+      "id": "demo-study-group",
+      "title": "Study group",
+      "start": "2026-10-06T14:10:00Z",
+      "end": "2026-10-06T15:00:00Z",
+      "location": "Fictional library"
+    },
+    {
+      "id": "demo-office-hours",
+      "title": "Office hours",
+      "start": "2026-10-06T18:30:00Z",
+      "end": "2026-10-06T19:00:00Z",
+      "location": "Fictional seminar room"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "demo-task-outline",
+      "title": "Map the feedback loop",
+      "dueAt": "2026-10-08T20:00:00Z",
+      "status": "todo"
+    },
+    {
+      "id": "demo-task-reading",
+      "title": "Read the watershed example",
+      "dueDate": "2026-10-09",
+      "status": "todo"
+    },
+    {
+      "id": "demo-task-model-comparison",
+      "title": "Compare two feedback models",
+      "dueDate": "2026-10-11",
+      "status": "todo"
+    },
+    {
+      "id": "demo-task-watershed-diagram",
+      "title": "Sketch the watershed diagram",
+      "dueDate": "2026-10-10",
+      "status": "todo"
+    },
+    {
+      "id": "demo-task-date-unverified",
+      "title": "Check the workshop reflection deadline",
+      "status": "todo"
+    },
+    {
+      "id": "demo-prelab",
+      "title": "Systems pre-lab checklist",
+      "dueDate": "2026-10-06",
+      "status": "todo"
+    }
+  ]
+}

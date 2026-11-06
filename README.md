@@ -18,6 +18,12 @@ with the commands below. In the demo, open **School → Lectures** and a sample
 notebook to try its labelled transcript. Open **Academics → Week workload** to
 compare the week’s commitments and see which courses have deadlines together.
 
+I can also check the fictional day's schedule and upcoming deadlines in the
+phone client. From this checkout, run `cd mobile`, `npm ci`, then `npm start`
+and open it in Expo Go, an app that runs the phone preview. **Refresh** downloads
+the public examples; the last saved copy stays available without a connection.
+The [phone guide](docs/mobile.md) covers setup, retry states and the browser preview.
+
 ## Run it locally
 
 Install Node.js 24 or newer, then run:
@@ -163,6 +169,14 @@ continues to use Cloudflare, the service hosting its public files.
 
 The [budget view guide](docs/react-migration.md) explains how this screen is built
 and how to use the same approach for another screen.
+
+The phone client uses React Native with Expo and TypeScript. Its schedule and
+deadline dates come from the same typed date model as the web workload view.
+`cd mobile && npm ci && npm run typecheck && npm test && npm run export` checks
+the client with 12 native tests and creates Android, iOS and web bundles. Six
+shared date-model tests run with the web suite. CI also runs a browser
+walkthrough of the exported client, including a restart with the feed offline.
+Native device testing and app-store distribution are not included in that check.
 
 ```sh
 npm test

@@ -11,7 +11,7 @@ LIFEOS_DEFAULT_BACKUP_DIR=/var/backups/lifeos
 LIFEOS_NODE_MAJOR=24
 LIFEOS_KEEP_RELEASES=3
 # Paths copied from the source checkout into each release (everything the app needs).
-LIFEOS_RELEASE_PATHS=(package.json package-lock.json src public demo tools/build.mjs deploy/linux)
+LIFEOS_RELEASE_PATHS=(package.json package-lock.json src public demo tools/build.mjs tools/build-demo-feed.ts deploy/linux)
 
 log() { printf '[lifeos] %s\n' "$*"; }
 warn() { printf '[lifeos] WARNING: %s\n' "$*" >&2; }
