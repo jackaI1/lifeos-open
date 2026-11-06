@@ -30,6 +30,7 @@ wrangler.toml
 .dev.vars
 .wrangler
 # Not needed to build or run the standalone server image.
+mobile
 test
 docs
 Dockerfile
