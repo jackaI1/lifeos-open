@@ -1,0 +1,31 @@
+{
+  "name": "lifeos-azure-feed",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/functions.mjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "test:integration": "node --experimental-strip-types test/integration.ts",
+    "start": "func start",
+    "dev": "node --experimental-strip-types test/preview.ts",
+    "publish:feed": "node --experimental-strip-types src/publish.ts"
+  },
+  "dependencies": {
+    "@azure/functions": "4.17.0",
+    "mssql": "12.7.14"
+  },
+  "devDependencies": {
+    "@azure/storage-blob": "12.33.0",
+    "@types/mssql": "12.3.0",
+    "@types/node": "26.6.6",
+    "azurite": "3.37.0",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  }
+}

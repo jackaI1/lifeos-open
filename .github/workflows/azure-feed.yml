@@ -1,0 +1,45 @@
+name: Azure public feed
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  azure-feed:
+    name: Functions, Azurite and SQL Server
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: integrations/azure-feed/package-lock.json
+      - run: npm ci
+        working-directory: integrations/azure-feed
+      - name: Install the real Functions host
+        run: npm install -g azure-functions-core-tools@4.16.0
+      - name: Compile, check types and test handlers
+        working-directory: integrations/azure-feed
+        run: |
+          npm run build
+          npm run typecheck
+          npm test
+      - name: Compile the deployment template without an Azure account
+        run: |
+          az bicep install
+          az bicep build --file integrations/azure-feed/infra/main.bicep --outfile "$RUNNER_TEMP/azure-feed.json"
+      - name: Exercise SQL schema, Core Tools HTTP host and Azurite binding
+        working-directory: integrations/azure-feed
+        run: npm run test:integration
+      - name: Build the App Service container
+        run: |
+          docker build -f integrations/azure-feed/Dockerfile -t lifeos-azure-feed:ci .
+          test "$(docker run --rm --entrypoint id lifeos-azure-feed:ci -u)" != 0
+      - name: Exercise the same feed through the packaged Functions runtime
+        working-directory: integrations/azure-feed
+        env:
+          AZURE_FEED_CONTAINER_IMAGE: lifeos-azure-feed:ci
+        run: npm run test:integration

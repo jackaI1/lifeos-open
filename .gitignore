@@ -28,3 +28,8 @@ wrangler.jsonc
 wrangler.toml
 .dev.vars
 .wrangler/
+
+# Local Azure settings and operator-owned deployment parameters
+**/local.settings.json
+integrations/azure-feed/infra/*.bicepparam
+integrations/azure-feed/infra/*.parameters.json
