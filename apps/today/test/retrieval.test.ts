@@ -3,6 +3,7 @@ import { it, expect, afterEach, vi } from "vitest";
 import {
   answer,
   embedding,
+  search,
   grounded,
   modelAnswer,
   score,
@@ -94,4 +95,9 @@ it("reports an unavailable model and refuses insecure remote HTTP", async () => 
   await expect(async () => {
     for await (const c of modelAnswer("day", [p])) void c;
   }).rejects.toThrow("HTTPS");
+});
+
+it("abstains on questions with no searchable words before a database query", async () => {
+  vi.stubEnv("CONSOLE_DATABASE_URL", "postgresql://127.0.0.1:1/unused");
+  expect(await search("the and of")).toEqual([]);
 });

@@ -331,6 +331,13 @@ reloads and downloaded counts. CI runs these checks too. The
 and [demo audit](docs/demo-audit-2026-10-22.md) describe the checked paths and limits.
 The [contribution guide](CONTRIBUTING.md) explains changes to the project.
 
+The optional study desk adds 36 focused checks for the public feed, component
+states, scheduling, typed APIs, citations and account access. I compare retrieval
+with nine fixed questions and run five browser journeys in CI. Separate service
+checks use real Redis and PostgreSQL and a local AWS emulator. The
+[study desk guide](docs/study-desk.md#checks-and-cleanup) explains how I repeat
+those checks and stop their disposable resources.
+
 ## Demo
 
 https://github.com/user-attachments/assets/5397817a-6c90-41f8-9ad9-6138a0c4023d

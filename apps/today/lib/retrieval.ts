@@ -42,9 +42,11 @@ export async function closeDatabase() {
 export async function search(question: string): Promise<Passage[]> {
   if (!process.env.CONSOLE_DATABASE_URL)
     throw Error("Start the document database and run npm run seed.");
+  const vector = embedding(question);
+  if (vector.every(value => value === 0)) return [];
   const result = await database().query<Passage>(
-    `SELECT id,title,body AS text,source,1-(embedding <=> $1::vector) AS score FROM console_passages WHERE 1-(embedding <=> $1::vector) >= 0.24 ORDER BY embedding <=> $1::vector, id LIMIT 3`,
-    [JSON.stringify(embedding(question))],
+    `SELECT id,title,body AS text,source,1-(embedding <=> $1::vector) AS score FROM console_passages WHERE (embedding <=> $1::vector) < 'Infinity'::float8 AND 1-(embedding <=> $1::vector) >= 0.24 ORDER BY embedding <=> $1::vector, id LIMIT 3`,
+    [JSON.stringify(vector)],
   );
   return result.rows;
 }
