@@ -5,6 +5,8 @@ await mkdir('build',{recursive:true});
 await build({entryPoints:['src/local/main.ts'],bundle:true,platform:'node',target:'node24',format:'esm',packages:'external',outfile:'build/server.mjs',sourcemap:false,legalComments:'inline'});
 await build({entryPoints:['src/frontend/document-runtime.mjs'],bundle:true,platform:'browser',target:'es2022',format:'esm',outfile:'public/vendor/document-runtime.mjs',sourcemap:false,legalComments:'inline'});
 await build({entryPoints:['src/analytics/index.ts'],bundle:true,platform:'browser',target:'es2022',format:'esm',outfile:'public/vendor/analytics.mjs',sourcemap:false,legalComments:'inline'});
+const workloadShell={name:'workload-shell',setup(b){b.onResolve({filter:/^@shell\//},args=>({path:'../'+args.path.slice('@shell/'.length),external:true}));}};
+await build({entryPoints:['src/frontend/workload/view.mjs'],bundle:true,platform:'browser',target:'es2022',format:'esm',outfile:'public/vendor/workload.mjs',minify:true,plugins:[workloadShell],legalComments:'eof'});
 // React views: `@shell/x.js` imports stay external and resolve to public/x.js at runtime,
 // so the bundle shares the shell's live module instances. Add one entry per migrated view;
 // splitting puts React itself in a shared chunk. See docs/react-migration.md.

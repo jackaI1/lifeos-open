@@ -32,8 +32,8 @@ jobs:
       - run: npm run build
       - name: Replay fictional usage through the exported analytics configuration
         run: npm run analytics:check
-      - name: Verify committed React bundle matches its source
-        run: test -z "$(git status --porcelain -- public/react)" || { git status --short -- public/react; exit 1; }
+      - name: Verify committed view bundles match their source
+        run: test -z "$(git status --porcelain -- public/react public/vendor/workload.mjs)" || { git status --short -- public/react public/vendor/workload.mjs; exit 1; }
       - run: npm test
         env:
           TEST_DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql://lifeos:fictional-ci-password@127.0.0.1:5432/lifeos_test' || '' }}
@@ -43,10 +43,10 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: node --test tools/analytics-browser.test.mjs
       - run: npm run test:smoke
-      - name: Verify clock preference and lecture lifecycle
+      - name: Render workload charts and verify clock and lecture lifecycle
         run: npm run test:e2e
         env:
-          E2E_FOCUS: '^(25|26|27)-|^time-format'
+          E2E_FOCUS: '^(25|26|27|28)-|^time-format'
   whisper:
     name: Real offline Whisper public-clip test
     runs-on: ubuntu-latest

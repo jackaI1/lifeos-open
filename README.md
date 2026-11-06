@@ -15,7 +15,8 @@ This is the public edition of my personal project. It starts with fictional
 courses, contacts and records, with no private workspace history. Try the
 [browser demo](https://lifeos.jacklai.ca) without signing in, or run it locally
 with the commands below. In the demo, open **School → Lectures** and a sample
-notebook to try its labelled transcript.
+notebook to try its labelled transcript. Open **Academics → Week workload** to
+compare the week’s commitments and see which courses have deadlines together.
 
 ## Run it locally
 
@@ -54,6 +55,14 @@ record audio and replay my notes against the recording. [Notebook notes](docs/no
 explain how slides stay attached across navigation. Saved drafts and queued edits help
 preserve work through a lost connection, but a full offline reload is not supported.
 The [screen guide](docs/features.md) describes the other views.
+
+I use **Academics → Week workload** when a task list makes every deadline look
+separate. The weekly timeline compares calendar hours with the remaining work
+due each day, and the deadline heat map groups task counts by course and day.
+I can move between weeks, hover or Tab to a chart mark for details, then click
+or press Enter to open its task links. Unknown dates and estimates stay visible.
+These totals help me spot clusters; they do not reserve study time or measure
+free time. The [chart guide](docs/workload.md) explains the counting rules.
 
 In **Finances**, I can track spending and see what is left for the current week,
 month or year. I can add transactions, change their categories, and review

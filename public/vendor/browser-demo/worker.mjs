@@ -10517,6 +10517,37 @@ async function cookingHelpRoute({ req, path, body, store, env, session }) {
 // src/cloud/lectures.mjs
 init_globals();
 
+// src/cloud/lecture-transcription.mjs
+init_globals();
+async function transcriptionState(store, env, lectureId) {
+  const job = await store.sql("SELECT id,status,error,progress FROM jobs WHERE type='lecture-transcription' AND json_extract(payload,'$.lectureId')=? ORDER BY created_at DESC,id DESC LIMIT 1", lectureId).first();
+  return { available: !!env.LOCAL_WHISPER, job };
+}
+async function requestTranscription({ store, env, req, id, json: json3 }) {
+  if (req.method !== "POST") throw new AppError("Method not allowed", 405);
+  if (!env.LOCAL_WHISPER) throw new AppError("Local Whisper is not configured. See docs/whisper.md for setup.", 503);
+  const lecture = await store.get("lecture", identifier(id));
+  if (!lecture) throw new AppError("Lecture not found", 404);
+  const b = await json3(req);
+  exactFields(b, ["mutationId"]);
+  const mid = mutationId(b.mutationId), fingerprint = { lectureId: id, b };
+  const previous = await store.mutation(mid, await digest(JSON.stringify(fingerprint)));
+  if (previous) return Response.json(previous);
+  const active = await store.sql("SELECT id,status FROM jobs WHERE type='lecture-transcription' AND json_extract(payload,'$.lectureId')=? AND status IN ('queued','running') LIMIT 1", id).first();
+  if (active) return Response.json(await store.commit({ id: mid, fingerprint, result: { job: active } }));
+  const clips = (await store.sql("SELECT id,version FROM records WHERE kind='lecture-clip' AND json_extract(data,'$.lectureId')=? AND json_extract(data,'$.status')='saved' ORDER BY id LIMIT 501", id).all()).results;
+  if (!clips.length) throw new AppError("Pause recording and save audio before transcribing.", 409);
+  if (clips.length > 500) throw new AppError("A transcription supports at most 500 saved audio segments.", 413);
+  const jobId = "whisper-" + (await digest(mid)).slice(0, 40);
+  return Response.json(await store.commit({
+    id: mid,
+    fingerprint,
+    reads: [{ kind: lecture.kind, id, version: lecture.version }],
+    jobs: [{ id: jobId, type: "lecture-transcription", component: "local-whisper", authority: "owner-lecture", payload: { lectureId: id, clips } }],
+    result: { job: { id: jobId, status: "queued" } }
+  }));
+}
+
 // src/cloud/lecture-capture.mjs
 init_globals();
 async function lectureCaptureRoute({ store, req, id, json: json3, change: change7 }) {
@@ -11043,6 +11074,8 @@ async function lectureRoute({
     if (!lecture2) throw new AppError("Lecture not found", 404);
     return lecturePhotoRoute({ store, env, config, req, lecture: lecture2, part: photoPath[2], json: json2, change: change6, writeObject });
   }
+  const transcriptPath = path.match(/^\/api\/lectures\/([-\w]+)\/transcribe$/);
+  if (transcriptPath) return requestTranscription({ store, env, req, id: transcriptPath[1], json: json2 });
   const m = path.match(
     /^\/api\/lectures\/([-\w]+)(?:\/(pages|clips|sources)\/([-\w]+)(?:\/(\d+))?)?$/
   );
@@ -11081,6 +11114,7 @@ async function lectureRoute({
     return response({
       item: lecture,
       transcript: (await store.get("lecture-transcript", id))?.data ?? null,
+      transcription: await transcriptionState(store, env, id),
       pages: pages2,
       clips,
       permission: (await store.get("lecture-permission", lecture.data.courseId))?.data.state ?? "unknown"
@@ -11848,7 +11882,6 @@ var LocalObjects = class {
   constructor(db, owner) {
     this.db = db;
     this.owner = owner;
-    db.exec("CREATE TABLE IF NOT EXISTS local_objects(id TEXT PRIMARY KEY, metadata TEXT NOT NULL, content BLOB NOT NULL)");
   }
   async put(id, metadata, content) {
     const meta = { modifiedTime: (/* @__PURE__ */ new Date()).toISOString(), ...metadata, id, size: String(content.length), md5Checksum: createHash("md5").update(content).digest("hex"), shared: false, trashed: false, owners: [{ emailAddress: this.owner }] };
@@ -12078,7 +12111,9 @@ var sha = (s) => createHash("sha256").update(s).digest("hex");
 var DEMO_NAME = "Example User";
 var DEMO_EMAIL = "alex@example.invalid";
 async function makeWorkspace(db, { demo = true, now = /* @__PURE__ */ new Date(), owner = DEMO_EMAIL, readAsset: load = readFile } = {}) {
-  db.exec(await load("src/cloud/schema.sql", "utf8"));
+  if (db.migrate) await db.migrate();
+  else await db.exec(await load("src/cloud/schema.sql", "utf8"));
+  await db.exec("CREATE TABLE IF NOT EXISTS local_objects(id TEXT PRIMARY KEY,metadata TEXT NOT NULL,content BLOB NOT NULL)");
   if (await db.prepare("SELECT value FROM meta WHERE key='local-initialized'").first()) {
     if (demo) await refreshDemoExamples(db, now);
     return;
@@ -12205,18 +12240,17 @@ async function refreshDemoExamples(db, now) {
   if (!profile || JSON.parse(profile.data).fictional !== true) return;
   const date3 = lifeosDay(Date.parse(profile.created_at), "America/Toronto"), stamp = now.toISOString(), delta = Date.parse(date3 + "T12:00Z") - Date.parse(STORY_DAY + "T12:00Z");
   const shift = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(v) ? new Date(Date.parse(v.length === 10 ? v + "T12:00Z" : v) + delta).toISOString().slice(0, v.length === 10 ? 10 : 24) : Array.isArray(v) ? v.map(shift) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, shift(x)])) : v;
-  db.exec("BEGIN IMMEDIATE");
-  try {
-    db.exec("CREATE TABLE IF NOT EXISTS _demo_seed_originals(revision TEXT,kind TEXT,id TEXT,data TEXT,version INTEGER,created_at TEXT,updated_at TEXT,PRIMARY KEY(revision,kind,id))");
-    const get = async (kind, id) => db.prepare("SELECT * FROM records WHERE kind=? AND id=?").bind(kind, id).first();
+  const refresh = async (db2) => {
+    await db2.exec("CREATE TABLE IF NOT EXISTS _demo_seed_originals(revision TEXT,kind TEXT,id TEXT,data TEXT,version INTEGER,created_at TEXT,updated_at TEXT,PRIMARY KEY(revision,kind,id))");
+    const get = async (kind, id) => db2.prepare("SELECT * FROM records WHERE kind=? AND id=?").bind(kind, id).first();
     const put = async (kind, id, data2) => {
-      if (await db.prepare("SELECT id FROM retired_records WHERE kind=? AND id=?").bind(kind, id).first()) return;
+      if (await db2.prepare("SELECT id FROM retired_records WHERE kind=? AND id=?").bind(kind, id).first()) return;
       const old = await get(kind, id);
       if (old) {
         if (old.version !== 1 || old.data === JSON.stringify(data2)) return;
-        await db.prepare("INSERT OR IGNORE INTO _demo_seed_originals VALUES(?,?,?,?,?,?,?)").bind(DEMO_REVISION, kind, id, old.data, old.version, old.created_at, old.updated_at).run();
-        await db.prepare("UPDATE records SET data=?,version=version+1,updated_at=? WHERE kind=? AND id=? AND version=1").bind(JSON.stringify(data2), stamp, kind, id).run();
-      } else await db.prepare("INSERT INTO records VALUES(?,?,?,?,?,?)").bind(kind, id, JSON.stringify(data2), 1, stamp, stamp).run();
+        await db2.prepare("INSERT OR IGNORE INTO _demo_seed_originals VALUES(?,?,?,?,?,?,?)").bind(DEMO_REVISION, kind, id, old.data, old.version, old.created_at, old.updated_at).run();
+        await db2.prepare("UPDATE records SET data=?,version=version+1,updated_at=? WHERE kind=? AND id=? AND version=1").bind(JSON.stringify(data2), stamp, kind, id).run();
+      } else await db2.prepare("INSERT INTO records VALUES(?,?,?,?,?,?)").bind(kind, id, JSON.stringify(data2), 1, stamp, stamp).run();
     };
     for (const row of scenarioRecords().task) {
       const old = await get("task", row.id);
@@ -12227,7 +12261,7 @@ async function refreshDemoExamples(db, now) {
     const contact = await get("reminder", "demo-maya-contact");
     if (contact && JSON.parse(contact.data).title === "Check in with Example Friend") await put("reminder", "demo-maya-contact", { ...JSON.parse(contact.data), title: "Check in with John Doe" });
     const oldPoints = ["Notice something good.", "Consider the context.", "Reflect on kindness.", "Name a human need.", "Choose one practical act.", "Listen with care.", "Take a quiet moment."];
-    for (const r of (await db.prepare("SELECT * FROM records WHERE kind='devotional'").all()).results) {
+    for (const r of (await db2.prepare("SELECT * FROM records WHERE kind='devotional'").all()).results) {
       const d = JSON.parse(r.data);
       if (JSON.stringify(d.points) === JSON.stringify(oldPoints) && d.complete === false) await put("devotional", r.id, { ...d, points: Array(7).fill("") });
     }
@@ -12240,12 +12274,19 @@ async function refreshDemoExamples(db, now) {
     if (baseline && JSON.parse(baseline.data).notes === "Fictional fitness plan; edit for your own ability.") await put("training", "baseline", demoTraining(date3));
     const source = await get("training-source", "fictional-plan");
     if (source && JSON.parse(source.data).source?.title === "Fictional gentle activity reference") await put("training-source", "fictional-plan", createDemoMarathonSource());
-    await assignmentExamples(db, stamp, put, true);
-    await db.prepare("INSERT OR REPLACE INTO meta VALUES(?,?)").bind("demo-content-revision", DEMO_REVISION).run();
-    db.exec("COMMIT");
-  } catch (error) {
-    db.exec("ROLLBACK");
-    throw error;
+    await assignmentExamples(db2, stamp, put, true);
+    await db2.prepare("INSERT OR REPLACE INTO meta VALUES(?,?)").bind("demo-content-revision", DEMO_REVISION).run();
+  };
+  if (db.transaction) await db.transaction(refresh);
+  else {
+    await db.exec("BEGIN IMMEDIATE");
+    try {
+      await refresh(db);
+      await db.exec("COMMIT");
+    } catch (error) {
+      await db.exec("ROLLBACK");
+      throw error;
+    }
   }
 }
 
@@ -12474,7 +12515,7 @@ async function drainJobs(db, env) {
     const row = await db.prepare("SELECT data FROM records WHERE kind=? AND id=?").bind(kind, id).first();
     return row ? JSON.parse(row.data) : null;
   };
-  const jobs = (await db.prepare("SELECT * FROM jobs WHERE status='queued' AND available_at<=? ORDER BY priority,created_at LIMIT 20").bind(Date.now()).all()).results;
+  const jobs = (await db.prepare("SELECT * FROM jobs WHERE status='queued' AND type!='lecture-transcription' AND available_at<=? ORDER BY priority,created_at LIMIT 20").bind(Date.now()).all()).results;
   for (const job of jobs) {
     const p = JSON.parse(job.payload);
     let reply = "This request completed in your local workspace.";
@@ -12585,7 +12626,7 @@ var identifier3 = (v) => {
 };
 var encode = (value) => value instanceof Uint8Array ? { lifeosBlob: import_buffer.Buffer.from(value).toString("base64") } : typeof value === "bigint" ? Number(value) : value;
 async function tableNames(db) {
-  return (await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all()).results.map((r) => String(r.name)).filter((n) => !n.startsWith("_") && !excluded.has(n));
+  return (db.tableNames ? await db.tableNames() : (await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all()).results.map((r) => String(r.name))).filter((n) => !n.startsWith("_") && !excluded.has(n));
 }
 async function createBackup(db) {
   const tables = {};
