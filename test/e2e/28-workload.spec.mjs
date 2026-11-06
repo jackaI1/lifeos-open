@@ -24,6 +24,12 @@ export default async function({page: p}) {
   await tuesday.press('Tab');
   assert.equal(await p.locator('.workload-day').nth(2).evaluate(n => n === document.activeElement), true);
   await p.getByRole('tooltip').waitFor();
+  if (p.viewportSize().width < 600) {
+    const tooltip = await p.getByRole('tooltip').boundingBox(), navigation = await p.locator('#mobile-navigation').boundingBox();
+    assert.ok(tooltip.y + tooltip.height <= navigation.y, 'Tooltip stays above phone navigation');
+    await mkdir('.runtime/e2e/workload', {recursive: true});
+    await p.screenshot({path: '.runtime/e2e/workload/tooltip-phone.png', animations: 'disabled'});
+  }
   await p.keyboard.press('Enter');
   assert.match(await p.getByRole('region', {name: 'Selected deadlines'}).innerText(), /Wed/);
   await p.keyboard.press('Escape');
