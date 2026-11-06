@@ -13,9 +13,15 @@ FROM mcr.microsoft.com/azure-functions/node:4-node22
 ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
     FUNCTIONS_WORKER_RUNTIME=node \
-    FUNCTIONS_NODE_BLOCK_ON_ENTRY_POINT_ERROR=true
+    FUNCTIONS_NODE_BLOCK_ON_ENTRY_POINT_ERROR=true \
+    AzureWebJobsSecretStorageType=blob \
+    ASPNETCORE_URLS=http://+:8080
+RUN useradd --uid 10001 --create-home --home-dir /home/functions functions \
+    && mkdir -p /home/LogFiles \
+    && chown -R functions:functions /home
 WORKDIR /home/site/wwwroot
 COPY --from=build /repo/integrations/azure-feed/node_modules ./node_modules
 COPY --from=build /repo/integrations/azure-feed/dist ./dist
 COPY integrations/azure-feed/package.json integrations/azure-feed/host.json ./
-EXPOSE 80
+USER functions
+EXPOSE 8080

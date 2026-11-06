@@ -95,6 +95,8 @@ docker push ghcr.io/MY-OWNER/lifeos-azure-feed:MY-TAG
 I make that registry package public before deploying. Registry credentials stay
 in Docker's credential store. The image copies only the compiled read routes,
 their dependencies and host settings; publishing the feed runs separately.
+It runs as an unprivileged user on port 8080, which the App Service template
+maps to the public HTTPS address.
 
 I install Azure CLI, sign in with `az login`, and select my subscription with
 `az account set --subscription MY-SUBSCRIPTION`. My account needs permission to

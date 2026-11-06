@@ -35,7 +35,9 @@ jobs:
         working-directory: integrations/azure-feed
         run: npm run test:integration
       - name: Build the App Service container
-        run: docker build -f integrations/azure-feed/Dockerfile -t lifeos-azure-feed:ci .
+        run: |
+          docker build -f integrations/azure-feed/Dockerfile -t lifeos-azure-feed:ci .
+          test "$(docker run --rm --entrypoint id lifeos-azure-feed:ci -u)" != 0
       - name: Exercise the same feed through the packaged Functions runtime
         working-directory: integrations/azure-feed
         env:
