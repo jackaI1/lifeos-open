@@ -4,6 +4,12 @@ I built a personal workspace for my schedule, coursework and lecture notes becau
 keeping deadlines, handwritten notes and recordings in separate places made it
 hard to plan my day and find the right part of a lecture later.
 
+For a local checkout, I use `make install` to install the locked dependencies,
+`make build` to build the app, and `npm start` to run it. `make help` lists the
+other shortcuts: `make lint`, `make test`, and `make docker` (which needs Docker).
+The build checks its input files and skips work when they have not changed. The
+main CI job uses the same commands and checks that a second build is skipped.
+
 ## Overview
 
 I kept needing the schedule, the deadline and the notes behind a task together.

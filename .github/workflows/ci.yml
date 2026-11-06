@@ -33,15 +33,15 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
-      - run: npm run build
+      - run: make install
+      - run: make build
       - name: Replay fictional usage through the exported analytics configuration
         run: npm run analytics:check
       - name: Verify committed view bundles match their source
         run: test -z "$(git status --porcelain -- public/react public/vendor/workload.mjs)" || { git status --short -- public/react public/vendor/workload.mjs; exit 1; }
       - name: Start the optional Redis cache with Compose
         run: docker compose -p cache-ci --profile redis up -d --wait redis
-      - run: npm test
+      - run: node tools/test-make.mjs
         env:
           TEST_REDIS_URL: redis://127.0.0.1:6379
           TEST_DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql://lifeos:fictional-ci-password@127.0.0.1:5432/lifeos_test' || '' }}
@@ -53,7 +53,7 @@ jobs:
       - name: Stop the disposable Redis fixture
         if: always()
         run: docker compose -p cache-ci --profile redis down --volumes
-      - run: npm run lint
+      - run: make lint
       - run: npm run typecheck
       - run: npm run privacy
       - run: npx playwright install --with-deps chromium
