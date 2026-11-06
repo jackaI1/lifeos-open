@@ -90,8 +90,8 @@ jobs:
           retention-days: 7
   retrieval:
     name: Local retrieval, citations and labelled recall
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -103,7 +103,7 @@ jobs:
         run: npm run rag:download
       - name: Exercise offline model and assistant, then measure recall
         run: npm run test:rag
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps --only-shell chromium
       - run: npm run test:rag:browser
       - uses: actions/upload-artifact@v4
         if: always()
