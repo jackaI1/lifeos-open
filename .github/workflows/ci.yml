@@ -103,11 +103,13 @@ jobs:
         run: npm run rag:download
       - name: Exercise offline model and assistant, then measure recall
         run: npm run test:rag
+      - name: Evaluate support routing, source hits and uncertain ticket escalation
+        run: npm run support:evaluate
       - run: npx playwright install --with-deps --only-shell chromium
       - run: npm run test:rag:browser
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: retrieval-labelled-evaluation
-          path: .runtime/retrieval/evaluation.json
+          path: .runtime/retrieval/*evaluation.json
           retention-days: 7

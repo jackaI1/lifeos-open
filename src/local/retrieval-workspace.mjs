@@ -1,3 +1,4 @@
+import {RunnableSequence} from '@langchain/core/runnables';
 import {RetrievalIndex,savedSources,groundedAnswer,DEFAULT_THRESHOLD,SOURCE_KINDS} from './retrieval.mjs';
 import {localEmbedder,MODEL_ID} from './retrieval-model.mjs';
 
@@ -14,8 +15,11 @@ export class WorkspaceRetrieval{
    this.index??=new RetrievalIndex(this.path,{embed:this.model.embed,modelId:MODEL_ID});
    const rows=(await db.prepare('SELECT kind,id,data FROM records WHERE kind IN ('+SOURCE_KINDS.map(()=>'?').join(',')+') ORDER BY kind,id').bind(...SOURCE_KINDS).all()).results;
    await this.index.sync(savedSources(rows));
-   const hits=await this.index.search(question,{k:3,threshold:this.threshold,courseId});
-   return {...await groundedAnswer(question,hits,generate),model:MODEL_ID,threshold:this.threshold};
+   const chain=RunnableSequence.from([
+    async input=>({question:input,hits:await this.index.search(input,{k:3,threshold:this.threshold,courseId})}),
+    async ({question:input,hits})=>groundedAnswer(input,hits,generate),
+   ]);
+   return {...await chain.invoke(question),model:MODEL_ID,threshold:this.threshold};
   }catch{
    // Never answer from stale vectors or fall back to an ungrounded provider call.
    if(!this.model)this.loading=undefined;

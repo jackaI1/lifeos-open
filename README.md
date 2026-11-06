@@ -24,6 +24,14 @@ not know. The [saved-text setup](docs/retrieval.md#try-it) takes two commands af
 installing the app. This runs on my computer; the browser demo keeps its scripted
 example questions.
 
+When setup goes wrong, I can describe the problem to a read-only support
+assistant. It looks up my troubleshooting instructions, quotes the relevant
+steps and hands uncertain or high impact tickets back to me. After the same
+local model setup, I run `npm run support -- "My retrieval embedding files are unavailable"`.
+The [support guide](docs/support-assistant.md) includes examples and an optional
+Azure connection for written answers. The default keeps the question and search
+on my computer.
+
 I can also check the fictional day's schedule and upcoming deadlines in the
 phone client. From this checkout, run `cd mobile`, `npm ci`, then `npm start`
 and open it in Expo Go, an app that runs the phone preview. **Refresh** downloads
@@ -130,7 +138,9 @@ numbered source. I can add or edit a note and ask again without rebuilding an
 index by hand. No chat API key is needed for quoted answers.
 
 The local model turns passages into lists of numbers called embeddings, which
-let the assistant find related wording. SQLite stores them beside the workspace.
+let the assistant find related wording. SQLite and its sqlite-vec extension store
+and compare them beside the workspace. A LangChain sequence connects search to
+the answer and its checked sources.
 A configured chat provider can write an answer using just the retrieved passages;
 I check its citations against those passages. Other real chat features still need
 a configured provider, which receives their selected context and images. The
@@ -256,7 +266,7 @@ CI runs these tests without model downloads. In a separate check with two real
 local models and three fictional notes, both supported questions returned the
 right source quote and an unrelated question returned the unknown answer.
 
-For saved-text answers, `npm run rag:download && npm run test:rag` runs ten
+For saved-text answers, `npm run rag:download && npm run test:rag` runs twelve
 focused checks and a labelled set of fictional questions with the real local
 model. At the default relevance cutoff, the expected source appears in the top
 three for 12 of 14 answerable questions (85.7% recall at three), and all four
@@ -264,6 +274,12 @@ unknown questions receive an abstention. Two answerable questions also receive
 an abstention. This small set checks regressions, not general answer accuracy.
 `npm run test:rag:browser` checks typed questions, citations and abstention on
 desktop and phone layouts. CI runs both and uploads the question-by-question report.
+
+For support tickets, `npm run test:support` runs nine provider and routing tests.
+`npm run support:evaluate` measures source hits and escalation on 14 labelled
+fictional tickets with the real local model. The [support guide](docs/support-assistant.md)
+explains the decisions and honest limits. The full local suite passed 356 Node
+tests and 19 React tests, with three optional service tests skipped.
 
 The [local reference](docs/local-workspace.md#testing) also covers browser tests.
 I also keep a local build desk for checking a change before packaging it. Jenkins,
