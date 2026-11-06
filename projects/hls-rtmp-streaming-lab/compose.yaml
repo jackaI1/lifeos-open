@@ -1,0 +1,47 @@
+x-runtime: &runtime
+  image: ${LAB_IMAGE:-hls-rtmp-lab:local}
+  build: .
+  init: true
+  stop_grace_period: 10s
+services:
+  ingest:
+    <<: *runtime
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-8080}:8080"
+      - "127.0.0.1:${RTMP_PORT:-1935}:1935"
+    volumes:
+      - hls:/var/www/hls:ro
+    healthcheck:
+      test: [CMD, curl, -fsS, http://localhost:8080/health]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+  packager:
+    <<: *runtime
+    command: [python3, -u, -m, stream.packager]
+    environment:
+      INGEST_URL: rtmp://ingest:1935/live/demo
+      CAPTIONS_FILE: /app/captions/demo.vtt
+    volumes:
+      - hls:/var/www/hls
+      - ./captions:/app/captions:ro
+    depends_on:
+      ingest:
+        condition: service_healthy
+  publisher:
+    <<: *runtime
+    profiles: [tools]
+    command: [/app/scripts/publish.sh]
+    environment:
+      STREAM_SECONDS: ${STREAM_SECONDS:-16}
+      INGEST_URL: rtmp://ingest:1935/live/demo
+    depends_on:
+      ingest:
+        condition: service_healthy
+  validator:
+    <<: *runtime
+    profiles: [tools]
+    entrypoint: [python3, -m, stream.validate]
+    command: [http://ingest:8080/hls/master.m3u8, --probe]
+volumes:
+  hls:

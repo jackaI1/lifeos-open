@@ -1,0 +1,45 @@
+name: lifeos-mobile-expo / App checks
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - projects/lifeos-mobile-expo/**
+    - .github/workflows/lifeos-mobile-expo-ci.yml
+  pull_request:
+    paths:
+    - projects/lifeos-mobile-expo/**
+    - .github/workflows/lifeos-mobile-expo-ci.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: app-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: true
+      EXPO_NO_TELEMETRY: '1'
+      TZ: America/Toronto
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: projects/lifeos-mobile-expo/package-lock.json
+    - run: npm ci
+    - run: npm run lint
+    - run: npm run typecheck
+    - run: npm run test:ci
+    - run: npm test
+      env:
+        TZ: UTC
+    - run: npx expo install --check
+    - run: npm run build -- --max-workers 2
+defaults:
+  run:
+    working-directory: projects/lifeos-mobile-expo

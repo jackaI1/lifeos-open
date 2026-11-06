@@ -361,3 +361,22 @@ I can also make a small inventory of public pages with
 headings to `page-inventory.json`; rerunning replaces the file. It checks the site's
 robots.txt instructions, waits between requests, retries temporary failures and
 only visits the paths I provide. Use it only on public pages I am allowed to read.
+
+
+## Other things I've built here
+
+- [agent-tool-eval](projects/agent-tool-eval/)
+- [cdp-browser-agent](projects/cdp-browser-agent/)
+- [clip-export-tool](projects/clip-export-tool/)
+- [django-document-review](projects/django-document-review/)
+- [edge-vision-quantization](projects/edge-vision-quantization/)
+- [experiment-analysis](projects/experiment-analysis/)
+- [forecast-backtest-harness](projects/forecast-backtest-harness/)
+- [hls-rtmp-streaming-lab](projects/hls-rtmp-streaming-lab/)
+- [hnsw-vector-search](projects/hnsw-vector-search/)
+- [lifeos-android](projects/lifeos-android/)
+- [lifeos-ios](projects/lifeos-ios/)
+- [lifeos-mobile-expo](projects/lifeos-mobile-expo/)
+- [llm-lora-sft-eval](projects/llm-lora-sft-eval/)
+- [nextjs-run-dashboard](projects/nextjs-run-dashboard/)
+- [offline-bandit-eval](projects/offline-bandit-eval/)

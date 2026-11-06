@@ -1,8 +1,13 @@
 name: Jenkins pipeline
 on:
   pull_request:
+    paths-ignore:
+    - projects/**
   push:
-    branches: [main]
+    branches:
+    - main
+    paths-ignore:
+    - projects/**
 permissions:
   contents: read
 jobs:
@@ -11,25 +16,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v5
-        with:
-          # The SCM job must build the same revision, including PR merge commits.
-          ref: '${{ github.event.pull_request.head.sha || github.sha }}'
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-      - name: Check integration script
-        run: shellcheck deploy/jenkins/test.sh
-      - name: Boot Jenkins, validate and run the versioned pipeline
-        env:
-          LIFEOS_JENKINS_REF: '${{ github.event.pull_request.head.sha || github.sha }}'
-          LIFEOS_JENKINS_REPOSITORY: '${{ github.event.pull_request.head.repo.clone_url || format(''https://github.com/{0}.git'', github.repository) }}'
-        run: bash deploy/jenkins/test.sh
-      - name: Keep Jenkins evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jenkins-test-reports
-          path: test-results/jenkins
-          if-no-files-found: ignore
-          retention-days: 7
+    - uses: actions/checkout@v5
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+    - uses: actions/setup-node@v5
+      with:
+        node-version: 24
+    - name: Check integration script
+      run: shellcheck deploy/jenkins/test.sh
+    - name: Boot Jenkins, validate and run the versioned pipeline
+      env:
+        LIFEOS_JENKINS_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+        LIFEOS_JENKINS_REPOSITORY: ${{ github.event.pull_request.head.repo.clone_url || format('https://github.com/{0}.git',
+          github.repository) }}
+      run: bash deploy/jenkins/test.sh
+    - name: Keep Jenkins evidence
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: jenkins-test-reports
+        path: test-results/jenkins
+        if-no-files-found: ignore
+        retention-days: 7

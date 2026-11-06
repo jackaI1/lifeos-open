@@ -1,0 +1,15 @@
+{
+  "files": {
+    "inventory.json": {"sensor_count": 24, "spare_count": 6, "unit_cost": 12.5},
+    "schedule.json": {"inspection_day": "Tuesday", "interval_days": 14, "duration_minutes": 45},
+    "limits.json": {"max_temperature_c": 80, "min_pressure_kpa": 95, "max_pressure_kpa": 110},
+    "batch.json": {"sample_count": 120, "rejected_count": 9, "mass_g": 2.4},
+    "manual.json": {"revision": "C", "owner": "maintenance", "calibration_months": 6}
+  },
+  "tickets": {
+    "T-101": {"id": "T-101", "title": "Pump inspection", "status": "open", "priority": "high"},
+    "T-102": {"id": "T-102", "title": "Sensor calibration", "status": "in_progress", "priority": "medium"},
+    "T-103": {"id": "T-103", "title": "Replace filter", "status": "closed", "priority": "low"},
+    "T-104": {"id": "T-104", "title": "Check pressure", "status": "open", "priority": "medium"}
+  }
+}

@@ -1,0 +1,688 @@
+[
+  {
+    "id": "task-01",
+    "category": "calculator",
+    "prompt": "What is the total for 24 sensors costing 12.5 each? Use the calculator with expression \"24 * 12.5\". Return only the number.",
+    "expected_calls": [
+      {
+        "name": "calculator",
+        "arguments": {
+          "expression": "24 * 12.5"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 300
+    }
+  },
+  {
+    "id": "task-02",
+    "category": "calculator",
+    "prompt": "What is the average of 18 and 30? Use the calculator with expression \"(18 + 30) / 2\". Return only the number.",
+    "expected_calls": [
+      {
+        "name": "calculator",
+        "arguments": {
+          "expression": "(18 + 30) / 2"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 24
+    }
+  },
+  {
+    "id": "task-03",
+    "category": "calculator",
+    "prompt": "Convert 2.4 grams to milligrams. Use the calculator with expression \"2.4 * 1000\". Return only the number.",
+    "expected_calls": [
+      {
+        "name": "calculator",
+        "arguments": {
+          "expression": "2.4 * 1000"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 2400
+    }
+  },
+  {
+    "id": "task-04",
+    "category": "calculator",
+    "prompt": "What percentage is 9 rejected samples out of 120? Use the calculator with expression \"9 / 120 * 100\". Return only the number.",
+    "expected_calls": [
+      {
+        "name": "calculator",
+        "arguments": {
+          "expression": "9 / 120 * 100"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 7.5
+    }
+  },
+  {
+    "id": "task-05",
+    "category": "calculator",
+    "prompt": "How many minutes are in 3.5 hours? Use the calculator with expression \"3.5 * 60\". Return only the number.",
+    "expected_calls": [
+      {
+        "name": "calculator",
+        "arguments": {
+          "expression": "3.5 * 60"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 210
+    }
+  },
+  {
+    "id": "task-06",
+    "category": "calculator",
+    "prompt": "What is 80 minus 23.5? Use the calculator with expression \"80 - 23.5\". Return only the number.",
+    "expected_calls": [
+      {
+        "name": "calculator",
+        "arguments": {
+          "expression": "80 - 23.5"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 56.5
+    }
+  },
+  {
+    "id": "task-07",
+    "category": "calculator",
+    "prompt": "Split 144 units into 12 equal groups. Use the calculator with expression \"144 / 12\". Return only the number.",
+    "expected_calls": [
+      {
+        "name": "calculator",
+        "arguments": {
+          "expression": "144 / 12"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 12
+    }
+  },
+  {
+    "id": "task-08",
+    "category": "calculator",
+    "prompt": "A temperature changes by -6 then +2. What is the net change? Use the calculator with expression \"-6 + 2\". Return only the number.",
+    "expected_calls": [
+      {
+        "name": "calculator",
+        "arguments": {
+          "expression": "-6 + 2"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": -4
+    }
+  },
+  {
+    "id": "task-09",
+    "category": "calculator",
+    "prompt": "What is the area of a 12 by 7 rectangle? Use the calculator with expression \"12 * 7\". Return only the number.",
+    "expected_calls": [
+      {
+        "name": "calculator",
+        "arguments": {
+          "expression": "12 * 7"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 84
+    }
+  },
+  {
+    "id": "task-10",
+    "category": "calculator",
+    "prompt": "Add 5 percent tax to 240. Use the calculator with expression \"240 * 1.05\". Return only the number.",
+    "expected_calls": [
+      {
+        "name": "calculator",
+        "arguments": {
+          "expression": "240 * 1.05"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 252
+    }
+  },
+  {
+    "id": "task-11",
+    "category": "calculator",
+    "prompt": "What is zero divided by 18? Use the calculator with expression \"0 / 18\". Return only the number.",
+    "expected_calls": [
+      {
+        "name": "calculator",
+        "arguments": {
+          "expression": "0 / 18"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 0
+    }
+  },
+  {
+    "id": "task-12",
+    "category": "calculator",
+    "prompt": "Combine two batches of 18 and 6, then split into four groups. Use the calculator with expression \"(18 + 6) / 4\". Return only the number.",
+    "expected_calls": [
+      {
+        "name": "calculator",
+        "arguments": {
+          "expression": "(18 + 6) / 4"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 6
+    }
+  },
+  {
+    "id": "task-13",
+    "category": "file_lookup",
+    "prompt": "Read inventory.json and return only its sensor_count value.",
+    "expected_calls": [
+      {
+        "name": "file_lookup",
+        "arguments": {
+          "path": "inventory.json"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 24
+    }
+  },
+  {
+    "id": "task-14",
+    "category": "file_lookup",
+    "prompt": "Read inventory.json and return only its spare_count value.",
+    "expected_calls": [
+      {
+        "name": "file_lookup",
+        "arguments": {
+          "path": "inventory.json"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 6
+    }
+  },
+  {
+    "id": "task-15",
+    "category": "file_lookup",
+    "prompt": "Read inventory.json and return only its unit_cost value.",
+    "expected_calls": [
+      {
+        "name": "file_lookup",
+        "arguments": {
+          "path": "inventory.json"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 12.5
+    }
+  },
+  {
+    "id": "task-16",
+    "category": "file_lookup",
+    "prompt": "Read schedule.json and return only its inspection_day value.",
+    "expected_calls": [
+      {
+        "name": "file_lookup",
+        "arguments": {
+          "path": "schedule.json"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "text",
+      "value": "Tuesday"
+    }
+  },
+  {
+    "id": "task-17",
+    "category": "file_lookup",
+    "prompt": "Read schedule.json and return only its interval_days value.",
+    "expected_calls": [
+      {
+        "name": "file_lookup",
+        "arguments": {
+          "path": "schedule.json"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 14
+    }
+  },
+  {
+    "id": "task-18",
+    "category": "file_lookup",
+    "prompt": "Read limits.json and return only its max_temperature_c value.",
+    "expected_calls": [
+      {
+        "name": "file_lookup",
+        "arguments": {
+          "path": "limits.json"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 80
+    }
+  },
+  {
+    "id": "task-19",
+    "category": "file_lookup",
+    "prompt": "Read limits.json and return only its min_pressure_kpa value.",
+    "expected_calls": [
+      {
+        "name": "file_lookup",
+        "arguments": {
+          "path": "limits.json"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 95
+    }
+  },
+  {
+    "id": "task-20",
+    "category": "file_lookup",
+    "prompt": "Read batch.json and return only its sample_count value.",
+    "expected_calls": [
+      {
+        "name": "file_lookup",
+        "arguments": {
+          "path": "batch.json"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 120
+    }
+  },
+  {
+    "id": "task-21",
+    "category": "file_lookup",
+    "prompt": "Read manual.json and return only its revision value.",
+    "expected_calls": [
+      {
+        "name": "file_lookup",
+        "arguments": {
+          "path": "manual.json"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "text",
+      "value": "C"
+    }
+  },
+  {
+    "id": "task-22",
+    "category": "file_lookup",
+    "prompt": "Read manual.json and return only its owner value.",
+    "expected_calls": [
+      {
+        "name": "file_lookup",
+        "arguments": {
+          "path": "manual.json"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "text",
+      "value": "maintenance"
+    }
+  },
+  {
+    "id": "task-23",
+    "category": "tickets",
+    "prompt": "Look up ticket T-101 and return only its status.",
+    "expected_calls": [
+      {
+        "name": "ticket_get",
+        "arguments": {
+          "id": "T-101"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "text",
+      "value": "open"
+    }
+  },
+  {
+    "id": "task-24",
+    "category": "tickets",
+    "prompt": "Look up ticket T-102 and return only its status.",
+    "expected_calls": [
+      {
+        "name": "ticket_get",
+        "arguments": {
+          "id": "T-102"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "text",
+      "value": "in_progress"
+    }
+  },
+  {
+    "id": "task-25",
+    "category": "tickets",
+    "prompt": "Look up ticket T-103 and return only its title.",
+    "expected_calls": [
+      {
+        "name": "ticket_get",
+        "arguments": {
+          "id": "T-103"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "text",
+      "value": "Replace filter"
+    }
+  },
+  {
+    "id": "task-26",
+    "category": "tickets",
+    "prompt": "Look up ticket T-104 and return only its priority.",
+    "expected_calls": [
+      {
+        "name": "ticket_get",
+        "arguments": {
+          "id": "T-104"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "text",
+      "value": "medium"
+    }
+  },
+  {
+    "id": "task-27",
+    "category": "tickets",
+    "prompt": "Search tickets using exactly these filters: {\"status\": \"open\"}. Return only a JSON array of matching IDs, sorted by ID.",
+    "expected_calls": [
+      {
+        "name": "ticket_search",
+        "arguments": {
+          "status": "open"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "json",
+      "value": [
+        "T-101",
+        "T-104"
+      ]
+    }
+  },
+  {
+    "id": "task-28",
+    "category": "tickets",
+    "prompt": "Search tickets using exactly these filters: {\"priority\": \"high\"}. Return only a JSON array of matching IDs, sorted by ID.",
+    "expected_calls": [
+      {
+        "name": "ticket_search",
+        "arguments": {
+          "priority": "high"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "json",
+      "value": [
+        "T-101"
+      ]
+    }
+  },
+  {
+    "id": "task-29",
+    "category": "tickets",
+    "prompt": "Search tickets using exactly these filters: {\"status\": \"closed\"}. Return only a JSON array of matching IDs, sorted by ID.",
+    "expected_calls": [
+      {
+        "name": "ticket_search",
+        "arguments": {
+          "status": "closed"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "json",
+      "value": [
+        "T-103"
+      ]
+    }
+  },
+  {
+    "id": "task-30",
+    "category": "tickets",
+    "prompt": "Search tickets using exactly these filters: {\"status\": \"open\", \"priority\": \"low\"}. Return only a JSON array of matching IDs, sorted by ID.",
+    "expected_calls": [
+      {
+        "name": "ticket_search",
+        "arguments": {
+          "status": "open",
+          "priority": "low"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "json",
+      "value": []
+    }
+  },
+  {
+    "id": "task-31",
+    "category": "tickets",
+    "prompt": "Close T-101 using ticket_update, then return only its new status.",
+    "expected_calls": [
+      {
+        "name": "ticket_update",
+        "arguments": {
+          "id": "T-101",
+          "status": "closed"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "text",
+      "value": "closed"
+    }
+  },
+  {
+    "id": "task-32",
+    "category": "tickets",
+    "prompt": "Read T-999. Return only its error value.",
+    "expected_calls": [
+      {
+        "name": "ticket_get",
+        "arguments": {
+          "id": "T-999"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "text",
+      "value": "not_found"
+    }
+  },
+  {
+    "id": "task-33",
+    "category": "multi_step",
+    "prompt": "Read inventory.json, then use the calculator with expression \"24 + 6\" to find sensor_count plus spare_count. Return only the number.",
+    "expected_calls": [
+      {
+        "name": "file_lookup",
+        "arguments": {
+          "path": "inventory.json"
+        }
+      },
+      {
+        "name": "calculator",
+        "arguments": {
+          "expression": "24 + 6"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 30
+    }
+  },
+  {
+    "id": "task-34",
+    "category": "multi_step",
+    "prompt": "Read batch.json, then calculate accepted sample count using expression \"120 - 9\". Return only the number.",
+    "expected_calls": [
+      {
+        "name": "file_lookup",
+        "arguments": {
+          "path": "batch.json"
+        }
+      },
+      {
+        "name": "calculator",
+        "arguments": {
+          "expression": "120 - 9"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "number",
+      "value": 111
+    }
+  },
+  {
+    "id": "task-35",
+    "category": "multi_step",
+    "prompt": "Set T-102 to closed, then read T-102 to confirm. Return only its status.",
+    "expected_calls": [
+      {
+        "name": "ticket_update",
+        "arguments": {
+          "id": "T-102",
+          "status": "closed"
+        }
+      },
+      {
+        "name": "ticket_get",
+        "arguments": {
+          "id": "T-102"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "text",
+      "value": "closed"
+    }
+  },
+  {
+    "id": "task-36",
+    "category": "multi_step",
+    "prompt": "Read archive.json. If not found, read manual.json instead. Return only the revision.",
+    "expected_calls": [
+      {
+        "name": "file_lookup",
+        "arguments": {
+          "path": "archive.json"
+        }
+      },
+      {
+        "name": "file_lookup",
+        "arguments": {
+          "path": "manual.json"
+        }
+      }
+    ],
+    "answer": {
+      "kind": "text",
+      "value": "C"
+    }
+  },
+  {
+    "id": "task-37",
+    "category": "no_tool",
+    "prompt": "Return only the word ready. Do not call any tools.",
+    "expected_calls": [],
+    "answer": {
+      "kind": "text",
+      "value": "ready"
+    }
+  },
+  {
+    "id": "task-38",
+    "category": "no_tool",
+    "prompt": "The note says the colour is blue. Return only the colour without tools.",
+    "expected_calls": [],
+    "answer": {
+      "kind": "text",
+      "value": "blue"
+    }
+  },
+  {
+    "id": "task-39",
+    "category": "no_tool",
+    "prompt": "Return only the number 7 from this message. Do not use tools.",
+    "expected_calls": [],
+    "answer": {
+      "kind": "number",
+      "value": 7
+    }
+  },
+  {
+    "id": "task-40",
+    "category": "no_tool",
+    "prompt": "The provided status is paused. Echo only that status without tools.",
+    "expected_calls": [],
+    "answer": {
+      "kind": "text",
+      "value": "paused"
+    }
+  }
+]

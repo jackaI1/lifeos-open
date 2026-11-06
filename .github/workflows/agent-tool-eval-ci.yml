@@ -1,0 +1,55 @@
+name: agent-tool-eval / CI
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - projects/agent-tool-eval/**
+    - .github/workflows/agent-tool-eval-ci.yml
+  pull_request:
+    paths:
+    - projects/agent-tool-eval/**
+    - .github/workflows/agent-tool-eval-ci.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python:
+        - '3.11'
+        - '3.13'
+    steps:
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+        python-version: ${{ matrix.python }}
+        working-directory: projects/agent-tool-eval
+    - run: uv sync --frozen --extra dev
+    - run: uv run ruff check .
+    - run: uv run ruff format --check .
+    - run: uv run pytest -q
+    - name: Exercise the installed command and the entire dataset
+      run: uv run agent-tool-eval --backend scripted --repeats 3 --fail-under 1 --out reports/ci
+    - run: uv build
+    - name: Check packaged dataset outside the checkout
+      run: 'uv venv /tmp/wheel-check
+
+        uv pip install --python /tmp/wheel-check/bin/python dist/*.whl
+
+        cd /tmp
+
+        /tmp/wheel-check/bin/agent-tool-eval --backend scripted --fail-under 1 --out wheel-report
+
+        '
+    - uses: actions/upload-artifact@v4
+      with:
+        name: evaluation-python-${{ matrix.python }}
+        path: projects/agent-tool-eval/reports/ci/
+    timeout-minutes: 20
+defaults:
+  run:
+    working-directory: projects/agent-tool-eval

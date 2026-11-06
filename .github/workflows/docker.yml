@@ -1,9 +1,15 @@
 name: Docker
 on:
   pull_request:
+    paths-ignore:
+    - projects/**
   push:
-    branches: [main]
-    tags: ['v*']
+    branches:
+    - main
+    tags:
+    - v*
+    paths-ignore:
+    - projects/**
 permissions:
   contents: read
 env:
@@ -14,81 +20,96 @@ jobs:
     name: Build, smoke-test and scan image
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v4
-      - name: Build runtime image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          target: runtime
-          load: true
-          tags: lifeos-open:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      - name: Run container and check health
-        run: |
-          set -eu
-          docker run -d --name lifeos-ci -p 127.0.0.1:8787:8787 -v lifeos-ci-data:/data lifeos-open:ci
-          cleanup() { docker logs lifeos-ci 2>&1 | tail -n 30; docker rm -f lifeos-ci >/dev/null; docker volume rm lifeos-ci-data >/dev/null; }
-          trap cleanup EXIT
-          for i in $(seq 1 60); do
-            status=$(docker inspect -f '{{.State.Health.Status}}' lifeos-ci)
-            [ "$status" = healthy ] && break
-            sleep 2
-          done
-          echo "container health: $status"
-          [ "$status" = healthy ]
-          curl -fsS http://127.0.0.1:8787/api/health | grep -q '"status":"online"'
-          curl -fsS http://127.0.0.1:8787/ | grep -qi '<html'
-          [ "$(docker exec lifeos-ci id -u)" != 0 ]
-          docker exec lifeos-ci test -s /data/workspace.sqlite
-      - name: Check data survives a container restart
-        run: |
-          set -eu
-          docker run -d --name lifeos-persist -p 127.0.0.1:8787:8787 -v lifeos-persist-data:/data lifeos-open:ci
-          cleanup() { docker rm -f lifeos-persist >/dev/null 2>&1 || true; docker volume rm lifeos-persist-data >/dev/null 2>&1 || true; }
-          trap cleanup EXIT
-          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8787/api/health >/dev/null 2>&1 && break; sleep 2; done
-          before=$(docker exec lifeos-persist stat -c %s /data/workspace.sqlite)
-          docker rm -f lifeos-persist >/dev/null
-          docker run -d --name lifeos-persist -p 127.0.0.1:8787:8787 -v lifeos-persist-data:/data lifeos-open:ci
-          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8787/api/health >/dev/null 2>&1 && break; sleep 2; done
-          docker exec lifeos-persist test -s /data/workspace.sqlite
-          echo "database present after restart (size before: $before bytes)"
-      - name: Check PostgreSQL compose startup and restart persistence
-        run: |
-          set -eu
-          export LIFEOS_IMAGE_TAG=ci
-          export DATABASE_URL=postgresql://lifeos:lifeos-dev-only@postgres:5432/lifeos
-          docker tag lifeos-open:ci ghcr.io/jackai1/lifeos-open:ci
-          compose() { docker compose --project-name lifeos-pg-ci --profile postgres "$@"; }
-          cleanup() { compose logs --tail 20 lifeos || true; compose down --volumes --remove-orphans; }
-          trap cleanup EXIT
-          compose up -d --wait postgres
-          compose up -d --no-build --wait lifeos
-          curl -fsS http://127.0.0.1:8787/api/health | grep -q '"status":"online"'
-          compose exec -T lifeos test ! -e /data/workspace.sqlite
-          before=$(compose exec -T postgres psql -U lifeos -d lifeos -tAc 'SELECT count(*) FROM records')
-          [ "$before" -gt 0 ]
-          compose exec -T postgres psql -U lifeos -d lifeos -tAc 'SELECT version FROM _workspace_migrations' | grep -qx 1
-          compose restart lifeos
-          compose up -d --no-build --wait lifeos
-          after=$(compose exec -T postgres psql -U lifeos -d lifeos -tAc 'SELECT count(*) FROM records')
-          [ "$before" = "$after" ]
-      - name: Validate compose file
-        run: docker compose --profile postgres config --quiet
-      # Trivy runs from its official container image (pinned) rather than the
-      # aquasecurity/trivy-action installer, which fails to install on hosted runners.
-      - name: Trivy image scan (fixable HIGH/CRITICAL fail the build)
-        run: |
-          set -eu
-          docker save lifeos-open:ci -o "$RUNNER_TEMP/lifeos-open.tar"
-          docker run --rm -v "$RUNNER_TEMP:/scan:ro" -v trivy-cache:/root/.cache/ "$TRIVY_IMAGE" \
-            image --input /scan/lifeos-open.tar --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
-      - name: Trivy Dockerfile and compose misconfiguration scan
-        run: |
-          docker run --rm -v "$PWD:/src:ro" -v trivy-cache:/root/.cache/ "$TRIVY_IMAGE" \
-            config /src --severity HIGH,CRITICAL --exit-code 1
+    - uses: actions/checkout@v5
+    - uses: docker/setup-buildx-action@v4
+    - name: Build runtime image
+      uses: docker/build-push-action@v7
+      with:
+        context: .
+        target: runtime
+        load: true
+        tags: lifeos-open:ci
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    - name: Run container and check health
+      run: "set -eu\ndocker run -d --name lifeos-ci -p 127.0.0.1:8787:8787 -v lifeos-ci-data:/data lifeos-open:ci\ncleanup()\
+        \ { docker logs lifeos-ci 2>&1 | tail -n 30; docker rm -f lifeos-ci >/dev/null; docker volume rm lifeos-ci-data >/dev/null;\
+        \ }\ntrap cleanup EXIT\nfor i in $(seq 1 60); do\n  status=$(docker inspect -f '{{.State.Health.Status}}' lifeos-ci)\n\
+        \  [ \"$status\" = healthy ] && break\n  sleep 2\ndone\necho \"container health: $status\"\n[ \"$status\" = healthy\
+        \ ]\ncurl -fsS http://127.0.0.1:8787/api/health | grep -q '\"status\":\"online\"'\ncurl -fsS http://127.0.0.1:8787/\
+        \ | grep -qi '<html'\n[ \"$(docker exec lifeos-ci id -u)\" != 0 ]\ndocker exec lifeos-ci test -s /data/workspace.sqlite\n"
+    - name: Check data survives a container restart
+      run: 'set -eu
+
+        docker run -d --name lifeos-persist -p 127.0.0.1:8787:8787 -v lifeos-persist-data:/data lifeos-open:ci
+
+        cleanup() { docker rm -f lifeos-persist >/dev/null 2>&1 || true; docker volume rm lifeos-persist-data >/dev/null 2>&1
+        || true; }
+
+        trap cleanup EXIT
+
+        for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8787/api/health >/dev/null 2>&1 && break; sleep 2; done
+
+        before=$(docker exec lifeos-persist stat -c %s /data/workspace.sqlite)
+
+        docker rm -f lifeos-persist >/dev/null
+
+        docker run -d --name lifeos-persist -p 127.0.0.1:8787:8787 -v lifeos-persist-data:/data lifeos-open:ci
+
+        for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8787/api/health >/dev/null 2>&1 && break; sleep 2; done
+
+        docker exec lifeos-persist test -s /data/workspace.sqlite
+
+        echo "database present after restart (size before: $before bytes)"
+
+        '
+    - name: Check PostgreSQL compose startup and restart persistence
+      run: 'set -eu
+
+        export LIFEOS_IMAGE_TAG=ci
+
+        export DATABASE_URL=postgresql://lifeos:lifeos-dev-only@postgres:5432/lifeos
+
+        docker tag lifeos-open:ci ghcr.io/jackai1/lifeos-open:ci
+
+        compose() { docker compose --project-name lifeos-pg-ci --profile postgres "$@"; }
+
+        cleanup() { compose logs --tail 20 lifeos || true; compose down --volumes --remove-orphans; }
+
+        trap cleanup EXIT
+
+        compose up -d --wait postgres
+
+        compose up -d --no-build --wait lifeos
+
+        curl -fsS http://127.0.0.1:8787/api/health | grep -q ''"status":"online"''
+
+        compose exec -T lifeos test ! -e /data/workspace.sqlite
+
+        before=$(compose exec -T postgres psql -U lifeos -d lifeos -tAc ''SELECT count(*) FROM records'')
+
+        [ "$before" -gt 0 ]
+
+        compose exec -T postgres psql -U lifeos -d lifeos -tAc ''SELECT version FROM _workspace_migrations'' | grep -qx 1
+
+        compose restart lifeos
+
+        compose up -d --no-build --wait lifeos
+
+        after=$(compose exec -T postgres psql -U lifeos -d lifeos -tAc ''SELECT count(*) FROM records'')
+
+        [ "$before" = "$after" ]
+
+        '
+    - name: Validate compose file
+      run: docker compose --profile postgres config --quiet
+    - name: Trivy image scan (fixable HIGH/CRITICAL fail the build)
+      run: "set -eu\ndocker save lifeos-open:ci -o \"$RUNNER_TEMP/lifeos-open.tar\"\ndocker run --rm -v \"$RUNNER_TEMP:/scan:ro\"\
+        \ -v trivy-cache:/root/.cache/ \"$TRIVY_IMAGE\" \\\n  image --input /scan/lifeos-open.tar --severity HIGH,CRITICAL\
+        \ --ignore-unfixed --exit-code 1\n"
+    - name: Trivy Dockerfile and compose misconfiguration scan
+      run: "docker run --rm -v \"$PWD:/src:ro\" -v trivy-cache:/root/.cache/ \"$TRIVY_IMAGE\" \\\n  config /src --severity\
+        \ HIGH,CRITICAL --exit-code 1\n"
   publish:
     name: Publish to GHCR (tags only)
     needs: image
@@ -98,26 +119,29 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v4
-      - uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ env.IMAGE }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest
-      - uses: docker/build-push-action@v7
-        with:
-          context: .
-          target: runtime
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
+    - uses: actions/checkout@v5
+    - uses: docker/setup-buildx-action@v4
+    - uses: docker/login-action@v4
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - id: meta
+      uses: docker/metadata-action@v6
+      with:
+        images: ${{ env.IMAGE }}
+        tags: 'type=semver,pattern={{version}}
+
+          type=semver,pattern={{major}}.{{minor}}
+
+          type=raw,value=latest
+
+          '
+    - uses: docker/build-push-action@v7
+      with:
+        context: .
+        target: runtime
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha

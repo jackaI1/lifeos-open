@@ -1,0 +1,13 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:04.000
+This moving pattern is my test broadcast.
+
+00:00:04.000 --> 00:00:08.000
+The same stream is available at three picture qualities.
+
+00:00:08.000 --> 00:00:12.000
+I can switch quality without restarting the video.
+
+00:00:12.000 --> 00:00:16.000
+These captions travel beside the video as a separate track.

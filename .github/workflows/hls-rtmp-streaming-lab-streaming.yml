@@ -1,0 +1,53 @@
+name: hls-rtmp-streaming-lab / Streaming checks
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - projects/hls-rtmp-streaming-lab/**
+    - .github/workflows/hls-rtmp-streaming-lab-streaming.yml
+  pull_request:
+    paths:
+    - projects/hls-rtmp-streaming-lab/**
+    - .github/workflows/hls-rtmp-streaming-lab-streaming.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: streaming-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  streaming:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: npm
+        cache-dependency-path: projects/hls-rtmp-streaming-lab/package-lock.json
+    - name: Install player and browser dependencies
+      run: 'npm ci --ignore-scripts
+
+        npx playwright install --with-deps chromium
+
+        '
+    - name: Unit checks
+      run: npm test
+    - name: Two real broadcasts, browser playback and cleanup
+      run: python3 scripts/e2e.py --browser
+    - name: Browser evidence
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: browser-evidence
+        path: projects/hls-rtmp-streaming-lab/test-results/
+        retention-days: 7
+        if-no-files-found: ignore
+defaults:
+  run:
+    working-directory: projects/hls-rtmp-streaming-lab

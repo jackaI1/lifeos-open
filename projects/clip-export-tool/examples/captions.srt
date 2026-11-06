@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:02,000
+Typhoon Trami from above
+
+2
+00:00:02,200 --> 00:00:04,000
+Satellite measurements reveal the storm
+
+3
+00:00:04,500 --> 00:00:06,500
+Rainfall measurements across the clouds
+
+4
+00:00:07,000 --> 00:00:09,000
+A closer look at the storm structure

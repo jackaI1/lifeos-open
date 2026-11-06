@@ -1,0 +1,35 @@
+name: edge-vision-quantization / CI
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - projects/edge-vision-quantization/**
+    - .github/workflows/edge-vision-quantization-ci.yml
+  pull_request:
+    paths:
+    - projects/edge-vision-quantization/**
+    - .github/workflows/edge-vision-quantization-ci.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OMP_NUM_THREADS: '1'
+      MPLBACKEND: Agg
+    steps:
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+        working-directory: projects/edge-vision-quantization
+    - run: uv sync --frozen --extra dev --python 3.11
+    - run: uv run ruff check src tests
+    - run: uv run ruff format --check src tests
+    - run: uv run pytest -q
+defaults:
+  run:
+    working-directory: projects/edge-vision-quantization
