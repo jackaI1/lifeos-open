@@ -29,6 +29,6 @@ I kept 6 files of test code and supporting test helpers in this copy. That sourc
 
 
 
-The relocated workflow failed in GitHub Actions and was removed to keep the hub checks independent. Local test sources remain available.
 
-No project-specific GitHub Actions workflow was retained. The local test sources remain in this folder.
+
+The hub workflow `rails-course-progress-ci.yml` keeps the Ruby setup and Bundler cache in this project directory, then runs the project checks here. The authored `bin/` entry points are included.
