@@ -19,7 +19,7 @@ export async function commitPlan(store,plan,{id,fingerprint,result,extra=[]}){
 }
 async function jobViews(store,rows){const beats=(await store.sql('SELECT name,at,details FROM heartbeats').all()).results;return rows.map(r=>{const job=jobView(r);if(job.status==='queued'&&r.component!=='cloud'){const heartbeat=beats.find(b=>b.name===r.component),details=heartbeat?.details?JSON.parse(heartbeat.details):null;if(details?.status==='needs-sign-in')job.progress='needs sign-in';else if(!heartbeat||Date.now()-heartbeat.at>120000)job.progress='waiting for computer';else job.progress??='waiting for the '+r.component+' worker';}return safeJob(job);});}
 export async function jobList(store){return {jobs:await jobViews(store,(await store.sql('SELECT * FROM jobs ORDER BY created_at DESC LIMIT 50').all()).results)};}
-export async function recordRoute({store,req,path,body,config}){
+export async function recordRoute({store,req,path,body,config,cache}){
  const response=value=>Response.json(value);
  const timing=await timeSessionRoute({store,req,path,body});if(timing)return timing;
  if(req.method==='PUT'&&/^\/api\/devotionals\/\d{4}-\d{2}-\d{2}$/.test(path)&&retiredProductionDevotional(config,path.slice(-10)))throw new AppError('This retired activation-test record cannot be created in production.',403,'production_test_denied');
@@ -27,7 +27,14 @@ export async function recordRoute({store,req,path,body,config}){
  if(body?.mutationId&&!['GET','HEAD'].includes(req.method)){const prior=await store.mutation(v.mutationId(body.mutationId),await digest(JSON.stringify({path,body})));if(prior)return response(prior);}
  const match=path.match(/^\/api\/records\/([-\w]+)(?:\/([-\w]+))?$/);
  if(match){const [,kind,id]=match;if(!v.readableKinds.includes(kind))throw new AppError('Not found',404);
-  if(req.method==='GET'){if(!id){const q=new URL(req.url).searchParams;return response({items:publicValue(await store.list(kind,{limit:Math.min(1000,Math.max(1,Math.floor(Number(q.get('limit'))||500))),offset:Math.max(0,Math.floor(Number(q.get('offset'))||0))}))});}const item=await store.get(kind,id);if(!item)throw new AppError('Not found',404);return response({item:publicValue(item)});}
+  if(req.method==='GET'){
+   const q=new URL(req.url).searchParams,limit=Math.min(1000,Math.max(1,Math.floor(Number(q.get('limit'))||500))),offset=Math.max(0,Math.floor(Number(q.get('offset'))||0));
+   const load=async()=>{if(!id)return {items:publicValue(await store.list(kind,{limit,offset}))};const item=await store.get(kind,id);if(!item)throw new AppError('Not found',404);return {item:publicValue(item)};};
+   if(!cache)return response(await load());
+   const revision=async()=>await store.sql('SELECT version FROM kind_revisions WHERE kind=?',kind).first('version')??0;
+   const {body:cached,status}=await cache.read({kind,id,...(!id?{limit,offset}:{}),revision,load});
+   return Response.json(cached,{headers:{'x-lifeos-cache':status}});
+  }
   if(req.method==='PUT'&&id){v.identifier(id);v.version(body.version);const clean=v.recordData(kind,body.data),plan=await loadPlan(store,[kind,'settings','task',...(kind==='accountability-draft'?['devotional']:[])]);const old=plan.get(kind,id);if(kind==='task'&&clean.courseId){const course=await store.get('course',clean.courseId);if(!course||course.data.archived)throw new AppError('Choose an existing course');plan.epochChecks.push(store.assertion("SELECT version=? FROM records WHERE kind='course' AND id=?",[course.version,course.id]));}if(kind==='coursework'&&old?.data.document&&!clean.document&&clean.text!==undefined&&clean.text!==old.data.text)throw new AppError('This document now has formatting. Reload the document editor; your device draft is preserved.',409,'formatted_document_upgrade');if(kind==='accountability-draft'){const entry=plan.get('devotional',clean.entryId);if(!entry?.data.complete||entry.version!==clean.entryVersion||id!==clean.entryId)throw new AppError('The devotional changed. Reopen the message before confirming.',409);clean.approvedAt=clean.status==='approved'?new Date().toISOString():null;clean.lastApprovedText=clean.status==='approved'?clean.text:old?.data.lastApprovedText??(old?.data.status==='approved'?old.data.text:null);clean.lastApprovedAt=clean.approvedAt??old?.data.lastApprovedAt??old?.data.approvedAt??null;}const item=plan.put(kind,id,{...old?.data,...clean},body.version),extra=[];
    if(kind==='coursework'&&item.data.taskId){progress(plan,item.data.taskId,{id:item.id+':'+item.version,type:'saved-draft',at:item.updatedAt,recordId:item.id});}if(kind==='coop-role')syncCoopTask(plan,item);return response(await commitPlan(store,plan,{id:v.mutationId(body.mutationId),fingerprint:{path,body},extra,result:{item:publicValue(item)}}));}
  }

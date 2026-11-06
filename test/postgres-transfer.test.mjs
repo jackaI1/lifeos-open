@@ -11,8 +11,11 @@ import {createBackup} from '../src/local/backup-data.ts';
 test('versioned SQLite migration is idempotent and preserves existing records',async()=>{
  const db=new LocalDatabase(':memory:');try{
   assert.equal(typeof db.migrate,'function');
-  await makeWorkspace(db,{demo:false});await makeWorkspace(db,{demo:false});
-  assert.equal(await db.prepare('SELECT count(*) n FROM _workspace_migrations').first('n'),1);
+  await makeWorkspace(db,{demo:false});
+  const before=(await db.prepare('SELECT version,applied_at FROM _workspace_migrations ORDER BY version').all()).results;
+  assert.deepEqual(before.map(row=>row.version),[1,2]);
+  await makeWorkspace(db,{demo:false});
+  assert.deepEqual((await db.prepare('SELECT version,applied_at FROM _workspace_migrations ORDER BY version').all()).results,before);
   assert.equal(await db.prepare('SELECT count(*) n FROM records').first('n'),1);
  }finally{db.close();}
 });
