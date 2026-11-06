@@ -46,9 +46,16 @@ export async function drainJobs(db:WorkspaceDatabase,env:Record<string,any>){
     const context=JSON.stringify(contextRows.map(r=>({kind:r.kind,id:r.id,...JSON.parse(r.data)})),(key,value)=>typeof value==='string'?value.slice(0,1200):['image','imageData','document','raw','bodyHtml'].includes(key)?undefined:value);
     const timezone=(await get('settings','preferences'))?.timezone??'America/Toronto';
     const prepared=thread?.preparationOnly&&env.LLM_MODE==='real'?JSON.parse(await chatCompletion({env,scope:'project',message:message?.text??p.message??'',context:JSON.stringify(thread.preparationSnapshot),schema:projectReplySchema,model:p.model??thread?.model})):null;
-    reply=prepared?.reply??await assistantReply(thread?.preparationOnly?'project':scope,message?.text??p.message??'',{...env,LIFEOS_TIMEZONE:timezone},thread?.preparationOnly?JSON.stringify(thread.preparationSnapshot):context,p.model??thread?.model,scope==='lecture'?[message?.note?.image,message?.slide?.image].filter(Boolean):[]);
+    const question=message?.text??p.message??'';
+    const useRetrieval=env.LOCAL_RETRIEVAL&&!thread?.preparationOnly&&['today','academics','lecture'].includes(scope);
+    const lecture=useRetrieval&&scope==='lecture'?await get('lecture',thread?.lectureId):null;
+    const grounded=useRetrieval?await env.LOCAL_RETRIEVAL.answer(db,question,{
+     ...(scope==='lecture'?{courseId:lecture?.courseId??'__no_course__'}:{}),
+     ...(env.LLM_MODE==='real'?{generate:(context:string,schema:any)=>chatCompletion({env:{...env,LIFEOS_TIMEZONE:timezone},scope,message:question,context,schema,model:p.model??thread?.model})}:{}),
+    }):null;
+    reply=grounded?.text??prepared?.reply??await assistantReply(thread?.preparationOnly?'project':scope,question,{...env,LIFEOS_TIMEZONE:timezone},thread?.preparationOnly?JSON.stringify(thread.preparationSnapshot):context,p.model??thread?.model,scope==='lecture'?[message?.note?.image,message?.slide?.image].filter(Boolean):[]);
     let demoProposals:string[]=[];
-    if(env.AUTH_MODE==='demo'&&env.LLM_MODE!=='real'&&!thread?.preparationOnly){
+    if(!grounded&&env.AUTH_MODE==='demo'&&env.LLM_MODE!=='real'&&!thread?.preparationOnly){
      const kinds=['task','course','settings','project','calendar-event','schedule-correction'],records:Record<string,any[]>={};
      for(const kind of kinds)records[kind]=(await db.prepare('SELECT * FROM records WHERE kind=?').bind(kind).all()).results.map(r=>({...r,data:JSON.parse(r.data)}));
      const now=env.LOCAL_DEMO_NOW?.()??new Date().toISOString(),day=lifeosDay(now,timezone),config=JSON.parse(env.APP_CONFIG??'{}'),settings=normalizeDomainSettings({...records.settings.find(r=>r.id==='preferences')?.data,allowedCalendarIds:Object.values(config.calendarIds??{}),schoolCalendarIds:[config.calendarIds?.schoolA,config.calendarIds?.schoolB].filter(Boolean)});
@@ -67,7 +74,7 @@ export async function drainJobs(db:WorkspaceDatabase,env:Record<string,any>){
      const artifact=prepared?prepared.artifact:{kind:'checklist',title:'Starting-point checklist',body:'[ ] Review your project notes.\n[ ] '+(thread.preparationSnapshot.nextStep||'Identify one small next action.')+'\n[ ] Check the result before continuing.',nextAction:thread.preparationSnapshot.nextStep||'Write down one small next action.',assumptions:['Canned fictional example; review all dimensions, costs and requirements.']};
      const preparation=savedProjectPreparation(threadRecord,{id:job.id,version:inputRow!.version,data:inputData},{artifact,needsInput:prepared?.needsInput??false});
      await put('support-message',job.id+'-reply',{threadId:p.threadId,role:'assistant',jobId:job.id,text:reply,scope:'today',mock:env.LLM_MODE!=='real',preparation});
-    }else await put('support-message','local-answer-'+hash(job.id).slice(0,32),{threadId:p.threadId,role:'assistant',text:reply,proposalIds:demoProposals,scope:thread?.scope??'support',mock:env.LLM_MODE!=='real'});
+    }else await put('support-message','local-answer-'+hash(job.id).slice(0,32),{threadId:p.threadId,role:'assistant',text:reply,proposalIds:demoProposals,scope:thread?.scope??'support',mock:!grounded&&env.LLM_MODE!=='real',...(grounded?{retrieval:{abstained:grounded.abstained,mode:grounded.mode,model:grounded.model,threshold:grounded.threshold,citations:grounded.citations}}:{})});
    }else if(job.type==='lecture-study'){
     const request=await get('lecture-study-request',p.requestId),lecture=await get('lecture',p.lectureId);const type=request?.mode??'definition';
     const fields=env.LLM_MODE==='real'?validateStudyResult(JSON.parse(await chatCompletion({env,scope:'lecture',message:studyPrompt({mode:type,context:request?.context??{},page:request?.page}),context:JSON.stringify({request,lecture},(key,value)=>key==='image'?undefined:value),images:[request?.page?.image??request?.context?.slide?.image].filter(Boolean),schema:studySchema})),type):{question:'Explain the feedback loop in a thermostat.',answer:'A sensor reports temperature; heating changes it; the sensor feeds the result back to the controller.',hint:'Identify one output and the input it changes.',text:type==='index'?'Feedback loop, input, output. This demo index is an example; review your handwriting yourself.':'',uncertain:true,evidence:'Canned fictional example; review the selected page yourself.'};

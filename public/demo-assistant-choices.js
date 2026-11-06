@@ -2,7 +2,7 @@ import {el,button} from './ui.js';
 import {demoAssistantOptions,isDemoAssistant} from './demo-assistant.js';
 /** Share normal send/draft handling; an example never replaces unsent writing. */
 export function demoAssistantChoices({session,scope,input,onSend,onDraft,hasDraft=()=>!!input.value.trim(),onBlocked=()=>{},canSend=()=>true}){
- if(!isDemoAssistant(session))return null;
+ if(!isDemoAssistant(session,scope))return null;
  let busy=false;
  const buttons=demoAssistantOptions(scope).map(option=>{
   const choice=button(option.label,async event=>{

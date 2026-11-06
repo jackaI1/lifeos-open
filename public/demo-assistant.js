@@ -9,7 +9,7 @@ const catalogue={
  support:[['notes','Find my notes','How do I take and find lecture notes?'],['privacy','Understand demo saving','Where are my demo edits saved?'],['export','Keep a copy','How do I download a copy of my records?']]
 };
 export function demoAssistantOptions(scope){return (catalogue[scope]??[]).map(([id,label,message])=>({id:scope+'-'+id,label,message}));}
-export const isDemoAssistant=session=>session?.mode==='demo'&&session?.services?.ai==='mock';
+export const isDemoAssistant=(session,scope)=>session?.mode==='demo'&&session?.services?.ai==='mock'&&!(session?.services?.retrieval==='local'&&['today','academics','lecture'].includes(scope));
 export function demoAssistantAnswer(scope,message,context={}){
  const option=demoAssistantOptions(scope).find(o=>o.message===message);if(!option)return null;
  const answer=(reply,proposals=[])=>({reply,proposals}),tz=context.timeZone??'America/Toronto';
