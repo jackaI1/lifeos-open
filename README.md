@@ -222,11 +222,11 @@ pages. The separate [account examples](docs/study-accounts.md) let me try repeat
 requests, concurrent settlements and selective access to fictional balances.
 They are learning tools beside LifeOS, with no real accounts or money.
 
-## Optional connections
-
 ## Keep a cluster copy up to date
 
 I can also run the fictional workspace on my own Kubernetes cluster, a system for running containers. Flux checks this repository and pulls the saved deployment settings into the cluster, so a reviewed change can be applied without manually editing the running copy. It also corrects configuration drift, such as an accidental change to the number of running copies. This is an optional experiment and does not change the public browser demo. The [cluster setup guide](docs/gitops.md) has the commands, storage requirements and limitations.
+
+## Optional connections
 
 If I want coursework reminders in Microsoft 365, the
 [connection guide](integrations/m365/README.md) explains how to copy tasks from
