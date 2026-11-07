@@ -64,9 +64,9 @@ def main():
     for name, route, children in [
         ('Review deliverable', '/review/:id', [component('formblock', dataSource={'type': 'table', 'tableId': tables['Deliverables'], 'resourceId': tables['Deliverables'], 'label':'Deliverables'}, actionType='Update', rowId='{{ url.id }}', title='Review fictional deliverable', buttonPosition='bottom', showSaveButton=True, saveButtonLabel='Save review', showDeleteButton=False)]),
         ('Cleanup queue', '/cleanup', [component('gridblock',table={**cleanup,'type':'viewV2','resourceId':cleanup['id'],'label':'Cleanup queue'},allowAddRows=False,allowEditRows=False,allowDeleteRows=False)]),
-        ('Audit log', '/audit', [component('gridblock', table={'type': 'table', 'tableId': tables['Audit']}, allowAddRows=False, allowEditRows=False, allowDeleteRows=False)]),
-        ('Asset inspection report', '/assets', [component('gridblock', table={'type':'table','tableId':tables['Assets'],'label':'Asset inspection report'},allowAddRows=False,allowEditRows=False,allowDeleteRows=False)]),
-        ('Source citations', '/citations', [component('gridblock', table={'type': 'table', 'tableId': tables['FieldCitations']}, allowAddRows=False, allowEditRows=False, allowDeleteRows=False)])
+        ('Audit log', '/audit', [component('gridblock', table={'type': 'table', 'tableId': tables['Audit'], 'resourceId': tables['Audit'], 'label': 'Audit'}, allowAddRows=False, allowEditRows=False, allowDeleteRows=False)]),
+        ('Asset inspection report', '/assets', [component('gridblock', table={'type':'table','tableId':tables['Assets'],'resourceId':tables['Assets'],'label':'Asset inspection report'},allowAddRows=False,allowEditRows=False,allowDeleteRows=False)]),
+        ('Source citations', '/citations', [component('gridblock', table={'type': 'table', 'tableId': tables['FieldCitations'], 'resourceId': tables['FieldCitations'], 'label': 'FieldCitations'}, allowAddRows=False, allowEditRows=False, allowDeleteRows=False)])
     ]:
         screens.append(call('/api/screens', 'POST', {'name': name, 'workspaceAppId': workspace_id, 'showNavigation': True, 'width': 'Large', 'routing': {'route': route, 'roleId': 'BASIC', 'homeScreen': False}, 'props': component('container', layout='flex', direction='column', hAlign='stretch', vAlign='top', size='grow', gap='M', _children=children)}))
     definitions = call('/api/automations/definitions/list')
