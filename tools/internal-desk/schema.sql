@@ -1,7 +1,7 @@
 PRAGMA foreign_keys=ON;
 CREATE TABLE IF NOT EXISTS asset_types(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE CHECK(name IN ('water','sewer')));
 CREATE TABLE IF NOT EXISTS assets(id INTEGER PRIMARY KEY,tag TEXT NOT NULL UNIQUE,type_id INTEGER NOT NULL REFERENCES asset_types(id),installed_year INTEGER NOT NULL CHECK(installed_year BETWEEN 1900 AND 2100),condition_score INTEGER NOT NULL CHECK(condition_score BETWEEN 1 AND 5));
-CREATE TABLE IF NOT EXISTS inspections(id INTEGER PRIMARY KEY,asset_id INTEGER NOT NULL REFERENCES assets(id),inspected_on TEXT NOT NULL CHECK(date(inspected_on)=inspected_on),finding TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS inspections(id INTEGER PRIMARY KEY,asset_id INTEGER NOT NULL REFERENCES assets(id),inspected_on TEXT NOT NULL CHECK(date(inspected_on) IS NOT NULL AND date(inspected_on)=inspected_on),finding TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS deliverables(id INTEGER PRIMARY KEY,title TEXT NOT NULL UNIQUE,status TEXT NOT NULL CHECK(status IN ('draft','review','approved')),cleanup_required INTEGER NOT NULL DEFAULT 0 CHECK(cleanup_required IN (0,1)));
 CREATE TABLE IF NOT EXISTS reviews(id INTEGER PRIMARY KEY,deliverable_id INTEGER NOT NULL REFERENCES deliverables(id),status TEXT NOT NULL CHECK(status IN ('draft','review','approved')),comment TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS audit_log(id INTEGER PRIMARY KEY,deliverable_id INTEGER NOT NULL REFERENCES deliverables(id),old_status TEXT NOT NULL,new_status TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);

@@ -12,7 +12,7 @@ For Local, use the Ollama setup in [the notes guide](notes-questions.md).
 to `qwen2.5:1.5b`. Only HTTP loopback addresses are allowed, and redirects are
 refused, so a fallback cannot silently send the chosen text to another host.
 For an optional Claude connection, set `ANTHROPIC_API_KEY` in the server's
-environment, optionally `CLAUDE_MODEL` (default `claude-sonnet-4-5`). I restart
+environment, optionally `CLAUDE_MODEL` (default `claude-sonnet-4-6`). I restart
 `npm run dev` after changing environment variables. There is no key field in
 the page and no key in a database record or returned settings response.
 

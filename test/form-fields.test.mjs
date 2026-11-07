@@ -4,6 +4,7 @@ test('AcroForm tree and widget types agree; only cited fields are drafted',async
  const blank=await sampleForm(),draft=await draftForm(blank,chart);assert.equal(draft.map.length,7);assert.equal(draft.citations.length,5);assert.equal(draft.map.find(f=>f.name==='physician.signature').type,'/Sig');
  for(const f of draft.map){if(!f.rule.draft)assert.equal(f.value,'');else{assert.ok(f.widgets.every(w=>w.appearance));assert.ok(draft.citations.some(c=>c.field===f.name&&c.source.startsWith('chart.json#/')));}}
  assert.equal(draft.map.find(f=>f.name==='patient.name').value,'Alex Example');
+ const reopened=await PDFDocument.load(draft.output);for(const f of reopened.getForm().getFields())assert.ok(!f.acroField.getPartialName().includes('.'),'partial names must use the canonical parent hierarchy');
 });
 test('physician-only input and unknown fields are rejected, never carried into output',async()=>{
  const blank=await sampleForm(),pdf=await PDFDocument.load(blank);pdf.getForm().getTextField('physician.diagnosis').setText('Must never pass');await assert.rejects(draftForm(await pdf.save(),chart),/Physician-only/);

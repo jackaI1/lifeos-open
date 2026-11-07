@@ -199,7 +199,7 @@ jobs:
     env:
       BB_ADMIN_USER_EMAIL: fictional@example.com
       BB_ADMIN_USER_PASSWORD: fictional-local-review-pass-7291
-      BUDIBASE_JWT_SECRET: fictional-local-jwt-secret-7291
+      BUDIBASE_JWT_SECRET: fictional-local-jwt-secret-7291-keep-this-ci-only-not-for-deployment
       BUDIBASE_INTERNAL_KEY: fictional-local-internal-key-7291
       BUDIBASE_ENCRYPTION_KEY: fictional-local-encryption-key-7291
       BUDIBASE_REDIS_PASSWORD: fictional-local-redis-password-7291
@@ -222,6 +222,7 @@ jobs:
             cid=$(docker compose -p internal-desk -f compose.internal-desk.yaml ps -aq budibase)
             docker inspect --format '{{range .State.Health.Log}}{{.Output}}{{end}}' "$cid" | tail -c 2000
             docker compose -p internal-desk -f compose.internal-desk.yaml exec -T budibase pm2 list
+            docker compose -p internal-desk -f compose.internal-desk.yaml exec -T budibase node /opt/lifeos-diagnose.mjs
             exit 1
           fi
           docker compose -p internal-desk -f compose.internal-desk.yaml ps --format json

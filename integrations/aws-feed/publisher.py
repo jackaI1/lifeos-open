@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import re
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
@@ -12,9 +13,10 @@ from botocore.exceptions import ClientError
 def validate(feed):
     if not isinstance(feed, dict) or set(feed) != {"schemaVersion", "fictional", "anchorDate", "timeZone", "events", "tasks"}:
         raise ValueError("Expected public feed fields only")
-    if feed["schemaVersion"] != 1 or feed["fictional"] is not True:
+    if type(feed["schemaVersion"]) is bool or feed["schemaVersion"] != 1 or feed["fictional"] is not True:
         raise ValueError("Only fictional version 1 feeds may be published")
-    date.fromisoformat(feed["anchorDate"])
+    if date.fromisoformat(feed["anchorDate"]).isoformat() != feed["anchorDate"]:
+        raise ValueError("Expected YYYY-MM-DD anchor date")
     ZoneInfo(feed["timeZone"])
     for kind in ("events", "tasks"):
         rows = feed[kind]
@@ -29,15 +31,16 @@ def validate(feed):
                 if key == "archived":
                     if type(value) is not bool:
                         raise ValueError("Invalid archived flag")
-                elif not isinstance(value, str) or not 1 <= len(value) <= 240:
+                elif not isinstance(value, str) or not value.strip() or not 1 <= len(value) <= 240:
                     raise ValueError("Invalid text")
             if row["id"] in ids:
                 raise ValueError("Duplicate ID")
             ids.add(row["id"])
             if "dueDate" in row:
-                date.fromisoformat(row["dueDate"])
+                if date.fromisoformat(row["dueDate"]).isoformat() != row["dueDate"]:
+                    raise ValueError("Expected YYYY-MM-DD deadline")
             for key in ("start", "end", "dueAt"):
-                if key in row and datetime.fromisoformat(row[key].replace("Z", "+00:00")).tzinfo is None:
+                if key in row and (not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})", row[key]) or datetime.fromisoformat(row[key].replace("Z", "+00:00")).tzinfo is None):
                     raise ValueError("Timezone required")
             if kind == "events" and (not {"start", "end"} <= set(row) or datetime.fromisoformat(row["end"].replace("Z", "+00:00")) <= datetime.fromisoformat(row["start"].replace("Z", "+00:00"))):
                 raise ValueError("Invalid event interval")

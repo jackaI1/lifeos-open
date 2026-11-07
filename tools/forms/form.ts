@@ -1,4 +1,4 @@
-import {PDFDocument,PDFName,PDFDict,PDFString,PDFTextField,PDFCheckBox,StandardFonts,rgb} from 'pdf-lib';
+import {PDFDocument,PDFName,PDFDict,PDFTextField,PDFCheckBox,StandardFonts,rgb} from 'pdf-lib';
 import type {PoolClient} from 'pg';
 export const rules:Record<string,{draft:boolean;path?:string;reason:string}>={
  'patient.name':{draft:true,path:'/demographics/name',reason:'Copy the fictional chart identity'},
@@ -20,8 +20,8 @@ export async function sampleForm(){
   if(name==='history.hasAllergies'){form.createCheckBox(name).addToPage(page,{x:50,y,width:18,height:18});}
   else if(name==='physician.signature'){
    page.drawRectangle({x:50,y,width:512,height:22,borderWidth:1,borderColor:rgb(.5,.6,.55)});
-   const field=pdf.context.obj({FT:'Sig',T:PDFString.of(name),Ff:0,Kids:[]}),ref=pdf.context.register(field);
-   const widget=pdf.context.obj({Type:'Annot',Subtype:'Widget',Rect:[50,y,562,y+22],Parent:ref,P:page.ref,F:4});const wr=pdf.context.register(widget);field.set(PDFName.of('Kids'),pdf.context.obj([wr]));page.node.addAnnot(wr);form.acroForm.addField(ref);
+   const signature=form.createTextField(name),field=signature.acroField.dict,ref=signature.ref;field.set(PDFName.of('FT'),PDFName.of('Sig'));
+   const widget=pdf.context.obj({Type:'Annot',Subtype:'Widget',Rect:[50,y,562,y+22],Parent:ref,P:page.ref,F:4});const wr=pdf.context.register(widget);field.set(PDFName.of('Kids'),pdf.context.obj([wr]));page.node.addAnnot(wr);
   } else{const f=form.createTextField(name);f.setMaxLength(name==='visit.reason'?90:70);f.addToPage(page,{x:50,y,width:512,height:22,font,borderWidth:1,borderColor:rgb(.5,.6,.55)});f.setFontSize(11);}
  }
  page.drawText('Drafts copy source facts only. Diagnosis and signature require physician review.',{x:50,y:74,size:10,font});

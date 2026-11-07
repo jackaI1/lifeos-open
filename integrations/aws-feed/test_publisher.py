@@ -26,7 +26,7 @@ def test_real_s3_calls_are_idempotent_and_encrypted():
 def test_malformed_or_private_feed_does_not_write():
     s3 = boto3.client("s3", region_name="us-east-1")
     s3.create_bucket(Bucket="fictional-lifeos")
-    for bad in ({**FEED, "fictional": False}, {**FEED, "privateNotes": "never publish"}, {**FEED, "events": [{"id": "a", "title": "a", "start": "bad", "end": "bad"}]}):
+    for bad in ({**FEED, "schemaVersion": True}, {**FEED, "anchorDate": "20261106"}, {**FEED,"tasks":[{"id":"bad","title":"   "}]}, {**FEED,"events":[{"id":"bad","title":"bad","start":"2026-11-06 10:00:00Z","end":"2026-11-06 11:00:00Z"}]}, {**FEED, "fictional": False}, {**FEED, "privateNotes": "never publish"}, {**FEED, "events": [{"id": "a", "title": "a", "start": "bad", "end": "bad"}]}):
         with pytest.raises((ValueError, KeyError)):
             publish(bad, s3, "fictional-lifeos")
     assert s3.list_objects_v2(Bucket="fictional-lifeos")["KeyCount"] == 0

@@ -31,7 +31,7 @@ def migrate_and_seed(db):
     reports = json.loads((ROOT / "reports.json").read_text())
     embeddings = embed([r["passage"] for r in reports])
     for report, vector in zip(reports, embeddings["vectors"], strict=True):
-        db.execute("INSERT INTO shift_passages(id,document,shift,passage,embedding,model) VALUES(%s,%s,%s,%s,%s::vector,%s) ON CONFLICT(id) DO UPDATE SET passage=excluded.passage,embedding=excluded.embedding,model=excluded.model", (report["id"], report["document"], report["shift"], report["passage"], json.dumps(vector), embeddings["model"]))
+        db.execute("INSERT INTO shift_passages(id,document,shift,passage,embedding,model) VALUES(%s,%s,%s,%s,%s::vector,%s) ON CONFLICT(id) DO UPDATE SET document=excluded.document,shift=excluded.shift,passage=excluded.passage,embedding=excluded.embedding,model=excluded.model", (report["id"], report["document"], report["shift"], report["passage"], json.dumps(vector), embeddings["model"]))
     db.commit()
 
 

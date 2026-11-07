@@ -57,8 +57,9 @@ runs the tests inside the build image, checks runtime health and persistence,
 scans the image and publishes successful main builds and release tags to GHCR.
 The public `/healthz` endpoint emits structured JSON with time, service, event,
 HTTP status and success. ECS's `awslogs` driver sends stdout to CloudWatch. The
-Terraform module now defines a log metric and alarm for three failed health
-checks within five minutes. Configure alarm notifications in your AWS account.
+Terraform module now defines a log metric for `health_check` entries with
+HTTP status 500 or higher and an alarm for three such failures within five
+minutes. It uses the [numeric JSON filter syntax](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html) supported by CloudWatch. Configure alarm notifications in your AWS account.
 A failed network probe that cannot reach the app cannot produce an app log;
 ECS and load-balancer health checks remain necessary.
 

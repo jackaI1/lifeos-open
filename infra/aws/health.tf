@@ -1,7 +1,7 @@
 resource "aws_cloudwatch_log_metric_filter" "failed_health" {
   name           = "${var.name}-failed-health"
   log_group_name = aws_cloudwatch_log_group.demo.name
-  pattern        = "{ $.event = \"health_check\" && $.ok = false }"
+  pattern        = "{ $.event = \"health_check\" && $.status >= 500 }"
   metric_transformation {
     name      = "FailedHealthChecks"
     namespace = "LifeOS/${var.name}"

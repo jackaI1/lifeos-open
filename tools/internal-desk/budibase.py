@@ -1,6 +1,7 @@
 """Create real Budibase tables, review screens and an audit automation, using v3.50 APIs."""
 import json
 import os
+import sqlite3
 from pathlib import Path
 import uuid
 
@@ -33,6 +34,7 @@ def main():
     schemas = {
         'Deliverables': {'Title': {'type': 'string', 'constraints': {'presence': True}}, 'Status': {'type': 'options', 'constraints': {'inclusion': ['draft', 'review', 'approved']}}, 'Cleanup': {'type': 'boolean'}},
         'Audit': {'Title': {'type': 'string'}, 'Status': {'type': 'string'}, 'SourceRow': {'type': 'string'}},
+        'Assets': {'Tag': {'type':'string'}, 'Network': {'type':'string'}, 'Year': {'type':'number'}, 'Condition': {'type':'number'}, 'Inspected': {'type':'string'}},
         'FieldCitations': {'Field': {'type': 'string'}, 'Value': {'type': 'string'}, 'Source': {'type': 'string'}}
     }
     for name, schema in schemas.items():
@@ -42,6 +44,14 @@ def main():
     for citation in field_map['citations']:
         call(f"/api/public/v1/tables/{tables['FieldCitations']}/rows", 'POST', {'Field': citation['field'], 'Value': str(citation['value']), 'Source': citation['source']})
     cleanup = call('/api/public/v1/views', 'POST', {'name':'Cleanup queue','tableId':tables['Deliverables'],'schema':{key:{**value,'name':key} for key,value in schemas['Deliverables'].items()},'query':{'logicalOperator':'all','groups':[{'logicalOperator':'all','filters':[{'field':'Cleanup','operator':'equal','value':True},{'field':'Status','operator':'notEqual','value':'approved'}]}]}})['data']
+    registry = sqlite3.connect(':memory:')
+    try:
+        registry.row_factory = sqlite3.Row
+        registry.executescript(Path('tools/internal-desk/schema.sql').read_text())
+        for asset in registry.execute('SELECT * FROM asset_inspection_report ORDER BY tag'):
+            call(f"/api/public/v1/tables/{tables['Assets']}/rows", 'POST', {'Tag':asset['tag'],'Network':asset['network'],'Year':asset['installed_year'],'Condition':asset['condition_score'],'Inspected':asset['last_inspected']})
+    finally:
+        registry.close()
     workspace_apps = call('/api/workspaceApp')
     workspace_app = (workspace_apps if isinstance(workspace_apps, list) else workspace_apps.get('workspaceApps', workspace_apps.get('data', [])))[0]
     workspace_id = workspace_app['_id']
@@ -50,13 +60,14 @@ def main():
         ('Review deliverable', '/review/:id', [component('formblock', dataSource={'type': 'table', 'tableId': tables['Deliverables'], 'resourceId': tables['Deliverables'], 'label':'Deliverables'}, actionType='Update', rowId='{{ url.id }}', title='Review fictional deliverable', buttonPosition='bottom', showSaveButton=True, saveButtonLabel='Save review', showDeleteButton=False)]),
         ('Cleanup queue', '/cleanup', [component('gridblock',table={**cleanup,'type':'viewV2','resourceId':cleanup['id'],'label':'Cleanup queue'},allowAddRows=False,allowEditRows=False,allowDeleteRows=False)]),
         ('Audit log', '/audit', [component('gridblock', table={'type': 'table', 'tableId': tables['Audit']}, allowAddRows=False, allowEditRows=False, allowDeleteRows=False)]),
+        ('Asset inspection report', '/assets', [component('gridblock', table={'type':'table','tableId':tables['Assets'],'label':'Asset inspection report'},allowAddRows=False,allowEditRows=False,allowDeleteRows=False)]),
         ('Source citations', '/citations', [component('gridblock', table={'type': 'table', 'tableId': tables['FieldCitations']}, allowAddRows=False, allowEditRows=False, allowDeleteRows=False)])
     ]:
         screens.append(call('/api/screens', 'POST', {'name': name, 'workspaceAppId': workspace_id, 'showNavigation': True, 'width': 'Large', 'routing': {'route': route, 'roleId': 'BASIC', 'homeScreen': False}, 'props': component('container', layout='flex', direction='column', hAlign='stretch', vAlign='top', size='grow', gap='M', _children=children)}))
     definitions = call('/api/automations/definitions/list')
     trigger_key, trigger = next((key, value) for key, value in definitions['trigger'].items() if 'row' in value['name'].lower() and 'updated' in value['name'].lower())
     action_key, action = next((key, value) for key, value in definitions['action'].items() if 'create row' in value['name'].lower())
-    automation = call('/api/automations', 'POST', {'name': 'Record every deliverable review', 'type': 'automation', 'definition': {'trigger': {**trigger, 'id': str(uuid.uuid4()), 'stepId': trigger_key, 'inputs': {'tableId': tables['Deliverables']}}, 'steps': [{**action, 'id': str(uuid.uuid4()), 'stepId': action_key, 'inputs': {'row': {'tableId': tables['Audit'], 'Title': '{{trigger.row.Title}}', 'Status': '{{trigger.row.Status}}', 'SourceRow': '{{trigger.row._id}}'}}}]}})
+    automation = call('/api/automations', 'POST', {'name': 'Record every deliverable review', 'type': 'automation', 'definition': {'trigger': {**trigger, 'id': str(uuid.uuid4()), 'stepId': trigger_key, 'inputs': {'tableId': tables['Deliverables']}}, 'steps': [{**action, 'id': str(uuid.uuid4()), 'stepId': action_key, 'inputs': {'row': {'tableId': tables['Audit'], 'Title': '{{trigger.row.Title}}', 'Status': '{{trigger.row.Status}}', 'SourceRow': '{{trigger.id}}'}}}]}})
     deployment = call(f'/api/public/v1/applications/{app_id}/publish', 'POST')['data']
     state = {'appId': app_id, 'productionId': app_id.replace('app_dev_', 'app_'), 'workspaceAppId': workspace_id, 'tables': tables, 'rowId': row['_id'], 'appUrl': deployment.get('appUrl', '/app/lifeos-review'), 'cleanupView':cleanup['id'], 'screens': len(screens), 'automation': automation.get('automation', automation).get('_id')}
     Path('.runtime/internal-desk').mkdir(parents=True, exist_ok=True)

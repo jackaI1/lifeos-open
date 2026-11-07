@@ -6,13 +6,17 @@ namespace LifeOS.BrowserTests;
 public abstract class BrowserFixture {
     protected IWebDriver Driver=null!;
     protected SchedulePage Page=null!;
+    private ChromeDriverService? service;
+    private void CloseBrowser() {try {Driver?.Quit();} finally {try {Driver?.Dispose();} finally {service?.Dispose();}}}
     [SetUp] public void Start() {
         var options=new ChromeOptions(); options.AddArguments("--headless=new","--no-sandbox","--disable-dev-shm-usage","--window-size=1440,1000");
-        Driver=new ChromeDriver(options);Driver.Manage().Timeouts().AsynchronousJavaScript=TimeSpan.FromSeconds(15);Page=new SchedulePage(Driver);Page.Wait.IgnoreExceptionTypes(typeof(StaleElementReferenceException),typeof(NoSuchElementException));Page.Open();
+        service=ChromeDriverService.CreateDefaultService();
+        try {Driver=new ChromeDriver(service,options);Driver.Manage().Timeouts().AsynchronousJavaScript=TimeSpan.FromSeconds(15);Page=new SchedulePage(Driver);Page.Wait.IgnoreExceptionTypes(typeof(StaleElementReferenceException),typeof(NoSuchElementException));Page.Open();}
+        catch {CloseBrowser();throw;}
     }
     [TearDown] public void Stop() {
         try {if(TestContext.CurrentContext.Result.Outcome.Status==TestStatus.Failed) {var file=Path.Combine(TestContext.CurrentContext.WorkDirectory,TestContext.CurrentContext.Test.ID+".png");((ITakesScreenshot)Driver).GetScreenshot().SaveAsFile(file);TestContext.AddTestAttachment(file);}}
-        finally {Driver?.Quit();Driver?.Dispose();}
+        finally {CloseBrowser();}
     }
 }
 [TestFixture, NonParallelizable] public class ScheduleTests:BrowserFixture {

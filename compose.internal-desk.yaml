@@ -10,7 +10,8 @@ services:
       JWT_SECRET: ${BUDIBASE_JWT_SECRET:?Set a random local secret}
       INTERNAL_API_KEY: ${BUDIBASE_INTERNAL_KEY:?Set a random local key}
       API_ENCRYPTION_KEY: ${BUDIBASE_ENCRYPTION_KEY:?Set a random local key}
+      ENCRYPTION_KEY: ${BUDIBASE_ENCRYPTION_KEY:?Set a random local key}
       REDIS_PASSWORD: ${BUDIBASE_REDIS_PASSWORD:?Set a random local password}
-    volumes: [budibase-data:/data]
+    volumes: [budibase-data:/data, ./tools/internal-desk/diagnose.mjs:/opt/lifeos-diagnose.mjs:ro]
 volumes:
   budibase-data:
