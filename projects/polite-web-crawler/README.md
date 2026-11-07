@@ -2,6 +2,8 @@
 
 I built a web crawler to learn how the underlying idea works. This is a learning project.
 
+The included checks use local demonstration pages.
+
 ## Try it
 
 Install [Rust](https://www.rust-lang.org/tools/install), then run:

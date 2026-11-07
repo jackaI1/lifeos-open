@@ -2,6 +2,8 @@
 
 I built a clip export tool to learn how the underlying idea works. This is a learning project.
 
+The walkthroughs use practice clips and captions; the test fixtures exercise the export steps.
+
 ## Setup
 
 I use Python 3.9 or newer and FFmpeg, the free program that reads, edits and writes video. FFmpeg needs its `subtitles` filter, provided by libass, to draw captions. There are no Python dependencies for running the tool or its tests. Run commands from this repository's folder.

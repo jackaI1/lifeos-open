@@ -2,6 +2,8 @@
 
 I built a small billing and access service to learn how the underlying idea works. This is a learning project.
 
+The examples use fictional tenants, usage events and invoices.
+
 ## Try it
 
 You need Python 3.9 or newer. No packages or containers are needed. In a terminal, from this folder:

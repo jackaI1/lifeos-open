@@ -2,6 +2,8 @@
 
 I built a browser automation library to learn how the underlying idea works. This is a learning project.
 
+I use local demonstration pages and scripted tasks for the included tests.
+
 ## Try it
 
 Install Node.js 22 or newer and Chrome, then run:

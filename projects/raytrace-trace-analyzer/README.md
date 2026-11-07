@@ -2,6 +2,8 @@
 
 I built a small image renderer and frame comparison tool to learn how the underlying idea works. This is a learning project.
 
+I use example ray traces to exercise the analysis.
+
 ## Run the example
 
 I use a C++17 compiler, Python 3.10 or newer, CMake and zlib (the PNG compression library). On macOS I install the command-line compiler with `xcode-select --install` and zlib with `brew install zlib`. On Ubuntu, `sudo apt-get install build-essential zlib1g-dev python3-venv` supplies the system dependencies.
