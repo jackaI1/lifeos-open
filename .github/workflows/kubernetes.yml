@@ -115,6 +115,8 @@ jobs:
       - name: Bounded diagnostics on failure
         if: failure()
         run: |
+          kubectl --context "kind-$CLUSTER" -n flux-system get gitrepositories,kustomizations -o yaml || true
+          kubectl --context "kind-$CLUSTER" -n flux-system logs deployment/kustomize-controller --tail=40 || true
           kubectl --context "kind-$CLUSTER" -n lifeos get pods,pvc,deployments || true
           kubectl --context "kind-$CLUSTER" -n lifeos get events --sort-by=.lastTimestamp | tail -25 || true
           kubectl --context "kind-$CLUSTER" -n lifeos logs deployment/lifeos --tail=30 || true
