@@ -30,3 +30,15 @@ test('settings never store a key; preview cannot write before explicit calendar 
   const rows=await app.db.prepare("SELECT * FROM meta WHERE key='syllabus-provider'").all();assert.ok(!JSON.stringify(rows).includes('fictional-secret'));
  }finally{globalThis.fetch=previous;await app.close();}
 });
+test('local fallback uses the real Ollama HTTP contract and refuses remote endpoints',async()=>{
+ const {createServer}=await import('node:http'),{localSyllabus}=await import('../src/local/syllabus.ts');let captured;
+ const server=createServer(async(req,res)=>{let body='';for await(const b of req)body+=b;captured={path:req.url,body:JSON.parse(body),authorization:req.headers.authorization};res.writeHead(200,{'content-type':'application/json'}).end(JSON.stringify({message:{content:JSON.stringify({events})}}));});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ try{const env={OLLAMA_BASE_URL:`http://127.0.0.1:${server.address().port}`,NOTES_CHAT_MODEL:'local-test-model',ANTHROPIC_API_KEY:'must-not-leak'};assert.deepEqual(await localSyllabus('chosen text',env),{events});assert.equal(captured.path,'/api/chat');assert.equal(captured.body.model,'local-test-model');assert.deepEqual(captured.body.messages[1],{role:'user',content:'chosen text'});assert.equal(captured.authorization,undefined);assert.ok(!JSON.stringify(captured).includes('must-not-leak'));assert.equal(captured.body.stream,false);await assert.rejects(localSyllabus('text',{OLLAMA_BASE_URL:'https://outside.invalid'}),/loopback/);}finally{await new Promise(r=>server.close(r));}
+});
+test('slow provider preview keeps the workspace responsive and saves no records',async()=>{
+ const {createService}=await import('../src/local/service.ts');let release;const previous=globalThis.fetch;const app=await createService({database:':memory:',env:{ANTHROPIC_API_KEY:'fake'}}),origin=app.origin;
+ const headers={origin,'x-lifeos-csrf':app.env.LOCAL_CSRF,'content-type':'application/json'};
+ try{await app.fetch(new Request(origin+'/api/assistant-connection',{method:'PUT',headers,body:JSON.stringify({provider:'claude'})}));let started;const entered=new Promise(r=>{started=r;});globalThis.fetch=async()=>{started();return new Promise(r=>{release=()=>r(Response.json({content:[{type:'tool_use',name:'draft_calendar_events',input:{events}}]}));});};const preview=app.fetch(new Request(origin+'/api/syllabus-preview',{method:'POST',headers,body:JSON.stringify({text:'Chosen text'})}));await entered;
+  let deadline;let health;try{health=await Promise.race([app.fetch(new Request(origin+'/api/health')),new Promise((_,reject)=>{deadline=setTimeout(()=>reject(Error('Health blocked by preview')),1000);})]);}finally{clearTimeout(deadline);}assert.equal(health.status,200);release();assert.equal((await preview).status,200);
+ }finally{release?.();globalThis.fetch=previous;await app.close();}
+});

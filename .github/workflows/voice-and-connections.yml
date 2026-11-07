@@ -22,9 +22,10 @@ jobs:
       - name: Drive the fictional workspace with Selenium and NUnit
         run: |
           set -euo pipefail
-          LIFEOS_DATABASE="$RUNNER_TEMP/selenium.sqlite" npm start > "$RUNNER_TEMP/lifeos.log" 2>&1 &
+          LIFEOS_DATABASE="$RUNNER_TEMP/selenium.sqlite" node build/server.mjs > "$RUNNER_TEMP/lifeos.log" 2>&1 &
           pid=$!
-          trap 'kill -TERM "$pid"; wait "$pid" || true' EXIT
+          cleanup() { kill -TERM "$pid" 2>/dev/null || true; wait "$pid" || true; ! kill -0 "$pid" 2>/dev/null; test -z "$(ss -H -ltn 'sport = :8787')"; }
+          trap cleanup EXIT
           ps -p "$pid" -o pid,lstart,args
           echo "owner=selenium-fixture port=8787 cleanup=kill-TERM-$pid"
           curl --retry 20 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:8787/api/health
@@ -217,7 +218,12 @@ jobs:
         run: |
           set -euo pipefail
           trap 'docker compose -p internal-desk -f compose.internal-desk.yaml down --volumes' EXIT
-          docker compose -p internal-desk -f compose.internal-desk.yaml up -d --wait --wait-timeout 300
+          if ! docker compose -p internal-desk -f compose.internal-desk.yaml up -d --wait --wait-timeout 300; then
+            cid=$(docker compose -p internal-desk -f compose.internal-desk.yaml ps -aq budibase)
+            docker inspect --format '{{range .State.Health.Log}}{{.Output}}{{end}}' "$cid" | tail -c 2000
+            docker compose -p internal-desk -f compose.internal-desk.yaml exec -T budibase pm2 list
+            exit 1
+          fi
           docker compose -p internal-desk -f compose.internal-desk.yaml ps --format json
           curl -fsS http://127.0.0.1:10000/health > /dev/null
           python tools/internal-desk/budibase.py

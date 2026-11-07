@@ -34,7 +34,8 @@ platform data, so this is not a tamper-proof compliance log.
 `node tools/internal-desk/budibase-browser.mjs` drives the published form with
 Playwright, edits a fictional title, waits for the real audit automation, checks
 the citation count and filtered queue, and saves a screenshot. The workflow runs
-this against the actual pinned Budibase container on Linux. This setup uses the
+this against the actual pinned Budibase container on Linux. The review desk does not use Budibase's optional AI proxy; its startup wait is
+capped so that proxy cannot hold up the forms. This setup uses the
 [public API](https://docs.budibase.com/docs/public-api) for data and the release's
 builder API for screens. `budibase.py` is the reproducible app definition.
 It stores only generated ids in `.runtime`, never its API key or login cookie.

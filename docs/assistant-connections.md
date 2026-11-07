@@ -7,8 +7,10 @@ paste text with explicit dates and times, and choose **Draft events for review**
 The result says which provider answered. Nothing is saved to the calendar until
 I choose **Confirm and save these events**. I check every title, timezone and time.
 
-For Local, configure the existing compatible model endpoint with `LLM_API_KEY`,
-`LLM_BASE_URL` and `LLM_MODEL` as described in [the notes guide](notes-questions.md).
+For Local, use the Ollama setup in [the notes guide](notes-questions.md).
+`OLLAMA_BASE_URL` defaults to `http://127.0.0.1:11434` and `NOTES_CHAT_MODEL`
+to `qwen2.5:1.5b`. Only HTTP loopback addresses are allowed, and redirects are
+refused, so a fallback cannot silently send the chosen text to another host.
 For an optional Claude connection, set `ANTHROPIC_API_KEY` in the server's
 environment, optionally `CLAUDE_MODEL` (default `claude-sonnet-4-5`). I restart
 `npm run dev` after changing environment variables. There is no key field in
@@ -23,7 +25,7 @@ fall back to the configured local model, with a visible reason. If that model
 also fails, the page shows an error and saves no events. This connection is
 separate from the public demo's scripted example conversations.
 
-`node --test test/syllabus.test.mjs` runs seven provider and integration checks for the exact
+`node --test test/syllabus.test.mjs` runs provider and integration checks for the exact
 outbound context, tool use, HTTP errors, timeout, absent key, invalid output and
 local failure. These do not claim to make a paid Claude call. The implementation
 follows the [Anthropic tool-use contract](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview).

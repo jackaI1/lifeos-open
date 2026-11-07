@@ -27,7 +27,13 @@ test('official stdio client starts server and calls schedule tool',async()=>{
  try{await client.connect(new StdioClientTransport({command:process.execPath,args:['src/mcp/server.ts'],env:{...process.env,LIFEOS_DATABASE:join(dir,'workspace.sqlite'),MCP_TOKEN:token,MCP_TOKENS:JSON.stringify({[token]:['schedule:read']})},stderr:'ignore'}));assert.ok(parse(await client.callTool({name:'read_deadlines',arguments:{}})).length>0);}
  finally{await client.close();await rm(dir,{recursive:true,force:true});}
 });
-test('unresponsive asynchronous action times out after bounded retries',async()=>{
- const app=await createService({database:':memory:'}),jobs=new TaskJobs(app,async()=>new Promise(()=>{}),5);await jobs.init();
- try{const submitted=await jobs.submit('timeout',{title:'Never completes'},'timeout-id');let row;for(let n=0;n<40;n++){row=await jobs.get('timeout',submitted.jobId);if(row.status==='failed')break;await new Promise(r=>setTimeout(r,10));}assert.equal(row.status,'failed');assert.equal(row.attempts,3);}finally{await jobs.close();await app.close();}
+test('unresponsive custom and default API actions time out after bounded retries',async()=>{
+ for(const custom of [true,false]){
+  const app=await createService({database:':memory:'}),never=async()=>new Promise(()=>{}),jobs=new TaskJobs(custom?app:{...app,fetch:never},custom?never:undefined,5);await jobs.init();
+  try{const submitted=await jobs.submit('timeout',{title:'Never completes'},'timeout-id');let row;for(let n=0;n<60;n++){row=await jobs.get('timeout',submitted.jobId);if(row.status==='failed')break;await new Promise(r=>setTimeout(r,10));}assert.equal(row.status,'failed');assert.equal(row.attempts,3);}finally{await jobs.close();await app.close();}
+ }
+});
+test('concurrent submissions all drain through the persistent worker',async()=>{
+ const app=await createService({database:':memory:'}),jobs=new TaskJobs(app);await jobs.init();
+ try{const submitted=await Promise.all(Array.from({length:20},(_,i)=>jobs.submit('concurrent',{title:'Fictional concurrent task '+i},'request-'+i)));let rows;for(let n=0;n<100;n++){rows=await Promise.all(submitted.map(j=>jobs.get('concurrent',j.jobId)));if(rows.every(r=>r.status==='completed'))break;await new Promise(r=>setTimeout(r,10));}assert.ok(rows.every(r=>r.status==='completed'));}finally{await jobs.close();await app.close();}
 });

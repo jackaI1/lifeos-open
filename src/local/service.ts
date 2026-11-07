@@ -48,6 +48,7 @@ export async function createService(options:ServiceOptions={}){
  env.ASSETS={fetch:async(req:Request)=>{const u=new URL(req.url);const name=decodeURIComponent(u.pathname)==='/'?'index.html':decodeURIComponent(u.pathname).slice(1);const root=resolve('public'),file=resolve(root,name);if(relative(root,file).startsWith('..')||name.includes('\\'))return new Response(null,{status:404});try{const canonical=await realpath(file);if(relative(root,canonical).startsWith('..')||!(await stat(canonical)).isFile())return new Response(null,{status:404});return new Response(req.method==='HEAD'?null:await readFile(canonical),{headers:{'content-type':mime[extname(file)]??'application/octet-stream'}});}catch{return new Response(null,{status:404});}}};
  // Serialize local mutations: CloudStore plans perform async reads before atomic batches.
  let serial:Promise<any>=Promise.resolve();
+ const previews=new Set<Promise<Response>>();
  const serve=async(req:Request)=>{
   const u=new URL(req.url);if(u.origin!==origin)return new Response('Origin denied',{status:403});
   if(u.pathname==='/auth/local'&&req.method==='POST'){
@@ -86,5 +87,5 @@ export async function createService(options:ServiceOptions={}){
   // Local-only service capabilities used by feature UIs; no external workers are launched.
   return response;
  };
- return {origin,db,env,async fetch(req:Request){const result=serial.then(()=>serve(req));serial=result.catch(()=>{});return result;},async close(){await serial;await whisper?.close();await retrieval?.close();recordCache?.close();await db.close?.();}};
+ return {origin,db,env,async fetch(req:Request){if(new URL(req.url).pathname==='/api/syllabus-preview'&&req.method==='POST'){const result=serve(req);previews.add(result);void result.finally(()=>previews.delete(result)).catch(()=>{});return result;}const result=serial.then(()=>serve(req));serial=result.catch(()=>{});return result;},async close(){await serial;await Promise.allSettled(previews);await whisper?.close();await retrieval?.close();recordCache?.close();await db.close?.();}};
 }

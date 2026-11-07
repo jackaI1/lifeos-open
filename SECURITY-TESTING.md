@@ -27,7 +27,7 @@ syllabus request. WebSocket payloads and retained sessions have size limits.
 The first real ZAP run reported `10055-6`, **CSP: style-src unsafe-inline**.
 The existing schedule, notebook and charts use inline style attributes for
 positioning. I retained that existing style permission as one reviewed baseline
-entry matching the complete CSP and rule reference. It does not allow inline
+entry matching the complete CSP, root page path and rule reference. It does not allow inline
 scripts, and changing any policy text makes the gate fail again. Removing this
 style permission needs a separate UI migration; this is a known limitation,
 not a fixed finding. The scan also reports missing cross-origin isolation and
