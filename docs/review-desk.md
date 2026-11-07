@@ -20,10 +20,12 @@ export BUDIBASE_ENCRYPTION_KEY=replace-with-a-random-key
 export BUDIBASE_REDIS_PASSWORD=replace-with-a-random-password
 docker compose -p internal-desk -f compose.internal-desk.yaml up -d --wait --wait-timeout 300
 python -m pip install requests
-python tools/internal-desk/budibase.py
+python tools/internal-desk/budibase.py --initialize
 ```
 
-Open `http://127.0.0.1:10000`, sign in with the local account, and open the
+The first-use API creates the account explicitly after the platform is ready.
+`--initialize` refuses an instance that already has an account; omit it when
+provisioning another desk on an existing instance. Open `http://127.0.0.1:10000`, sign in with the local account, and open the
 **LifeOS fictional review desk** workspace. The provisioning script creates
 real Budibase tables, a review form, a filtered clean-up queue, a read-only audit
 screen, the five source citations from the PDF example, and the two rows from

@@ -1,5 +1,6 @@
 """Create real Budibase tables, review screens and an audit automation, using v3.50 APIs."""
 import json
+import argparse
 import os
 import sqlite3
 from pathlib import Path
@@ -23,6 +24,10 @@ def component(kind, **props):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--initialize', action='store_true', help='Create the first admin on a fresh, local instance; refuses an existing account.')
+    if parser.parse_args().initialize:
+        call('/api/global/users/init', 'POST', {'email': os.environ['BB_ADMIN_USER_EMAIL'], 'password': os.environ['BB_ADMIN_USER_PASSWORD'], 'tenantId': 'default'})
     call('/api/global/auth/default/login', 'POST', {'username': os.environ['BB_ADMIN_USER_EMAIL'], 'password': os.environ['BB_ADMIN_USER_PASSWORD']})
     me = call('/api/global/self')
     session.headers['x-csrf-token'] = me['csrfToken']
