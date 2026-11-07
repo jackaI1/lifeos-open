@@ -72,7 +72,7 @@ def main():
             call(f"/api/public/v1/tables/{tables['Assets']}/rows", 'POST', {'Tag':asset['tag'],'Network':asset['network'],'Year':asset['installed_year'],'Condition':asset['condition_score'],'Inspected':asset['last_inspected']})
     finally:
         registry.close()
-    workspace_app = call('/api/workspaceApp', 'POST', {'name': 'Review desk', 'url': '/review-desk'})['workspaceApp']
+    workspace_app = call('/api/workspaceApp', 'POST', {'name': 'Review desk', 'url': '/review-desk', 'disabled': False})['workspaceApp']
     workspace_id = workspace_app['_id']
     screens = []
     for name, route, children in [
@@ -86,8 +86,8 @@ def main():
     definitions = call('/api/automations/definitions/list')
     trigger_key, trigger = next((key, value) for key, value in definitions['trigger'].items() if 'row' in value['name'].lower() and 'updated' in value['name'].lower())
     action_key, action = next((key, value) for key, value in definitions['action'].items() if 'create row' in value['name'].lower())
-    automation = call('/api/automations', 'POST', {'name': 'Record every deliverable review', 'type': 'automation', 'definition': {'trigger': {**trigger, 'id': str(uuid.uuid4()), 'stepId': trigger_key, 'inputs': {'tableId': tables['Deliverables']}}, 'steps': [{**action, 'id': str(uuid.uuid4()), 'stepId': action_key, 'inputs': {'row': {'tableId': tables['Audit'], 'Title': '{{trigger.row.Title}}', 'Status': '{{trigger.row.Status}}', 'SourceRow': '{{trigger.id}}'}}}]}})
-    call(f'/api/public/v1/applications/{app_id}/publish', 'POST')
+    automation = call('/api/automations', 'POST', {'name': 'Record every deliverable review', 'type': 'automation', 'disabled': False, 'definition': {'trigger': {**trigger, 'id': str(uuid.uuid4()), 'stepId': trigger_key, 'inputs': {'tableId': tables['Deliverables']}}, 'steps': [{**action, 'id': str(uuid.uuid4()), 'stepId': action_key, 'inputs': {'row': {'tableId': tables['Audit'], 'Title': '{{trigger.row.Title}}', 'Status': '{{trigger.row.Status}}', 'SourceRow': '{{trigger.id}}'}}}]}})
+    call(f'/api/public/v1/applications/{app_id}/publish', 'POST', {'seedProductionTables': True})
     production_id = app_id.replace('app_dev_', 'app_')
     # Exercise the published form as an explicitly scoped end user, not the builder.
     call('/api/global/users', 'POST', {'email': os.environ['BB_REVIEWER_USER_EMAIL'], 'password': os.environ['BB_REVIEWER_USER_PASSWORD'], 'roles': {production_id: 'BASIC'}, 'firstName': 'Fictional', 'lastName': 'Reviewer'})
