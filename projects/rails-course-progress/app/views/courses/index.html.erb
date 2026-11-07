@@ -1,0 +1,3 @@
+<h1>Courses</h1>
+<% if current_user.role == "instructor" %><p><%= link_to "Create a course", new_course_path %></p><% end %>
+<% @courses.each do |course| %><article><h2><%= link_to course.title, course %></h2><p><%= course.description %></p><% if !course.published? %><p>Draft</p><% end %></article><% end %>

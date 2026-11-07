@@ -1,0 +1,7 @@
+{
+  "identical_frames": 6,
+  "shadow_changed_pixels": 1367,
+  "bvh_primitive_tests": 2175225,
+  "brute_primitive_tests": 110962069,
+  "flagged_regressions": 6
+}

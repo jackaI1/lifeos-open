@@ -1,0 +1,4 @@
+<h1>Progress: <%= @course.title %></h1>
+<p>This table updates as students complete lessons.</p>
+<%= turbo_stream_from [@course, :progress] %>
+<%= render "progress/table", course: @course %>

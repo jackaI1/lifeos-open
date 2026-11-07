@@ -1,0 +1,49 @@
+name: webrtc-captioned-call / Test captioned calls
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - projects/webrtc-captioned-call/**
+    - .github/workflows/webrtc-captioned-call-ci.yml
+  pull_request:
+    paths:
+    - projects/webrtc-captioned-call/**
+    - .github/workflows/webrtc-captioned-call-ci.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: projects/webrtc-captioned-call/package-lock.json
+    - run: npm ci
+      env:
+        npm_config_onnxruntime_node_install: skip
+    - run: npm test
+    - uses: actions/cache@v4
+      with:
+        path: projects/webrtc-captioned-call/public/models
+        key: whisper-${{ hashFiles('scripts/model-manifest.json') }}
+    - run: npm run setup:models
+    - run: npm run build
+    - run: npx playwright install --with-deps chromium
+    - run: npm run test:e2e
+    - uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: browser-test-results
+        path: 'projects/webrtc-captioned-call/playwright-report/
+
+          projects/webrtc-captioned-call/test-results/'
+        retention-days: 7
+defaults:
+  run:
+    working-directory: projects/webrtc-captioned-call

@@ -1,0 +1,39 @@
+name: alm-asset-allocation-model / Model checks
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - projects/alm-asset-allocation-model/**
+    - .github/workflows/alm-asset-allocation-model-ci.yml
+  pull_request:
+    paths:
+    - projects/alm-asset-allocation-model/**
+    - .github/workflows/alm-asset-allocation-model-ci.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v6
+      with:
+        version: 0.12.19
+        enable-cache: true
+        working-directory: projects/alm-asset-allocation-model
+    - run: uv sync --locked
+    - run: uv run ruff check .
+    - run: uv run ruff format --check .
+    - run: uv run pytest -q
+    - name: Run full offline example
+      run: uv run alm-model --output reports/ci
+    - uses: actions/upload-artifact@v4
+      with:
+        name: allocation-and-reconciliation
+        path: projects/alm-asset-allocation-model/reports/ci/
+    timeout-minutes: 20
+defaults:
+  run:
+    working-directory: projects/alm-asset-allocation-model

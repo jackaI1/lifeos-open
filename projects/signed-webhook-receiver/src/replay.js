@@ -1,0 +1,3 @@
+import {pool} from './db.js';
+const id=process.argv[2]; if(!id) {console.error('Usage: npm run replay -- EVENT_ID'); process.exit(1);}
+const c=await pool.connect(); try {await c.query('BEGIN'); const r=await c.query("UPDATE events SET status='pending',attempts=0,next_attempt_at=now(),locked_at=NULL,last_error=NULL WHERE id=$1 AND status IN ('dead','pending') RETURNING id",[id]); if(!r.rowCount) throw new Error('Event not found or currently processing/done'); await c.query('DELETE FROM dead_letters WHERE event_id=$1',[id]); await c.query('COMMIT'); console.log(`Queued ${id}`);} catch(e){await c.query('ROLLBACK'); console.error(e.message); process.exitCode=1;} finally {c.release();await pool.end();}

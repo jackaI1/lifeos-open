@@ -1,0 +1,7 @@
+<h1>Create a course</h1>
+<% if @course.errors.any? %><p><%= @course.errors.full_messages.to_sentence %></p><% end %>
+<%= form_with model: @course do |f| %>
+<p><%= f.label :title %><br><%= f.text_field :title, required: true %></p>
+<p><%= f.label :description %><br><%= f.text_area :description %></p>
+<%= f.submit "Create course" %>
+<% end %>

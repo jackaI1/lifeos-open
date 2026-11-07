@@ -1,0 +1,26 @@
+name: polite-web-crawler / CI
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - projects/polite-web-crawler/**
+    - .github/workflows/polite-web-crawler-ci.yml
+  pull_request:
+    paths:
+    - projects/polite-web-crawler/**
+    - .github/workflows/polite-web-crawler-ci.yml
+  workflow_dispatch: {}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+    - run: cargo test --locked
+    timeout-minutes: 20
+permissions:
+  contents: read
+defaults:
+  run:
+    working-directory: projects/polite-web-crawler

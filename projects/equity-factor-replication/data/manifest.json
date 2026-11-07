@@ -1,0 +1,18 @@
+[
+  {
+    "file": "10_Portfolios_Prior_12_2_CSV.zip",
+    "url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/10_Portfolios_Prior_12_2_CSV.zip",
+    "sha256": "688467caa28578a8dca70698537c4f03c406b246350b6f3e9c396e15e1e7964f",
+    "bytes": 119215,
+    "retrieved_utc": "2026-11-05T02:50:43.643518+00:00",
+    "source_vintage": "202609 CRSP"
+  },
+  {
+    "file": "49_Industry_Portfolios_CSV.zip",
+    "url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/49_Industry_Portfolios_CSV.zip",
+    "sha256": "d1a3b0b9896e1e633ed2aa85e24ca144d7998f8ab2ff344e2379383ebeb7b836",
+    "bytes": 489861,
+    "retrieved_utc": "2026-11-05T02:50:43.643925+00:00",
+    "source_vintage": "202609 CRSP"
+  }
+]
