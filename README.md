@@ -4,10 +4,6 @@ I built a personal workspace for my schedule, coursework and lecture notes becau
 keeping deadlines, handwritten notes and recordings in separate places made it
 hard to plan my day and find the right part of a lecture later.
 
-## Keep a cluster copy up to date
-
-I can also run the fictional workspace on my own Kubernetes cluster, a system for running containers. Flux checks this repository and pulls the saved deployment settings into the cluster, so a reviewed change can be applied without manually editing the running copy. It also corrects configuration drift, such as an accidental change to the number of running copies. This is an optional experiment and does not change the public browser demo. The [cluster setup guide](docs/gitops.md) has the commands, storage requirements and limitations.
-
 ## Overview
 
 I kept needing the schedule, the deadline and the notes behind a task together.
@@ -184,6 +180,8 @@ a separate disk. My notes stay on that disk when I replace the app. The guide
 starts with a local test cluster, shows how to open the workspace through a local
 tunnel, and covers backups, updates and switching back to an earlier version.
 This setup runs one copy of the app and briefly stops it during updates.
+
+I can also run the fictional workspace on my own Kubernetes cluster, a system for running containers. Flux checks this repository and pulls the saved deployment settings into the cluster, so a reviewed change can be applied without manually editing the running copy. It also corrects configuration drift, such as an accidental change to the number of running copies. This is an optional experiment and does not change the public browser demo. The [cluster setup guide](docs/gitops.md) has the commands, storage requirements and limitations.
 
 SQLite, the default database, keeps records in a local file. PostgreSQL is an
 alternative database that runs as a separate service. For that setup,
