@@ -83,7 +83,7 @@ def main():
         ('Asset inspection report', '/assets', [component('gridblock', table={'type':'table','tableId':tables['Assets'],'resourceId':tables['Assets'],'label':'Asset inspection report'},allowAddRows=False,allowEditRows=False,allowDeleteRows=False)]),
         ('Source citations', '/citations', [component('gridblock', table={'type': 'table', 'tableId': tables['FieldCitations'], 'resourceId': tables['FieldCitations'], 'label': 'FieldCitations'}, allowAddRows=False, allowEditRows=False, allowDeleteRows=False)])
     ]:
-        screens.append(call('/api/screens', 'POST', {'name': name, 'workspaceAppId': workspace_id, 'showNavigation': True, 'width': 'Large', 'routing': {'route': route, 'roleId': 'BASIC', 'homeScreen': False}, 'props': component('container', layout='flex', direction='column', hAlign='stretch', vAlign='top', size='grow', gap='M', _children=children)}))
+        screens.append(call('/api/screens', 'POST', {'name': name, **({'navigationLinkLabel': name} if ':id' not in route else {}), 'workspaceAppId': workspace_id, 'showNavigation': True, 'width': 'Large', 'routing': {'route': route, 'roleId': 'BASIC', 'homeScreen': False}, 'props': component('container', layout='flex', direction='column', hAlign='stretch', vAlign='top', size='grow', gap='M', _children=children)}))
     definitions = call('/api/automations/definitions/list')
     trigger_key, trigger = next((key, value) for key, value in definitions['trigger'].items() if 'row' in value['name'].lower() and 'updated' in value['name'].lower())
     action_key, action = next((key, value) for key, value in definitions['action'].items() if 'create row' in value['name'].lower())

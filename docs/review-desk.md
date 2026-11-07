@@ -44,8 +44,8 @@ Publishing explicitly enables the app and its automation and copies these
 fictional rows. A second, approved deliverable stays out of the clean-up queue.
 
 `node tools/internal-desk/budibase-browser.mjs` drives the published form with
-Playwright, edits a fictional title, waits for the real audit automation, checks
-the citation count, relational asset rows and filtered queue, and opens the audit
+Playwright, edits a fictional title and review status, waits for the real audit automation, checks
+the citation count, relational asset rows and filtered queue, and follows the navigation links to the audit
 and clean-up screens. It saves screenshots of all three views. The workflow runs
 this against the actual pinned Budibase container on Linux. The review desk does not use Budibase's optional AI proxy; its startup wait is
 capped so that proxy cannot hold up the forms. This setup uses the
