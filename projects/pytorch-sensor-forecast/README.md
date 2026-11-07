@@ -1,8 +1,10 @@
 # pytorch-sensor-forecast
 
-I built an hourly temperature forecast comparison to learn how the underlying idea works. This is a learning project.
+I built a weather forecast comparison and text prediction experiments because I wanted to understand how models learn from real data and how to check their answers.
 
-I use public UCI Beijing weather measurements and public Tiny Shakespeare and IMDB text; attribution is kept in `docs/methods.md` and `docs/text-models.md`.
+The weather comparison tests several ways to predict the next hour’s temperature against actual readings. The text experiments learn to guess the next character in Shakespeare and classify movie reviews as positive or negative. I can resume the character model after a stop, check it on text it has not seen, and send review predictions to a local service.
+
+To try the weather comparison, follow the commands below. The text experiments and their commands are in the next section. I use public UCI Beijing weather measurements and public Tiny Shakespeare and IMDB text; attribution is in `docs/methods.md` and `docs/text-models.md`.
 
 ## Try it
 
