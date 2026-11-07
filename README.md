@@ -393,3 +393,7 @@ only visits the paths I provide. Use it only on public pages I am allowed to rea
 - [webrtc-captioned-call](projects/webrtc-captioned-call/)
 - [alm-asset-allocation-model](projects/alm-asset-allocation-model/)
 - [equity-factor-replication](projects/equity-factor-replication/)
+- [django-document-review](projects/django-document-review/)
+- [forecast-backtest-harness](projects/forecast-backtest-harness/)
+- [local-llm-judgment-eval](projects/local-llm-judgment-eval/)
+- [pytorch-sensor-forecast](projects/pytorch-sensor-forecast/)

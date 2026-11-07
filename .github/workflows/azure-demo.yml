@@ -1,8 +1,10 @@
 name: Optional Azure browser demo
 on:
   push:
+    paths-ignore: ['projects/**']
     branches: [main]
   pull_request:
+    paths-ignore: ['projects/**']
   workflow_dispatch:
 permissions:
   contents: read

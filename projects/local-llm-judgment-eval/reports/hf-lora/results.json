@@ -1,0 +1,719 @@
+{
+  "models": [
+    {
+      "model": {
+        "backend": "transformers",
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+        "adapter_sha256": "fac3847aee93624f8e81722b4c4a913de0f84aa37ebc724f1a26db955e5b12ba",
+        "device": "mps",
+        "dtype": "float32",
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "max_new_tokens": 192,
+        "schema_guidance": false,
+        "torch": "2.8.0",
+        "transformers": "4.57.1",
+        "load_latency_s": 1.329806791851297,
+        "memory_scope": "client RSS; device allocation reported separately"
+      },
+      "survey_sha256": "fce22476e0bca8fa44dae8b4768add2773fb334f06149bcf13b769f698ab14ac",
+      "source_url": "https://www.pewresearch.org/wp-content/uploads/2023/08/SR_23.08.28_views-of-ai_topline.pdf",
+      "created_at": "2026-11-06T00:06:42.445574+00:00",
+      "environment": {
+        "python": "3.12.14",
+        "platform": "Darwin",
+        "machine": "arm64"
+      },
+      "config": {
+        "repeats": 2,
+        "max_attempts": 2,
+        "seed": 42,
+        "case_ids": [
+          "cncexc",
+          "information",
+          "health",
+          "cars",
+          "service",
+          "shopping",
+          "privacy",
+          "policing",
+          "doctors"
+        ],
+        "ece_bins": 10
+      },
+      "summary": {
+        "brier": 1.3708919339933994,
+        "excess_brier": 0.740392651787951,
+        "total_variation": 0.6848800880088008,
+        "js_divergence_bits": 0.46264517127188104,
+        "planned": 18,
+        "accepted": 9,
+        "rejected": 9,
+        "coverage": 0.5,
+        "attempts": 29,
+        "soft_ece": 0.3424400440044004,
+        "repeat_tv": null,
+        "repeat_case_coverage": 0.0,
+        "mean_latency_s": 1.4809060740258753,
+        "peak_client_rss_mib": 1554.609375,
+        "peak_server_tree_rss_mib": null
+      },
+      "runs": [
+        {
+          "case_id": "cncexc",
+          "repeat": 0,
+          "seed": 42,
+          "prediction": null,
+          "target": [
+            0.1,
+            0.52,
+            0.36,
+            0.02
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.027,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.027, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 1.667491708882153
+            },
+            {
+              "attempt": 2,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.027,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.027, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 1.1995884170755744
+            }
+          ],
+          "latency_s": 2.8673361248802394,
+          "peak_client_rss_mib": 1527.828125,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": null
+        },
+        {
+          "case_id": "cncexc",
+          "repeat": 1,
+          "seed": 43,
+          "prediction": [
+            0.974,
+            0.026,
+            0.0,
+            0.0
+          ],
+          "target": [
+            0.1,
+            0.52,
+            0.36,
+            0.02
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.964,\"B\":0.001,\"C\":0.033,\"D\":0.004}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.001, 'C': 0.033, 'D': 0.004}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.8737307079136372
+            },
+            {
+              "attempt": 2,
+              "raw": "{\"A\":0.974,\"B\":0.026,\"C\":0.000,\"D\":0.000}",
+              "error": null,
+              "error_kind": null,
+              "latency_s": 0.8508762919809669
+            }
+          ],
+          "latency_s": 1.7247642499860376,
+          "peak_client_rss_mib": 1530.09375,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": {
+            "brier": 1.727512,
+            "excess_brier": 1.137912,
+            "total_variation": 0.874,
+            "js_divergence_bits": 0.6846853899967829
+          }
+        },
+        {
+          "case_id": "information",
+          "repeat": 0,
+          "seed": 42,
+          "prediction": null,
+          "target": [
+            0.32673267326732675,
+            0.26732673267326734,
+            0.39603960396039606,
+            0.009900990099009901
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.017,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.017, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.9887228750158101
+            },
+            {
+              "attempt": 2,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.027,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.027, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.869126208126545
+            }
+          ],
+          "latency_s": 1.8580048331059515,
+          "peak_client_rss_mib": 1552.96875,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": null
+        },
+        {
+          "case_id": "information",
+          "repeat": 1,
+          "seed": 43,
+          "prediction": [
+            0.974,
+            0.026,
+            0.0,
+            0.0
+          ],
+          "target": [
+            0.32673267326732675,
+            0.26732673267326734,
+            0.39603960396039606,
+            0.009900990099009901
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.964,\"B\":0.001,\"C\":0.033,\"D\":0.004}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.001, 'C': 0.033, 'D': 0.004}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.8685141671448946
+            },
+            {
+              "attempt": 2,
+              "raw": "{\"A\":0.974,\"B\":0.026,\"C\":0.000,\"D\":0.000}",
+              "error": null,
+              "error_kind": null,
+              "latency_s": 0.844268208136782
+            }
+          ],
+          "latency_s": 1.7129282499663532,
+          "peak_client_rss_mib": 1508.46875,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": {
+            "brier": 1.2989757623762377,
+            "excess_brier": 0.6341389816684637,
+            "total_variation": 0.6472673267326733,
+            "js_divergence_bits": 0.4078024672995203
+          }
+        },
+        {
+          "case_id": "health",
+          "repeat": 0,
+          "seed": 42,
+          "prediction": null,
+          "target": [
+            0.33,
+            0.19,
+            0.47,
+            0.01
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.027,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.027, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.9073107920121402
+            },
+            {
+              "attempt": 2,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.027,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.027, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.8725931248627603
+            }
+          ],
+          "latency_s": 1.780042750062421,
+          "peak_client_rss_mib": 1528.390625,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": null
+        },
+        {
+          "case_id": "health",
+          "repeat": 1,
+          "seed": 43,
+          "prediction": [
+            0.974,
+            0.026,
+            0.0,
+            0.0
+          ],
+          "target": [
+            0.33,
+            0.19,
+            0.47,
+            0.01
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.974,\"B\":0.026,\"C\":0.000,\"D\":0.000}",
+              "error": null,
+              "error_kind": null,
+              "latency_s": 0.8752010830212384
+            }
+          ],
+          "latency_s": 0.8753412920050323,
+          "peak_client_rss_mib": 1529.21875,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": {
+            "brier": 1.296632,
+            "excess_brier": 0.6626319999999999,
+            "total_variation": 0.6439999999999999,
+            "js_divergence_bits": 0.4106144252196172
+          }
+        },
+        {
+          "case_id": "cars",
+          "repeat": 0,
+          "seed": 42,
+          "prediction": null,
+          "target": [
+            0.36633663366336633,
+            0.18811881188118812,
+            0.43564356435643564,
+            0.009900990099009901
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.027,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.027, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.8726794579997659
+            },
+            {
+              "attempt": 2,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.027,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.027, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.8506942500825971
+            }
+          ],
+          "latency_s": 1.7235697919968516,
+          "peak_client_rss_mib": 1530.796875,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": null
+        },
+        {
+          "case_id": "cars",
+          "repeat": 1,
+          "seed": 43,
+          "prediction": [
+            0.974,
+            0.026,
+            0.0,
+            0.0
+          ],
+          "target": [
+            0.36633663366336633,
+            0.18811881188118812,
+            0.43564356435643564,
+            0.009900990099009901
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.974,\"B\":0.026,\"C\":0.000,\"D\":0.000}",
+              "error": null,
+              "error_kind": null,
+              "latency_s": 0.9066727920435369
+            }
+          ],
+          "latency_s": 0.9068241249769926,
+          "peak_client_rss_mib": 1531.53125,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": {
+            "brier": 1.2259460594059406,
+            "excess_brier": 0.5854206207234585,
+            "total_variation": 0.6076633663366336,
+            "js_divergence_bits": 0.37580329782415817
+          }
+        },
+        {
+          "case_id": "service",
+          "repeat": 0,
+          "seed": 42,
+          "prediction": null,
+          "target": [
+            0.28,
+            0.34,
+            0.37,
+            0.01
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.017,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.017, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.9246810420881957
+            },
+            {
+              "attempt": 2,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.027,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.027, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.8656437920872122
+            }
+          ],
+          "latency_s": 1.7905131250154227,
+          "peak_client_rss_mib": 1533.453125,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": null
+        },
+        {
+          "case_id": "service",
+          "repeat": 1,
+          "seed": 43,
+          "prediction": [
+            0.974,
+            0.026,
+            0.0,
+            0.0
+          ],
+          "target": [
+            0.28,
+            0.34,
+            0.37,
+            0.01
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.974,\"B\":0.026,\"C\":0.000,\"D\":0.000}",
+              "error": null,
+              "error_kind": null,
+              "latency_s": 0.8697152091190219
+            }
+          ],
+          "latency_s": 0.8698707500007004,
+          "peak_client_rss_mib": 1534.171875,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": {
+            "brier": 1.386232,
+            "excess_brier": 0.717232,
+            "total_variation": 0.694,
+            "js_divergence_bits": 0.4519709312127812
+          }
+        },
+        {
+          "case_id": "shopping",
+          "repeat": 0,
+          "seed": 42,
+          "prediction": null,
+          "target": [
+            0.49,
+            0.15,
+            0.35,
+            0.01
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.017,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.017, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.8808100828900933
+            },
+            {
+              "attempt": 2,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.027,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.027, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.8629529578611255
+            }
+          ],
+          "latency_s": 1.7439101671334356,
+          "peak_client_rss_mib": 1535.59375,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": null
+        },
+        {
+          "case_id": "shopping",
+          "repeat": 1,
+          "seed": 43,
+          "prediction": [
+            0.974,
+            0.026,
+            0.0,
+            0.0
+          ],
+          "target": [
+            0.49,
+            0.15,
+            0.35,
+            0.01
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.974,\"B\":0.026,\"C\":0.000,\"D\":0.000}",
+              "error": null,
+              "error_kind": null,
+              "latency_s": 0.8715682500042021
+            }
+          ],
+          "latency_s": 0.871733124833554,
+          "peak_client_rss_mib": 1536.3125,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": {
+            "brier": 0.987032,
+            "excess_brier": 0.37223199999999995,
+            "total_variation": 0.484,
+            "js_divergence_bits": 0.2736490166487544
+          }
+        },
+        {
+          "case_id": "privacy",
+          "repeat": 0,
+          "seed": 42,
+          "prediction": null,
+          "target": [
+            0.09900990099009901,
+            0.5247524752475248,
+            0.36633663366336633,
+            0.009900990099009901
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.017,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.017, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.9065762090031058
+            },
+            {
+              "attempt": 2,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.027,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.027, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.8818680827971548
+            }
+          ],
+          "latency_s": 1.7885977909900248,
+          "peak_client_rss_mib": 1537.734375,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": null
+        },
+        {
+          "case_id": "privacy",
+          "repeat": 1,
+          "seed": 43,
+          "prediction": [
+            0.974,
+            0.026,
+            0.0,
+            0.0
+          ],
+          "target": [
+            0.09900990099009901,
+            0.5247524752475248,
+            0.36633663366336633,
+            0.009900990099009901
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.974,\"B\":0.026,\"C\":0.000,\"D\":0.000}",
+              "error": null,
+              "error_kind": null,
+              "latency_s": 0.8778021670877934
+            }
+          ],
+          "latency_s": 0.8779384167864919,
+          "peak_client_rss_mib": 1538.421875,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": {
+            "brier": 1.7291935841584158,
+            "excess_brier": 1.1486622636996373,
+            "total_variation": 0.874990099009901,
+            "js_divergence_bits": 0.6862175938824855
+          }
+        },
+        {
+          "case_id": "policing",
+          "repeat": 0,
+          "seed": 42,
+          "prediction": null,
+          "target": [
+            0.24,
+            0.26,
+            0.49,
+            0.01
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.027,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.027, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.8924322079401463
+            },
+            {
+              "attempt": 2,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.027,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.027, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.8739137088414282
+            }
+          ],
+          "latency_s": 1.7665233749430627,
+          "peak_client_rss_mib": 1551.71875,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": null
+        },
+        {
+          "case_id": "policing",
+          "repeat": 1,
+          "seed": 43,
+          "prediction": [
+            0.974,
+            0.026,
+            0.0,
+            0.0
+          ],
+          "target": [
+            0.24,
+            0.26,
+            0.49,
+            0.01
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.974,\"B\":0.026,\"C\":0.000,\"D\":0.000}",
+              "error": null,
+              "error_kind": null,
+              "latency_s": 0.873662207974121
+            }
+          ],
+          "latency_s": 0.8738307079765946,
+          "peak_client_rss_mib": 1552.421875,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": {
+            "brier": 1.468312,
+            "excess_brier": 0.833712,
+            "total_variation": 0.734,
+            "js_divergence_bits": 0.5017561771801474
+          }
+        },
+        {
+          "case_id": "doctors",
+          "repeat": 0,
+          "seed": 42,
+          "prediction": null,
+          "target": [
+            0.37,
+            0.2,
+            0.42,
+            0.01
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.017,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.017, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.8762747920118272
+            },
+            {
+              "attempt": 2,
+              "raw": "{\"A\":0.964,\"B\":0.007,\"C\":0.027,\"D\":0.003}",
+              "error": "1 validation error for Prediction\n  Value error, probabilities must sum to 1 within 0.000001 [type=value_error, input_value={'A': 0.964, 'B': 0.007, 'C': 0.027, 'D': 0.003}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/value_error",
+              "error_kind": "validation",
+              "latency_s": 0.8649959999602288
+            }
+          ],
+          "latency_s": 1.7414501667954028,
+          "peak_client_rss_mib": 1553.984375,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": null
+        },
+        {
+          "case_id": "doctors",
+          "repeat": 1,
+          "seed": 43,
+          "prediction": [
+            0.974,
+            0.026,
+            0.0,
+            0.0
+          ],
+          "target": [
+            0.37,
+            0.2,
+            0.42,
+            0.01
+          ],
+          "attempts": [
+            {
+              "attempt": 1,
+              "raw": "{\"A\":0.974,\"B\":0.026,\"C\":0.000,\"D\":0.000}",
+              "error": null,
+              "error_kind": null,
+              "latency_s": 0.8829610829707235
+            }
+          ],
+          "latency_s": 0.8831302910111845,
+          "peak_client_rss_mib": 1554.609375,
+          "peak_server_tree_rss_mib": null,
+          "memory_errors": [],
+          "device_allocated_mib_after_generation": 1885.616943359375,
+          "scores": {
+            "brier": 1.218192,
+            "excess_brier": 0.571592,
+            "total_variation": 0.604,
+            "js_divergence_bits": 0.3713072421826821
+          }
+        }
+      ]
+    }
+  ]
+}

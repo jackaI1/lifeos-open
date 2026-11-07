@@ -1,0 +1,40 @@
+{
+  "base_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "seed": 42,
+  "steps": 12,
+  "device": "mps",
+  "trainable_parameters": 270336,
+  "total_parameters": 494303104,
+  "training_examples": 24,
+  "losses": [
+    0.6512117385864258,
+    0.7434031963348389,
+    0.6295400261878967,
+    0.4620911777019501,
+    0.4455021023750305,
+    0.5956984162330627,
+    0.3685603141784668,
+    0.2611757516860962,
+    0.32743093371391296,
+    0.1938231736421585,
+    0.15917348861694336,
+    0.07378901541233063
+  ],
+  "parameter_change_l1": 398.60351264476776,
+  "training_seconds": 6.249302875017747,
+  "training_sha256": "dc40aca508e03b83a8a9a13b91d2a6983bae6ae10da4e48048bd4a03a6b2d77f",
+  "adapter_sha256": "fac3847aee93624f8e81722b4c4a913de0f84aa37ebc724f1a26db955e5b12ba",
+  "peft": "0.17.1",
+  "torch": "2.8.0",
+  "transformers": "4.57.1",
+  "learning_rate": 0.0002,
+  "rank": 4,
+  "alpha": 8,
+  "target_modules": [
+    "q_proj",
+    "v_proj"
+  ],
+  "prompt_loss_masked": true,
+  "survey_data_used": false
+}
