@@ -88,6 +88,12 @@ def main():
     trigger_key, trigger = next((key, value) for key, value in definitions['trigger'].items() if 'row' in value['name'].lower() and 'updated' in value['name'].lower())
     action_key, action = next((key, value) for key, value in definitions['action'].items() if 'create row' in value['name'].lower())
     automation = call('/api/automations', 'POST', {'name': 'Record every deliverable review', 'type': 'automation', 'disabled': False, 'definition': {'trigger': {**trigger, 'id': str(uuid.uuid4()), 'stepId': trigger_key, 'inputs': {'tableId': tables['Deliverables']}}, 'steps': [{**action, 'id': str(uuid.uuid4()), 'stepId': action_key, 'inputs': {'row': {'tableId': tables['Audit'], 'Title': '{{trigger.row.Title}}', 'Status': '{{trigger.row.Status}}', 'SourceRow': '{{trigger.id}}'}}}]}})
+    for name, table_id in tables.items():
+        call(f'/api/permission/BASIC/{table_id}/read', 'POST')
+        writer = 'BASIC' if name == 'Deliverables' else 'ADMIN'
+        call(f'/api/permission/{writer}/{table_id}/write', 'POST')
+    call(f"/api/permission/BASIC/{cleanup['id']}/read", 'POST')
+    call(f"/api/permission/ADMIN/{cleanup['id']}/write", 'POST')
     call(f'/api/public/v1/applications/{app_id}/publish', 'POST', {'seedProductionTables': True})
     production_id = app_id.replace('app_dev_', 'app_')
     # Exercise the published form as an explicitly scoped end user, not the builder.

@@ -1,7 +1,7 @@
 import{chromium}from'playwright';import{readFile,mkdir,writeFile}from'node:fs/promises';import assert from'node:assert/strict';
 import{execFileSync}from'node:child_process';
 const state=JSON.parse(await readFile('.runtime/internal-desk/budibase.json','utf8')),origin=process.env.BUDIBASE_URL??'http://127.0.0.1:10000';
-let browserServer,browser,context,reviewContext,page,ownership,failed=true;
+let browserServer,browser,context,reviewContext,page,ownership,failed=true;const apiErrors=[];
 try{
  browserServer=await chromium.launchServer({headless:true,host:'127.0.0.1'});const pid=browserServer.process().pid;
  ownership={owner:'internal-desk browser test',pid,start:execFileSync('ps',['-p',String(pid),'-o','lstart='],{encoding:'utf8'}).trim(),port:Number(new URL(browserServer.wsEndpoint()).port),cleanup:'browser.close() and browserServer.close() in finally',closed:false};console.log(JSON.stringify(ownership));
@@ -16,7 +16,7 @@ try{
  const reviewSelf=await(await reviewContext.request.get(origin+'/api/global/self')).json();await reviewContext.setExtraHTTPHeaders({'x-csrf-token':reviewSelf.csrfToken});
  const appUrl=new URL(new URL(state.appUrl,origin).pathname.replace(/\/$/,'')+'/',origin);appUrl.hash='/review/'+encodeURIComponent(state.rowId);
  const packageResponse=await reviewContext.request.get(`${origin}/api/applications/${state.productionId}/appPackage`,{headers:{'x-budibase-app-id':state.productionId,referer:appUrl.href}});assert.ok(packageResponse.ok(),`published package HTTP ${packageResponse.status()}`);const appPackage=await packageResponse.json();assert.equal(appPackage.screens?.length,5,'reviewer must have access to all five published screens');
- page=await reviewContext.newPage();await page.goto(appUrl.href);
+ page=await reviewContext.newPage();page.on('response',async response=>{const path=new URL(response.url()).pathname;if(path.startsWith('/api/')&&response.status()>=400){const body=await response.json().catch(()=>({}));apiErrors.push({path,status:response.status(),message:String(body.message??'').slice(0,160)});if(apiErrors.length>8)apiErrors.shift();}});await page.goto(appUrl.href);
  // Match the pinned release's child-app prefix and hash-based screen routes.
  await page.getByText('Review fictional deliverable',{exact:true}).waitFor({timeout:60000});
  const title=page.getByLabel('Title',{exact:true});await title.fill('Fictional desk node design reviewed');
@@ -31,7 +31,7 @@ try{
  appUrl.hash='/audit';await page.goto(appUrl.href);await page.getByText('Fictional desk node design reviewed',{exact:true}).first().waitFor();await page.screenshot({path:'test-results/internal-desk/audit.png',fullPage:true});
  appUrl.hash='/cleanup';await page.goto(appUrl.href);await page.getByText('Fictional desk node design reviewed',{exact:true}).first().waitFor();assert.equal(await page.getByText('Fictional enclosure drawing',{exact:true}).count(),0);await page.screenshot({path:'test-results/internal-desk/cleanup.png',fullPage:true});
  await writeFile('test-results/internal-desk/results.json',JSON.stringify({reviewSaved:true,auditCreated:true,auditVisible:true,cleanupVisible:true,citations:citations.length,relationalAssets:assets.length,cleanupRows:1,screens:state.screens}));failed=false;
-}finally{try{if(failed&&page){await mkdir('test-results/internal-desk',{recursive:true});await page.screenshot({path:'test-results/internal-desk/failure.png',fullPage:true}).catch(()=>{});console.error('Budibase page:',page.url(),(await page.locator('body').innerText().catch(()=>'' )).slice(0,600));}await page?.close();await reviewContext?.close();await context?.close();}finally{try{await browser?.close();}finally{await browserServer?.close();}await verifyOwnership(ownership);}}
+}finally{try{if(failed&&page){await mkdir('test-results/internal-desk',{recursive:true});await page.screenshot({path:'test-results/internal-desk/failure.png',fullPage:true}).catch(()=>{});console.error('Budibase API errors:',JSON.stringify(apiErrors));console.error('Budibase page:',page.url(),(await page.locator('body').innerText().catch(()=>'' )).slice(0,600));}await page?.close();await reviewContext?.close();await context?.close();}finally{try{await browser?.close();}finally{await browserServer?.close();}await verifyOwnership(ownership);}}
 async function verifyOwnership(owned){
  if(!owned)return;
  let alive=true;try{process.kill(owned.pid,0);}catch(e){if(e.code==='ESRCH')alive=false;else throw e;}
