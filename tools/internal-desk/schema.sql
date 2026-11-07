@@ -1,0 +1,16 @@
+PRAGMA foreign_keys=ON;
+CREATE TABLE IF NOT EXISTS asset_types(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE CHECK(name IN ('water','sewer')));
+CREATE TABLE IF NOT EXISTS assets(id INTEGER PRIMARY KEY,tag TEXT NOT NULL UNIQUE,type_id INTEGER NOT NULL REFERENCES asset_types(id),installed_year INTEGER NOT NULL CHECK(installed_year BETWEEN 1900 AND 2100),condition_score INTEGER NOT NULL CHECK(condition_score BETWEEN 1 AND 5));
+CREATE TABLE IF NOT EXISTS inspections(id INTEGER PRIMARY KEY,asset_id INTEGER NOT NULL REFERENCES assets(id),inspected_on TEXT NOT NULL CHECK(date(inspected_on) IS NOT NULL AND date(inspected_on)=inspected_on),finding TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS deliverables(id INTEGER PRIMARY KEY,title TEXT NOT NULL UNIQUE,status TEXT NOT NULL CHECK(status IN ('draft','review','approved')),cleanup_required INTEGER NOT NULL DEFAULT 0 CHECK(cleanup_required IN (0,1)));
+CREATE TABLE IF NOT EXISTS reviews(id INTEGER PRIMARY KEY,deliverable_id INTEGER NOT NULL REFERENCES deliverables(id),status TEXT NOT NULL CHECK(status IN ('draft','review','approved')),comment TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS audit_log(id INTEGER PRIMARY KEY,deliverable_id INTEGER NOT NULL REFERENCES deliverables(id),old_status TEXT NOT NULL,new_status TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TRIGGER IF NOT EXISTS deliverable_audit AFTER UPDATE OF status ON deliverables WHEN OLD.status<>NEW.status BEGIN INSERT INTO audit_log(deliverable_id,old_status,new_status) VALUES(NEW.id,OLD.status,NEW.status); END;
+CREATE TRIGGER IF NOT EXISTS immutable_audit_update BEFORE UPDATE ON audit_log BEGIN SELECT RAISE(ABORT,'audit log is append only'); END;
+CREATE TRIGGER IF NOT EXISTS immutable_audit_delete BEFORE DELETE ON audit_log BEGIN SELECT RAISE(ABORT,'audit log is append only'); END;
+CREATE VIEW IF NOT EXISTS asset_inspection_report AS SELECT a.tag,t.name AS network,a.installed_year,a.condition_score,MAX(i.inspected_on) AS last_inspected FROM assets a JOIN asset_types t ON t.id=a.type_id LEFT JOIN inspections i ON i.asset_id=a.id GROUP BY a.id;
+CREATE VIEW IF NOT EXISTS cleanup_queue AS SELECT id,title,status FROM deliverables WHERE cleanup_required=1 AND status<>'approved';
+INSERT OR IGNORE INTO asset_types VALUES(1,'water'),(2,'sewer');
+INSERT OR IGNORE INTO assets VALUES(1,'Fictional-W-01',1,2005,3),(2,'Fictional-S-01',2,1999,2);
+INSERT OR IGNORE INTO inspections VALUES(1,1,'2026-11-01','Synthetic pressure check'),(2,2,'2026-11-02','Synthetic condition survey');
+INSERT OR IGNORE INTO deliverables VALUES(1,'Fictional desk node design', 'draft',1),(2,'Fictional lab report figures','review',0);

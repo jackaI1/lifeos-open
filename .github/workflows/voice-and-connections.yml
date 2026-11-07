@@ -1,0 +1,253 @@
+name: Voice and connections
+on: [push, pull_request]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  selenium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: make install && make build
+      - name: Drive the fictional workspace with Selenium and NUnit
+        run: |
+          set -euo pipefail
+          LIFEOS_DATABASE="$RUNNER_TEMP/selenium.sqlite" node build/server.mjs > "$RUNNER_TEMP/lifeos.log" 2>&1 &
+          pid=$!
+          cleanup() { kill -TERM "$pid" 2>/dev/null || true; wait "$pid" || true; ! kill -0 "$pid" 2>/dev/null; test -z "$(ss -H -ltn 'sport = :8787')"; }
+          trap cleanup EXIT
+          ps -p "$pid" -o pid,lstart,args
+          echo "owner=selenium-fixture port=8787 cleanup=kill-TERM-$pid"
+          curl --retry 20 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:8787/api/health
+          mkdir -p test-results/selenium
+          dotnet test test/selenium --logger "nunit;LogFilePath=$PWD/test-results/selenium/nunit.xml" --results-directory test-results/selenium
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: selenium-nunit-results
+          path: |
+            test-results/selenium
+            test/selenium/bin/Debug/net8.0/*.png
+  terraform-docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.0
+      - run: docker build --target public-demo -t lifeos-public:terraform .
+      - run: terraform -chdir=infra/docker fmt -check
+      - run: terraform -chdir=infra/docker init -input=false
+      - run: terraform -chdir=infra/docker validate
+      - run: terraform -chdir=infra/docker plan -out=demo.tfplan -input=false
+      - name: Apply, probe real container and destroy
+        run: |
+          set -euo pipefail
+          cleanup() { terraform -chdir=infra/docker destroy -auto-approve -input=false; test -z "$(docker ps -aq --filter name=^lifeos-terraform-demo$)"; }
+          trap cleanup EXIT
+          terraform -chdir=infra/docker apply -auto-approve demo.tfplan
+          docker inspect --format 'owner=terraform-test pid={{.State.Pid}} started={{.State.StartedAt}} port=18080 cleanup=terraform-destroy' lifeos-terraform-demo
+          curl --retry 20 --retry-all-errors --retry-delay 1 -fsS http://127.0.0.1:18080/healthz | grep -q '"status":"ok"'
+  aws-publisher:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install 'boto3>=1.40,<2' 'moto[s3,iam]>=5.1,<6' 'pytest>=8,<10'
+      - run: python -m pytest -q integrations/aws-feed
+        env:
+          AWS_DEFAULT_REGION: us-east-1
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.0
+      - run: terraform -chdir=infra/publisher fmt -check
+      - run: terraform -chdir=infra/publisher init -backend=false -input=false
+      - run: terraform -chdir=infra/publisher validate
+  zap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Build the public demo to scan
+        run: docker build --target public-demo -t lifeos-zap .
+      - name: Scan with OWASP ZAP and reject new medium or high findings
+        run: |
+          set -euo pipefail
+          mkdir -p test-results/zap
+          chmod 777 test-results/zap
+          cid=$(docker run -d -e PARENT_ORIGIN=https://jacklai.ca -p 127.0.0.1:8080:8080 lifeos-zap)
+          trap 'docker stop "$cid" >/dev/null; docker rm "$cid" >/dev/null' EXIT
+          docker inspect --format 'owner=zap-fixture pid={{.State.Pid}} start={{.State.StartedAt}} port=8080 cleanup=docker-stop-and-rm' "$cid"
+          curl --retry 20 --retry-all-errors --retry-delay 1 -fsS http://127.0.0.1:8080/healthz
+          set +e
+          docker run --rm --network host -v "$PWD/test-results/zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://127.0.0.1:8080 -m 1 -J report.json -r report.html
+          status=$?
+          set -e
+          test "$status" -le 2
+          node security/check-zap.mjs test-results/zap/report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-report
+          path: test-results/zap
+  forms-and-shift-search:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: shift
+          POSTGRES_PASSWORD: fictional-shift
+          POSTGRES_DB: shifts
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U shift -d shifts" --health-interval 2s --health-retries 30
+    env:
+      FORM_DATABASE_URL: postgresql://shift:fictional-shift@127.0.0.1:5432/shifts
+      SHIFT_DATABASE_URL: postgresql://shift:fictional-shift@127.0.0.1:5432/shifts
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: make install
+      - run: node --test test/form-fields.test.mjs
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - run: pdftotext samples/forms/filled.pdf - | grep -q 'Alex Example'
+      - run: npm run rag:download
+      - run: pip install -r services/shift-search/requirements.txt
+      - name: Measure full-text, vector and combined retrieval with the real local model
+        run: |
+          set -euo pipefail
+          node tools/shift-embeddings.mjs > "$RUNNER_TEMP/embeddings.log" 2>&1 &
+          pid=$!
+          trap 'kill -TERM "$pid"; wait "$pid" || true' EXIT
+          echo "owner=shift-embedding-test pid=$pid port=8792 cleanup=kill-TERM-$pid"
+          ps -p "$pid" -o pid,lstart,args
+          curl --retry 30 --retry-connrefused --retry-delay 1 -fsS -H 'content-type: application/json' -d '{"texts":["ready"]}' http://127.0.0.1:8792/embed > /dev/null
+          python -m pytest -q services/shift-search
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shift-search-evaluation
+          path: evaluation.json
+  fhir:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      localstack:
+        image: localstack/localstack:4
+        env:
+          SERVICES: s3,lambda,dynamodb,iam,logs
+          LAMBDA_DOCKER_NETWORK: lifeos-fhir-ci
+        ports: ['4566:4566']
+        volumes: ['/var/run/docker.sock:/var/run/docker.sock']
+        options: --health-cmd "curl -f http://localhost:4566/_localstack/health" --health-interval 5s --health-retries 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          cache-dependency-path: services/fhir/go.sum
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: go vet ./... && go test -race -count=1 ./... && go test -fuzz=FuzzParse -fuzztime=5s .
+        working-directory: services/fhir
+      - run: GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bootstrap ./cmd/lambda
+        working-directory: services/fhir
+      - run: pip install 'boto3>=1.40,<2'
+      - name: Connect LocalStack Lambda executor to its owned network
+        run: |
+          docker network create lifeos-fhir-ci
+          docker network connect --alias localstack lifeos-fhir-ci '${{ job.services.localstack.id }}'
+      - run: python test_localstack.py
+        working-directory: services/fhir
+      - name: Remove owned Lambda network
+        if: always()
+        run: |
+          docker network disconnect lifeos-fhir-ci '${{ job.services.localstack.id }}' || true
+          docker network rm lifeos-fhir-ci || true
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.0
+      - run: terraform -chdir=infra/fhir fmt -check && terraform -chdir=infra/fhir init -backend=false -input=false && terraform -chdir=infra/fhir validate
+  internal-desk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      BB_ADMIN_USER_EMAIL: fictional@example.com
+      BB_ADMIN_USER_PASSWORD: Fictional-local-review-7291!
+      BB_REVIEWER_USER_EMAIL: reviewer@example.com
+      BB_REVIEWER_USER_PASSWORD: Fictional-reviewer-7291!
+      BUDIBASE_JWT_SECRET: fictional-local-jwt-secret-7291-keep-this-ci-only-not-for-deployment
+      BUDIBASE_INTERNAL_KEY: fictional-local-internal-key-7291
+      BUDIBASE_ENCRYPTION_KEY: fictional-local-encryption-key-7291
+      BUDIBASE_REDIS_PASSWORD: fictional-local-redis-password-7291
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - name: Start the real low-code platform and drive its generated review form
+        run: |
+          set -euo pipefail
+          cleanup() {
+            result=$?
+            trap - EXIT
+            cid=$(docker compose -p internal-desk -f compose.internal-desk.yaml ps -aq budibase)
+            if [ -n "$cid" ]; then
+              docker inspect --format 'owner=internal-desk-ci pid={{.State.Pid}} start={{.State.StartedAt}} port=10000 cleanup=compose-down-volumes' "$cid" || true
+            fi
+            docker compose -p internal-desk -f compose.internal-desk.yaml down --volumes || result=1
+            test -z "$(docker ps -aq --filter label=com.docker.compose.project=internal-desk)" || result=1
+            test -z "$(docker volume ls -q --filter label=com.docker.compose.project=internal-desk)" || result=1
+            test -z "$(ss -H -ltn 'sport = :10000')" || result=1
+            echo "Checked internal-desk container, volume and port cleanup."
+            exit "$result"
+          }
+          trap cleanup EXIT
+          if ! docker compose -p internal-desk -f compose.internal-desk.yaml up -d --wait --wait-timeout 300; then
+            cid=$(docker compose -p internal-desk -f compose.internal-desk.yaml ps -aq budibase)
+            docker inspect --format '{{range .State.Health.Log}}{{.Output}}{{end}}' "$cid" | tail -c 2000
+            docker compose -p internal-desk -f compose.internal-desk.yaml exec -T budibase pm2 list
+            docker compose -p internal-desk -f compose.internal-desk.yaml exec -T budibase node /opt/lifeos-diagnose.mjs
+            exit 1
+          fi
+          docker compose -p internal-desk -f compose.internal-desk.yaml ps --format json
+          curl -fsS http://127.0.0.1:10000/health > /dev/null
+          python tools/internal-desk/budibase.py --initialize
+          npm ci --ignore-scripts
+          npx playwright install --with-deps --only-shell chromium
+          node tools/internal-desk/budibase-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: internal-desk-review
+          path: test-results/internal-desk

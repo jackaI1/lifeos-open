@@ -43,3 +43,13 @@ __pycache__/
 *.tsbuildinfo
 .aws-sam/
 *.egg-info/
+**/bin/
+**/obj/
+**/.terraform/
+*.tfstate*
+*.tfplan
+infra/publisher/publisher.zip
+services/shift-search/evaluation.json
+services/fhir/bootstrap
+services/fhir/function.zip
+services/fhir/output/

@@ -926,6 +926,7 @@ async function mountWorkspace(root, ctx, course, id, store) {
    if(job?.status==='failed')transcriptDock.append(el('p',{role:'status'},job.error||'Transcription failed. Retry when local Whisper is ready.'));
    if(state?.available&&!['queued','running'].includes(job?.status))transcriptDock.append(button(transcript?.mock||!transcript?'Transcribe locally':'Transcribe saved audio again',run(async()=>{await ctx.request('/api/lectures/'+id+'/transcribe',{method:'POST',body:{mutationId:crypto.randomUUID()}});await refresh();}),'quiet'));
    else if(!state?.available)transcriptDock.append(el('p',{},'Live transcription is available in the local edition. Setup: docs/whisper.md in the repository.'));
+   if(ctx.state.session?.mode)transcriptDock.append(el('a',{href:'/live-voice.html',target:'_blank',rel:'noopener'},'Open live microphone transcript'));
    transcriptDock.append(button('Refresh transcript',run(refresh),'quiet'));
    if(!transcript?.segments?.length)transcriptDock.append(el('p',{},transcript&&!transcript.mock?'No speech detected in the saved audio.':'No transcript yet. Pause recording and save audio before transcribing.'));
    else transcriptDock.append(el('p',{},'Select a timestamp to hear the audio and open nearby handwritten notes.'));

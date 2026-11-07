@@ -1,0 +1,10 @@
+[
+ {"id":"pump-1","document":"Synthetic water loop report","shift":"2026-11-01 day","passage":"The water circulation pump P-12 vibrated during startup. The team replaced its worn coupling and vibration returned to the usual range."},
+ {"id":"filter-1","document":"Synthetic water loop report","shift":"2026-11-01 night","passage":"Pressure across the inlet filter rose to 38 kPa. The operator isolated the loop and replaced the blocked filter cartridge."},
+ {"id":"sensor-1","document":"Synthetic furnace report","shift":"2026-11-02 day","passage":"Thermocouple T-4 read 15 degrees above the reference probe. The team quarantined its measurements pending sensor calibration."},
+ {"id":"valve-1","document":"Synthetic furnace report","shift":"2026-11-02 night","passage":"The cooling valve V-3 stuck closed. Cooling flow fell to 2 litres per minute. The operator stopped the furnace and tagged the valve for repair."},
+ {"id":"battery-1","document":"Synthetic desk node report","shift":"2026-11-03 day","passage":"The desk node battery voltage dropped to 3.2 V under load. Charging the battery restored the wireless connection."},
+ {"id":"optic-1","document":"Synthetic camera note","shift":"2026-11-03 night","passage":"Dust on the camera lens caused blurry inspection images. Cleaning the lens restored image sharpness without changing exposure."},
+ {"id":"safety-1","document":"Synthetic isolation note","shift":"reference","passage":"Before opening a cooling line, isolate its energy source, release pressure and verify zero energy according to the lab procedure."},
+ {"id":"handoff-1","document":"Synthetic handoff note","shift":"reference","passage":"Every shift handoff records the equipment identifier, observed issue, action taken and unresolved follow-up. Do not invent missing measurements."}
+]

@@ -13,6 +13,7 @@ COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --ignore-scripts
 
 FROM node:${NODE_VERSION}-bookworm-slim AS build
+RUN apt-get update && apt-get install -y --no-install-recommends make openssl procps && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 COPY package.json package-lock.json ./
@@ -32,7 +33,7 @@ WORKDIR /app
 RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /opt/yarn*
 COPY --from=public-demo-build --chown=root:root /app/.runtime/hosted/assets ./assets
 COPY --from=build --chown=root:root /app/package.json ./package.json
-COPY --from=build --chown=root:root /app/src/hosted/server.mjs /app/src/hosted/worker.ts ./src/hosted/
+COPY --from=build --chown=root:root /app/src/hosted/server.mjs /app/src/hosted/worker.ts /app/src/hosted/log.mjs ./src/hosted/
 USER node
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \

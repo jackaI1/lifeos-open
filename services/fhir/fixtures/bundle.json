@@ -1,0 +1,5 @@
+{"resourceType":"Bundle","type":"collection","entry":[
+ {"fullUrl":"urn:uuid:fictional-patient","resource":{"resourceType":"Patient","id":"fictional-patient","name":[{"family":"Example","given":["Alex"]}]}},
+ {"resource":{"resourceType":"Observation","id":"fictional-temperature","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"8310-5"}]},"subject":{"reference":"Patient/fictional-patient"},"valueQuantity":{"value":37,"unit":"Cel","system":"http://unitsofmeasure.org","code":"Cel"}}},
+ {"resource":{"resourceType":"Observation","id":"fictional-reject","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"8310-5"}]},"subject":{"reference":"Patient/missing"},"valueQuantity":{"value":37,"unit":"Cel","system":"http://unitsofmeasure.org","code":"Cel"}}}
+]}

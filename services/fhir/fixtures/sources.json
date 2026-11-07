@@ -1,0 +1,12 @@
+[
+  {
+    "url": "https://hl7.org/fhir/R4/patient-example.json",
+    "sha256": "7cc6b3817264c22e722b6bc10e494d3441341032f8294db7ccec796ca7a0cf81",
+    "note": "FHIR R4 fictional example, reduced to importer fields; no private records"
+  },
+  {
+    "url": "https://hl7.org/fhir/R4/observation-example-respiratory-rate.json",
+    "sha256": "34e17df17d4510fe8424c5e1ac9431766838747171718cab8226cfcd5a9920d9",
+    "note": "FHIR R4 fictional example, reduced to importer fields; no private records"
+  }
+]

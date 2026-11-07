@@ -83,6 +83,12 @@ needed. Stop with Ctrl-C. Settings lets me change themes and [time format](docs/
 save a backup. The [local guide](docs/local-workspace.md) covers configuration,
 restoring backups and running an empty workspace.
 
+For a local checkout, I use `make install` to install the locked dependencies,
+`make build` to build the app, and `npm start` to run it. `make help` lists the
+other shortcuts: `make lint`, `make test`, and `make docker` (which needs Docker).
+The build checks its input files and skips work when they have not changed. The
+main CI job uses the same commands and checks that a second build is skipped.
+
 Docker packages the app with its runtime; Compose starts that package and its
 storage together. With Docker and Compose v2 installed, I can instead run:
 
@@ -124,6 +130,12 @@ on another page or after a recording pause. After the separate
 **School → Lectures**, record in a notebook, pause and let the audio save, then
 choose **Transcript → Transcribe locally**. On a phone, Transcript is under
 **More**. I refresh the transcript and select a timestamp to listen again.
+
+I can also read a short spoken note as I record it. After the
+[local speech setup](docs/live-voice.md#setup), I open a lecture notebook's
+**Transcript → Open live microphone transcript**, choose **Start microphone**,
+and use **Finish recording** to collect the last few seconds. Timestamped text
+arrives in small pieces; a brief lost connection keeps unfinished audio for retry.
 
 Whisper, a speech-recognition model, runs on my computer after its initial
 download. A background worker checks the saved audio and saves timestamped text
@@ -207,6 +219,11 @@ They are learning tools beside LifeOS, with no real accounts or money.
 
 ## Optional connections
 
+In the local **Settings → Connections**, I can choose a local model or the optional
+Claude connection for [syllabus review](docs/assistant-connections.md). I paste
+only the text I want to share, check the dated proposals, then confirm before
+saving any events. The page names the answering provider and explains a fallback.
+
 If I want coursework reminders in Microsoft 365, the
 [connection guide](integrations/m365/README.md) explains how to copy tasks from
 the SQLite workspace to SharePoint, Microsoft's shared-list service, and import
@@ -254,7 +271,37 @@ separate host; it has not been deployed or checked against a live AWS account.
 Running it needs an AWS account and can incur charges. A smaller [static AWS option and an optional Azure container deployment](docs/study-cloud.md) have separate templates and deployment workflows. Both are account-configured options; neither has been provisioned by these tests. The usual public demo
 continues to use Cloudflare, the service hosting its public files.
 
+I also wanted to learn how to connect small review and import tools without using
+private records. My [fictional review desk](docs/review-desk.md) has a Budibase
+review form, an audit trail, a clean-up queue and source citations from a self-made
+PDF form. Its separate relational asset registry has saved water/sewer inspection
+queries and a report I can open in Excel. Diagnosis and signature fields stay
+blank in the PDF example.
+
+For a compatible local agent, my [schedule tools](docs/mcp.md) can read commitments
+and deadlines and queue validated tasks with a scoped token. I can poll a job id
+to see when a write finishes. The [shift-report search](docs/shift-search.md)
+compares word search with a local model's similarity search and returns the exact
+fictional source passage. The [record importer](docs/fhir-ingest.md) checks public
+FHIR health-record examples and quarantines missing or unsupported values, with
+an optional S3-to-Lambda-to-DynamoDB path tested in an AWS emulator.
+
 ## Checks and documentation
+
+I run [C# browser checks](docs/connection-checks.md#browser-and-data-checks) with
+Selenium and NUnit to add and edit a fictional schedule event and compare the
+screen's dates and counts with the API. CI saves NUnit results and screenshots
+on failure. My [security checks](SECURITY-TESTING.md) verify the public host's
+headers, rejected remote writes and literal display of entered text, then scan
+a locally served public build with OWASP ZAP.
+
+The [deployment checks](docs/connection-checks.md) apply and destroy a disposable
+Docker container through Terraform, check its health response, and test the
+optional S3 feed publisher with emulated AWS permissions. The public container
+writes structured health logs; its AWS template includes a CloudWatch alarm for
+failed checks. These are tested local/emulated deployment paths, not a claim of
+a new live AWS deployment. The normal live demo remains at
+[lifeos.jacklai.ca](https://lifeos.jacklai.ca).
 
 I test the workspace with fictional records before sharing changes. The [checks guide](docs/project-checks.md) explains how I run the tests and what they cover. The [contribution guide](CONTRIBUTING.md) explains how to make changes.
 

@@ -1,0 +1,31 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: shift
+      POSTGRES_PASSWORD: fictional-shift
+      POSTGRES_DB: shifts
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U shift -d shifts]
+      interval: 2s
+      retries: 30
+  embeddings:
+    build:
+      context: .
+      dockerfile: services/shift-search/embeddings.Dockerfile
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:8792/embed',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({texts:['ready']})}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 10s
+      retries: 60
+  search:
+    build: services/shift-search
+    ports: ['127.0.0.1:8793:8000']
+    environment:
+      SHIFT_DATABASE_URL: postgresql://shift:fictional-shift@postgres/shifts
+      EMBED_URL: http://embeddings:8792/embed
+    depends_on:
+      postgres:
+        condition: service_healthy
+      embeddings:
+        condition: service_healthy

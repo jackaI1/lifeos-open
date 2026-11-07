@@ -7,9 +7,23 @@ import {CloudStore} from '../cloud/store.mjs';
 import {buildWhisperTranscript} from './whisper-transcript.mjs';
 import type {WorkspaceDatabase} from './database.ts';
 
+// One inference slot per local process, shared by saved recordings and live chunks.
+let inferenceOccupied=false;
+const inferenceWaiters:Array<{resolve:(release:()=>void)=>void;reject:(reason:unknown)=>void;signal:AbortSignal;cancel:()=>void}>=[];
+const releaseInference=()=>{const next=inferenceWaiters.shift();if(next){next.signal.removeEventListener('abort',next.cancel);next.resolve(releaseInference);}else inferenceOccupied=false;};
+export const whisperIsBusy=()=>inferenceOccupied;
+export async function withWhisperSlot<T>(signal:AbortSignal,work:()=>Promise<T>):Promise<T>{
+ signal.throwIfAborted();
+ const release=await new Promise<()=>void>((resolve,reject)=>{
+  if(!inferenceOccupied){inferenceOccupied=true;resolve(releaseInference);return;}
+  const waiter={resolve,reject,signal,cancel:()=>{const index=inferenceWaiters.indexOf(waiter);if(index>=0)inferenceWaiters.splice(index,1);reject(signal.reason);}};
+  inferenceWaiters.push(waiter);signal.addEventListener('abort',waiter.cancel,{once:true});
+ });
+ try{signal.throwIfAborted();return await work();}finally{release();}
+}
 type Inference = (manifest: string, output: string, signal: AbortSignal) => Promise<void>;
 export function pythonWhisper(python: string, model: string, language = 'en'): Inference {
-  return async (manifest, output, signal) => {
+  return async (manifest, output, signal) => withWhisperSlot(signal,async()=>{
     const child = spawn(python, [resolve('tools/whisper/transcribe.py'), '--manifest', manifest, '--output', output, '--model', model, '--language', language], {stdio: 'ignore'});
     const completion = new Promise<{code: number | null; failed: boolean}>(done => {
       let failed = false;
@@ -37,7 +51,7 @@ export function pythonWhisper(python: string, model: string, language = 'en'): I
         clearTimeout(escalation);
       }
     }
-  };
+  });
 }
 
 export function createWhisperWorker(db: WorkspaceDatabase, {python, model = 'base.en', language = 'en', infer}: {python: string; model?: string; language?: string; infer?: Inference}) {

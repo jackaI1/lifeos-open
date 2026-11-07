@@ -43,13 +43,15 @@ test('server bind host is configurable but defaults to loopback',async()=>{
  assert.match(main,/server\.listen\(port,bindHost,/);
 });
 
-test('docker workflow builds on PRs, scans with Trivy and publishes to GHCR on tags only',async()=>{
+test('docker workflow builds on PRs, scans with Trivy and publishes checked main and tags to GHCR',async()=>{
  const wf=await read('.github/workflows/docker.yml');
  assert.match(wf,/pull_request:/);
  assert.match(wf,/tags:\s*\[?\s*['"]?v\*/);
  assert.match(wf,/aquasecurity\/trivy:/);
  assert.match(wf,/ghcr\.io\/jackai1\/lifeos-open/);
- assert.match(wf,/if:\s*startsWith\(github\.ref,\s*'refs\/tags\/v'\)/);
+ assert.match(wf,/if:.*github\.event_name == 'push'.*refs\/heads\/main/);
+ assert.match(wf,/docker run --name lifeos-suite lifeos-tests make test/);
+ assert.match(wf,/trap cleanup EXIT/);
  assert.match(wf,/packages:\s*write/);
  assert.equal((wf.match(/packages:\s*write/g)??[]).length,1,'only the publish job may write packages');
 });

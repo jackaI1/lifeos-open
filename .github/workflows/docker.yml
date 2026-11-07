@@ -27,6 +27,14 @@ jobs:
           tags: lifeos-open:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Run the test suite inside the build container
+        timeout-minutes: 10
+        run: |
+          set -eu
+          cleanup() { docker stop -t 10 lifeos-suite >/dev/null 2>&1 || true; docker rm -f lifeos-suite >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          docker build --target build -t lifeos-tests .
+          docker run --name lifeos-suite lifeos-tests make test
       - name: Run container and check health
         run: |
           set -eu
@@ -92,9 +100,9 @@ jobs:
           docker run --rm -v "$PWD:/src:ro" -v trivy-cache:/root/.cache/ "$TRIVY_IMAGE" \
             config /src --skip-dirs /src/projects --severity HIGH,CRITICAL --exit-code 1
   publish:
-    name: Publish to GHCR (tags only)
+    name: Publish to GHCR
     needs: image
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -114,6 +122,7 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=sha
             type=raw,value=latest
       - uses: docker/build-push-action@v7
         with:
