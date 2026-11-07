@@ -4,7 +4,6 @@ import {mkdtemp, mkdir, writeFile, rm, symlink} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {once} from 'node:events';
-import {execFileSync} from 'node:child_process';
 import {createDemoServer} from '../src/hosted/server.mjs';
 
  const fixture = async (t, {shell=true}={}) => {
@@ -16,16 +15,21 @@ import {createDemoServer} from '../src/hosted/server.mjs';
   await writeFile(join(directory, 'private.json'), '{"secret":"fixture-outside-assets"}');
   await symlink(join(directory, 'private.json'), join(assets, 'linked.json'));
   const server = createDemoServer({directory:assets, parentOrigin:'https://portfolio.example.invalid'});
-  server.listen(0, '127.0.0.1');
-  await once(server, 'listening');
-  const port = server.address().port;
-  t.diagnostic(`owner=aws-static-host-test pid=${process.pid} start=${execFileSync('ps',['-p',String(process.pid),'-o','lstart='],{encoding:'utf8'}).trim()} port=${port} cleanup=server.close() in t.after`);
+  let port;
   t.after(async () => {
-   await new Promise((resolve,reject) => server.close(error => error ? reject(error) : resolve()));
+   if (server.listening) {
+    const closed = new Promise((resolve,reject) => server.close(error => error ? reject(error) : resolve()));
+    server.closeAllConnections();
+    await closed;
+   }
    assert.equal(server.listening, false);
-   await assert.rejects(fetch(`http://127.0.0.1:${port}/healthz`, {signal:AbortSignal.timeout(300)}));
+   if (port) await assert.rejects(fetch(`http://127.0.0.1:${port}/healthz`, {signal:AbortSignal.timeout(300)}));
    await rm(directory, {recursive:true,force:true});
   });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  port = server.address().port;
+  t.diagnostic(`owner=aws-static-host-test pid=${process.pid} start=${new Date(Date.now()-process.uptime()*1000).toISOString()} port=${port} cleanup=server.close() in t.after`);
   return `http://127.0.0.1:${port}`;
  };
  test('AWS host serves browser bootstrap and the same security policy over HTTP', async t => {

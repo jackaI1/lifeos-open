@@ -28,9 +28,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Run the test suite inside the build container
+        timeout-minutes: 10
         run: |
+          set -eu
+          cleanup() { docker stop -t 10 lifeos-suite >/dev/null 2>&1 || true; docker rm -f lifeos-suite >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
           docker build --target build -t lifeos-tests .
-          docker run --rm lifeos-tests make test
+          docker run --name lifeos-suite lifeos-tests make test
       - name: Run container and check health
         run: |
           set -eu
