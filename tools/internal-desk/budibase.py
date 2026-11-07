@@ -60,6 +60,7 @@ def main():
     for name, schema in schemas.items():
         tables[name] = call('/api/public/v1/tables', 'POST', {'name': name, 'primaryDisplay': next(iter(schema)), 'schema': {key: {**value, 'name': key} for key, value in schema.items()}})['data']['_id']
     row = call(f"/api/public/v1/tables/{tables['Deliverables']}/rows", 'POST', {'Title': 'Fictional desk node design', 'Status': 'draft', 'Cleanup': True})['data']
+    call(f"/api/public/v1/tables/{tables['Deliverables']}/rows", 'POST', {'Title': 'Fictional enclosure drawing', 'Status': 'approved', 'Cleanup': True})
     field_map = json.loads(Path('samples/forms/field-map.json').read_text())
     for citation in field_map['citations']:
         call(f"/api/public/v1/tables/{tables['FieldCitations']}/rows", 'POST', {'Field': citation['field'], 'Value': str(citation['value']), 'Source': citation['source']})

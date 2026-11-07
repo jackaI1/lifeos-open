@@ -38,10 +38,13 @@ the keys, joins and inspection rules stay in the relational source. The row-upda
 automation copies each reviewed title, status and source row id to the audit
 table. The form does not edit audit rows; an administrator can still change
 platform data, so this is not a tamper-proof compliance log.
+Publishing explicitly enables the app and its automation and copies these
+fictional rows. A second, approved deliverable stays out of the clean-up queue.
 
 `node tools/internal-desk/budibase-browser.mjs` drives the published form with
 Playwright, edits a fictional title, waits for the real audit automation, checks
-the citation count, relational asset rows and filtered queue, and saves a screenshot. The workflow runs
+the citation count, relational asset rows and filtered queue, and opens the audit
+and clean-up screens. It saves screenshots of all three views. The workflow runs
 this against the actual pinned Budibase container on Linux. The review desk does not use Budibase's optional AI proxy; its startup wait is
 capped so that proxy cannot hold up the forms. This setup uses the
 [public API](https://docs.budibase.com/docs/public-api) for data and the release's

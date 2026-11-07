@@ -26,7 +26,11 @@ try{
  const citations=await search(state.tables.FieldCitations);assert.equal(citations.length,5);
  const assets=await search(state.tables.Assets);assert.equal(assets.length,2);assert.deepEqual(assets.map(a=>a.Network).sort(),['sewer','water']);assert.ok(assets.every(a=>a.Inspected));
  const cleanup=await context.request.post(`${origin}/api/public/v1/views/${state.cleanupView}/rows/search`,{headers,data:{query:{}}});assert.ok(cleanup.ok());assert.equal((await cleanup.json()).data.length,1);
- await mkdir('test-results/internal-desk',{recursive:true});await page.screenshot({path:'test-results/internal-desk/review.png',fullPage:true});await writeFile('test-results/internal-desk/results.json',JSON.stringify({reviewSaved:true,auditCreated:true,citations:citations.length,relationalAssets:assets.length,cleanupRows:1,screens:state.screens}));failed=false;
+ assert.equal((await search(state.tables.Deliverables)).length,2,'the queue must filter out the approved deliverable');
+ await mkdir('test-results/internal-desk',{recursive:true});await page.screenshot({path:'test-results/internal-desk/review.png',fullPage:true});
+ appUrl.hash='/audit';await page.goto(appUrl.href);await page.getByText('Fictional desk node design reviewed',{exact:true}).first().waitFor();await page.screenshot({path:'test-results/internal-desk/audit.png',fullPage:true});
+ appUrl.hash='/cleanup';await page.goto(appUrl.href);await page.getByText('Fictional desk node design reviewed',{exact:true}).first().waitFor();assert.equal(await page.getByText('Fictional enclosure drawing',{exact:true}).count(),0);await page.screenshot({path:'test-results/internal-desk/cleanup.png',fullPage:true});
+ await writeFile('test-results/internal-desk/results.json',JSON.stringify({reviewSaved:true,auditCreated:true,auditVisible:true,cleanupVisible:true,citations:citations.length,relationalAssets:assets.length,cleanupRows:1,screens:state.screens}));failed=false;
 }finally{try{if(failed&&page){await mkdir('test-results/internal-desk',{recursive:true});await page.screenshot({path:'test-results/internal-desk/failure.png',fullPage:true}).catch(()=>{});console.error('Budibase page:',page.url(),(await page.locator('body').innerText().catch(()=>'' )).slice(0,600));}await page?.close();await reviewContext?.close();await context?.close();}finally{try{await browser?.close();}finally{await browserServer?.close();}await verifyOwnership(ownership);}}
 async function verifyOwnership(owned){
  if(!owned)return;
