@@ -27,5 +27,13 @@ try{
  const assets=await search(state.tables.Assets);assert.equal(assets.length,2);assert.deepEqual(assets.map(a=>a.Network).sort(),['sewer','water']);assert.ok(assets.every(a=>a.Inspected));
  const cleanup=await context.request.post(`${origin}/api/public/v1/views/${state.cleanupView}/rows/search`,{headers,data:{query:{}}});assert.ok(cleanup.ok());assert.equal((await cleanup.json()).data.length,1);
  await mkdir('test-results/internal-desk',{recursive:true});await page.screenshot({path:'test-results/internal-desk/review.png',fullPage:true});await writeFile('test-results/internal-desk/results.json',JSON.stringify({reviewSaved:true,auditCreated:true,citations:citations.length,relationalAssets:assets.length,cleanupRows:1,screens:state.screens}));failed=false;
-}finally{try{if(failed&&page){await mkdir('test-results/internal-desk',{recursive:true});await page.screenshot({path:'test-results/internal-desk/failure.png',fullPage:true}).catch(()=>{});console.error('Budibase page:',page.url(),(await page.locator('body').innerText().catch(()=>'' )).slice(0,600));}await page?.close();await reviewContext?.close();await context?.close();}finally{try{await browser?.close();}finally{await browserServer?.close();}if(ownership){let alive=true;try{process.kill(ownership.pid,0);}catch(e){if(e.code==='ESRCH')alive=false;else throw e;}assert.equal(alive,false,'owned browser process must exit');await assert.rejects(fetch(`http://127.0.0.1:${ownership.port}`,{signal:AbortSignal.timeout(300)}));ownership.closed=true;await mkdir('test-results/internal-desk',{recursive:true});await writeFile('test-results/internal-desk/ownership.json',JSON.stringify(ownership));}}}
+}finally{try{if(failed&&page){await mkdir('test-results/internal-desk',{recursive:true});await page.screenshot({path:'test-results/internal-desk/failure.png',fullPage:true}).catch(()=>{});console.error('Budibase page:',page.url(),(await page.locator('body').innerText().catch(()=>'' )).slice(0,600));}await page?.close();await reviewContext?.close();await context?.close();}finally{try{await browser?.close();}finally{await browserServer?.close();}await verifyOwnership(ownership);}}
+async function verifyOwnership(owned){
+ if(!owned)return;
+ let alive=true;try{process.kill(owned.pid,0);}catch(e){if(e.code==='ESRCH')alive=false;else throw e;}
+ assert.equal(alive,false,'owned browser process must exit');
+ await assert.rejects(fetch(`http://127.0.0.1:${owned.port}`,{signal:AbortSignal.timeout(300)}));
+ owned.closed=true;await mkdir('test-results/internal-desk',{recursive:true});await writeFile('test-results/internal-desk/ownership.json',JSON.stringify(owned));console.log(JSON.stringify(owned));
+}
+
 async function assertEventually(check){const deadline=Date.now()+60000;while(Date.now()<deadline){if(await check())return;await new Promise(r=>setTimeout(r,250));}throw Error('Budibase data did not reach expected state');}
