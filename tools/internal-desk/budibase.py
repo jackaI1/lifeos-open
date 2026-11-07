@@ -72,8 +72,7 @@ def main():
             call(f"/api/public/v1/tables/{tables['Assets']}/rows", 'POST', {'Tag':asset['tag'],'Network':asset['network'],'Year':asset['installed_year'],'Condition':asset['condition_score'],'Inspected':asset['last_inspected']})
     finally:
         registry.close()
-    workspace_apps = call('/api/workspaceApp')
-    workspace_app = (workspace_apps if isinstance(workspace_apps, list) else workspace_apps.get('workspaceApps', workspace_apps.get('data', [])))[0]
+    workspace_app = call('/api/workspaceApp', 'POST', {'name': 'Review desk', 'url': '/review-desk'})['workspaceApp']
     workspace_id = workspace_app['_id']
     screens = []
     for name, route, children in [
