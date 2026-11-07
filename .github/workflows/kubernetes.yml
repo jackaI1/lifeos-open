@@ -1,7 +1,9 @@
 name: Kubernetes
 on:
   pull_request:
+    paths-ignore: ['projects/**']
   push:
+    paths-ignore: ['projects/**']
     branches: [main]
 permissions:
   contents: read

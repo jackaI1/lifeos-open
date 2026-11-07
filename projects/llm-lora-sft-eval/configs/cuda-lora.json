@@ -1,0 +1,1 @@
+{"device":"cuda","mode":"lora","precision":"auto","steps":200,"batch_size":2,"accumulation":8,"max_length":256,"threads":2}

@@ -1,0 +1,4 @@
+[
+  {"name": "storm-overview", "start": 0.5, "end": 3.5, "tags": ["storm", "satellite", "overview"]},
+  {"name": "rainfall-slice", "start": 5, "end": 8, "tags": ["storm", "satellite", "rainfall"]}
+]

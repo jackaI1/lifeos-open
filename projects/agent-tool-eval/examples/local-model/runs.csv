@@ -1,0 +1,147 @@
+task_id,category,repeat,seed,tool_selection,argument_validity,argument_accuracy,answer_accuracy,passed,consistency,failures,answer
+task-01,calculator,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""total"": 300}"
+task-01,calculator,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""result"": 300}"
+task-01,calculator,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""result"": 300}"
+task-02,calculator,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""result"": 18.5}"
+task-02,calculator,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""result"": 18.0}"
+task-02,calculator,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""result"": 18.5}"
+task-03,calculator,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 2400}"
+task-03,calculator,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 2400}"
+task-03,calculator,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 2400}"
+task-04,calculator,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""result"": ""7.5""}"
+task-04,calculator,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""result"": ""7.5""}"
+task-04,calculator,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""result"": 7.5}"
+task-05,calculator,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""result"": 210}"
+task-05,calculator,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""result"": 210}"
+task-05,calculator,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""result"": 210}"
+task-06,calculator,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""result"": 56.5}"
+task-06,calculator,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""result"": ""56.5""}"
+task-06,calculator,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""result"": 56.5}"
+task-07,calculator,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 12}"
+task-07,calculator,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 12}"
+task-07,calculator,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 12}"
+task-08,calculator,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 2}"
+task-08,calculator,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""number"": -4}"
+task-08,calculator,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 2}"
+task-09,calculator,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""result"": 84}"
+task-09,calculator,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""value"": 84}"
+task-09,calculator,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""value"": 84}"
+task-10,calculator,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 252}"
+task-10,calculator,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""expression"": ""240 * 1.05""}"
+task-10,calculator,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""expression"": ""240 * 1.05""}"
+task-11,calculator,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 0}"
+task-11,calculator,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 0}"
+task-11,calculator,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 0}"
+task-12,calculator,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 5}"
+task-12,calculator,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 5}"
+task-12,calculator,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""number"": 5}"
+task-13,file_lookup,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""sensor_count"": 15}"
+task-13,file_lookup,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""sensor_count"": 15}"
+task-13,file_lookup,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""sensor_count"": 15}"
+task-14,file_lookup,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""file_lookup"", ""arguments"": {""path"": ""inventory.json""}}"
+task-14,file_lookup,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""file_lookup"", ""arguments"": {""path"": ""inventory.json""}}"
+task-14,file_lookup,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""file_lookup"", ""arguments"": {""path"": ""inventory.json""}}"
+task-15,file_lookup,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""unit_cost"": 100}"
+task-15,file_lookup,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""unit_cost"": 100}"
+task-15,file_lookup,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""unit_cost"": 100}"
+task-16,file_lookup,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""value"": ""inspection_day""}"
+task-16,file_lookup,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""value"": ""inspection_day""}"
+task-16,file_lookup,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""value"": ""inspection_day""}"
+task-17,file_lookup,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""interval_days"": ""2023-04-01T00:00:00Z""}"
+task-17,file_lookup,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""interval_days"": ""2023-04-01 00:00:00""}"
+task-17,file_lookup,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""interval_days"": ""2023-04-01T00:00:00Z""}"
+task-18,file_lookup,1,0,False,True,False,False,False,0.3333333333333333,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""limits.json"", ""arguments"": {""path"": {""path"": ""max_temperature_c""}}}"
+task-18,file_lookup,2,1,False,True,False,False,False,0.3333333333333333,answer_accuracy;argument_accuracy;tool_selection,"{""value"": 25.0}"
+task-18,file_lookup,3,2,False,True,False,False,False,0.3333333333333333,answer_accuracy;argument_accuracy;tool_selection,"{""value"": ""35.2""}"
+task-19,file_lookup,1,0,False,True,False,False,False,0.3333333333333333,answer_accuracy;argument_accuracy;tool_selection,"{""value"": ""500000""}"
+task-19,file_lookup,2,1,False,True,False,False,False,0.3333333333333333,answer_accuracy;argument_accuracy;tool_selection,"{""value"": 5000}"
+task-19,file_lookup,3,2,False,True,False,False,False,0.3333333333333333,answer_accuracy;argument_accuracy;tool_selection,"{""value"": ""1000000""}"
+task-20,file_lookup,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""sample_count"": 10}"
+task-20,file_lookup,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""sample_count"": 10}"
+task-20,file_lookup,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""sample_count"": 15}"
+task-21,file_lookup,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""revision"": ""1234567890""}"
+task-21,file_lookup,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""revision"": ""1234567890""}"
+task-21,file_lookup,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""revision"": ""1234567890""}"
+task-22,file_lookup,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""owner"": ""user""}"
+task-22,file_lookup,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""owner"": ""user""}"
+task-22,file_lookup,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""owner"": ""user""}"
+task-23,tickets,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""ticket_get"", ""arguments"": {""id"": ""T-101""}}"
+task-23,tickets,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"<tool>
+{""name"": ""ticket_get"", ""arguments"": {""id"": ""T-101""}}
+</tool>"
+task-23,tickets,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""ticket_get"", ""arguments"": {""id"": ""T-101""}}"
+task-24,tickets,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""ticket_get"", ""arguments"": {""id"": ""T-102""}}"
+task-24,tickets,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"<tool>
+{""name"": ""ticket_get"", ""arguments"": {""id"": ""T-102""}}
+</tool>"
+task-24,tickets,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""ticket_get"", ""arguments"": {""id"": ""T-102""}}"
+task-25,tickets,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""ticket_get"", ""arguments"": {""id"": ""T-103""}}"
+task-25,tickets,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"<tool>
+{""name"": ""ticket_get"", ""arguments"": {""id"": ""T-103""}}
+</tool>"
+task-25,tickets,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""ticket_get"", ""arguments"": {""id"": ""T-103""}}"
+task-26,tickets,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""ticket_get"", ""arguments"": {""id"": ""T-104""}}"
+task-26,tickets,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""ticket_get"", ""arguments"": {""id"": ""T-104""}}"
+task-26,tickets,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""ticket_get"", ""arguments"": {""id"": ""T-104""}}"
+task-27,tickets,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"```json
+{""id"": ""123"", ""status"": ""open""}
+```"
+task-27,tickets,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""ticket_search"", ""arguments"": {""priority"": ""open"", ""status"": ""open""}}}"
+task-27,tickets,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"```json
+{""id"": ""123"", ""status"": ""open""}
+```"
+task-28,tickets,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"```json
+{""id"": ""123"", ""status"": ""closed""}
+```"
+task-28,tickets,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""ticket_search"", ""arguments"": {""priority"": ""high""}}}"
+task-28,tickets,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"```json
+{""id"": ""123"", ""status"": ""closed""}
+```"
+task-29,tickets,1,0,False,True,False,False,False,0.3333333333333333,answer_accuracy;argument_accuracy;tool_selection,"```json
+{""id"": ""1234567890"", ""status"": ""closed""}
+```"
+task-29,tickets,2,1,False,True,False,False,False,0.3333333333333333,answer_accuracy;argument_accuracy;tool_selection,"{""id"": ""1234567890"", ""status"": ""closed""}"
+task-29,tickets,3,2,False,True,False,False,False,0.3333333333333333,answer_accuracy;argument_accuracy;tool_selection,"```json
+{""id"": ""123456"", ""status"": ""closed""}
+```"
+task-30,tickets,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"<tool>
+{""name"": ""ticket_search"", ""arguments"": {""priority"": ""low"", ""status"": ""open""}}
+</tool>"
+task-30,tickets,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"<tool>
+{""name"": ""ticket_search"", ""arguments"": {""priority"": ""low"", ""status"": ""open""}}
+</tool>"
+task-30,tickets,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"```json
+{""id"": ""123"", ""id"": ""456""}
+```"
+task-31,tickets,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""ticket_update"", ""arguments"": {""id"": ""T-101"", ""status"": ""closed""}}"
+task-31,tickets,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""ticket_update"", ""arguments"": {""id"": ""T-101"", ""status"": ""closed""}}"
+task-31,tickets,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""ticket_update"", ""arguments"": {""id"": ""T-101"", ""status"": ""closed""}}"
+task-32,tickets,1,0,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""error"": ""T-999. Error: Not found.""}"
+task-32,tickets,2,1,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""error"": 404}"
+task-32,tickets,3,2,False,True,False,False,False,0.6666666666666666,answer_accuracy;argument_accuracy;tool_selection,"{""error"": ""T-999. Error: Not found.""}"
+task-33,multi_step,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""Read a synthetic JSON file by name"", ""arguments"": {""path"": ""inventory.json""}}"
+task-33,multi_step,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""Read a synthetic JSON file by name"", ""arguments"": {""path"": ""inventory.json""}}"
+task-33,multi_step,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""Read a synthetic JSON file by name"", ""arguments"": {""path"": ""inventory.json""}}"
+task-34,multi_step,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""calculator"", ""arguments"": {""expression"": ""120 - 9""}}"
+task-34,multi_step,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""calculator"", ""arguments"": {""expression"": ""120 - 9""}}"
+task-34,multi_step,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""name"": ""calculator"", ""arguments"": {""expression"": ""120 - 9""}}"
+task-35,multi_step,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""status"": ""closed""}"
+task-35,multi_step,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""status"": ""closed""}"
+task-35,multi_step,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""status"": ""closed""}"
+task-36,multi_step,1,0,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""revision"": ""1234567890""}"
+task-36,multi_step,2,1,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""revision"": ""1234567890""}"
+task-36,multi_step,3,2,False,True,False,False,False,1.0,answer_accuracy;argument_accuracy;tool_selection,"{""revision"": ""1234567890""}"
+task-37,no_tool,1,0,True,True,True,False,False,1.0,answer_accuracy,"{""word"": ""ready""}"
+task-37,no_tool,2,1,True,True,True,False,False,1.0,answer_accuracy,"{""word"": ""ready""}"
+task-37,no_tool,3,2,True,True,True,False,False,1.0,answer_accuracy,"{""word"": ""ready""}"
+task-38,no_tool,1,0,True,True,True,True,True,0.6666666666666666,,"""blue"""
+task-38,no_tool,2,1,True,True,True,False,False,0.6666666666666666,answer_accuracy,"{""color"": ""blue""}"
+task-38,no_tool,3,2,True,True,True,True,True,0.6666666666666666,,"""blue"""
+task-39,no_tool,1,0,True,True,True,False,False,0.6666666666666666,answer_accuracy,"{""number"": 7}"
+task-39,no_tool,2,1,True,True,True,False,False,0.6666666666666666,answer_accuracy,"```json
+{""number"": 7}
+```"
+task-39,no_tool,3,2,True,True,True,False,False,0.6666666666666666,answer_accuracy,"{""number"": 7}"
+task-40,no_tool,1,0,True,True,True,False,False,0.6666666666666666,answer_accuracy,"{""status"": ""paused""}"
+task-40,no_tool,2,1,True,True,True,False,False,0.6666666666666666,answer_accuracy,status: paused
+task-40,no_tool,3,2,True,True,True,False,False,0.6666666666666666,answer_accuracy,"{""status"": ""paused""}"

@@ -61,3 +61,4 @@ integrations/payments
 infra/azure-demo
 infra/aws-static
 compose.study.yaml
+projects

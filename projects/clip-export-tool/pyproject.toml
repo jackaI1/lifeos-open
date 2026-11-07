@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clip-export-tool"
+version = "0.1.0"
+description = "Captioned FFmpeg exports with a searchable local footage catalogue"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Jack Lai"}]
+
+[project.scripts]
+clip-export = "clip_export.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["clip_export*"]

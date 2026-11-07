@@ -1,0 +1,20 @@
+{
+  "config": {
+    "seed": 42,
+    "ab_orders": 12000,
+    "locations": 40,
+    "pre_periods": 8,
+    "post_periods": 8,
+    "orders_per_cell": 50,
+    "accuracy_effect": 0.035,
+    "automation_effect": 0.1,
+    "service_effect": -18.0,
+    "differential_service_trend": 0.0
+  },
+  "effects": {
+    "correct": 0.035,
+    "automated": 0.1,
+    "service_seconds": -18.0
+  },
+  "synthetic": true
+}

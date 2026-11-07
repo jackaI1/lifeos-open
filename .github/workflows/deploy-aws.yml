@@ -1,6 +1,7 @@
 name: Deploy optional AWS demo
 on:
   push:
+    paths-ignore: ['projects/**']
     tags: ['aws-v*']
 
 permissions:

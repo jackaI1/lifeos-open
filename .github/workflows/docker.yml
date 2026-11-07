@@ -1,7 +1,9 @@
 name: Docker
 on:
   pull_request:
+    paths-ignore: ['projects/**']
   push:
+    paths-ignore: ['projects/**']
     branches: [main]
     tags: ['v*']
 permissions:
@@ -88,7 +90,7 @@ jobs:
       - name: Trivy Dockerfile and compose misconfiguration scan
         run: |
           docker run --rm -v "$PWD:/src:ro" -v trivy-cache:/root/.cache/ "$TRIVY_IMAGE" \
-            config /src --severity HIGH,CRITICAL --exit-code 1
+            config /src --skip-dirs /src/projects --severity HIGH,CRITICAL --exit-code 1
   publish:
     name: Publish to GHCR (tags only)
     needs: image

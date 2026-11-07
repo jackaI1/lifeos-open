@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "timeZone": "America/Toronto",
+  "schedule": [
+    {"id": "lecture", "title": "Materials lecture", "location": "Example lecture hall", "dayOffset": 0, "start": "09:30", "end": "10:20"},
+    {"id": "lab", "title": "Nanomaterials lab", "location": "Example teaching lab", "dayOffset": 0, "start": "13:30", "end": "16:20"},
+    {"id": "study", "title": "Review lab notes", "location": "Library", "dayOffset": 1, "start": "10:00", "end": "11:00"}
+  ],
+  "deadlines": [
+    {"id": "reading", "title": "Read the lab preparation sheet", "course": "Example materials course", "dayOffset": 0, "due": "12:00", "completed": false},
+    {"id": "report", "title": "Submit the lab report", "course": "Example nanomaterials course", "dayOffset": 2, "due": "23:59", "completed": false},
+    {"id": "quiz", "title": "Finish the practice quiz", "course": "Example mathematics course", "dayOffset": 4, "due": "17:00", "completed": false}
+  ]
+}

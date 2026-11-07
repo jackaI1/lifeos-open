@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "LifeOS Today",
+    "slug": "lifeos-mobile-expo",
+    "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "light",
+    "ios": { "supportsTablet": true },
+    "web": { "bundler": "metro" }
+  }
+}

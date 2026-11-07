@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Broadcast bench | Jack Lai</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/vendor/hls.min.js" defer></script>
+  <script src="/player.js" defer></script>
+</head>
+<body>
+  <main>
+    <header><h1>Broadcast bench</h1><p>One broadcast, three picture qualities, captions alongside.</p></header>
+    <video id="video" controls playsinline preload="metadata" aria-label="Test broadcast"></video>
+    <div class="controls">
+      <div><label for="quality">Picture quality</label><select id="quality" disabled><option value="-1">Automatic</option></select></div>
+      <button id="reload" type="button">Load broadcast</button>
+    </div>
+    <p id="status" role="status" aria-live="polite">Checking for a broadcast…</p>
+    <section aria-labelledby="watch-heading">
+      <h2 id="watch-heading">Watch a test broadcast</h2>
+      <p>Start the test source in a terminal, then choose <strong>Load broadcast</strong>. Press play when the picture appears. Captions are in the video’s caption menu.</p>
+      <pre><code>docker compose run --rm publisher</code></pre>
+      <p>The picture takes about six seconds to arrive. Automatic quality adapts to the connection; choose a fixed quality to compare the same stream. When the source stops, the recording stays here to replay.</p>
+      <p>To begin another broadcast, run <code>docker compose restart packager</code> before starting the source again.</p>
+      <a href="/hls/master.m3u8">Open the stream playlist</a>
+    </section>
+  </main>
+</body>
+</html>

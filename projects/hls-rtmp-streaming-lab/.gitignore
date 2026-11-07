@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+node_modules/
+web/vendor/
+playwright-report/
+test-results/
+.superpowers/
+.impeccable/
+.env
+artifacts/

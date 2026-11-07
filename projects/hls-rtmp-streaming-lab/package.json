@@ -1,0 +1,11 @@
+{
+  "name": "hls-rtmp-streaming-lab",
+  "private": true,
+  "scripts": {
+    "test": "python3 -m unittest discover -s tests -v",
+    "test:browser": "playwright test",
+    "vendor": "mkdir -p web/vendor && cp node_modules/hls.js/dist/hls.min.js web/vendor/hls.min.js && cp node_modules/hls.js/LICENSE web/vendor/hls.js.LICENSE"
+  },
+  "dependencies": {"hls.js": "1.7.4"},
+  "devDependencies": {"@playwright/test": "1.65.0"}
+}

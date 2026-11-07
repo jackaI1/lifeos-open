@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "source": "Fictional LifeOS Open examples, adapted for the mobile public feed",
+  "schedule": [
+    { "id": "demo-workshop", "title": "Workshop", "location": "Fictional design studio", "start": { "dayOffset": 0, "time": "10:45" }, "end": { "dayOffset": 0, "time": "11:30" } },
+    { "id": "demo-study-group", "title": "Study group", "location": "Fictional library", "start": { "dayOffset": 0, "time": "13:00" }, "end": { "dayOffset": 0, "time": "13:30" } },
+    { "id": "demo-office-hours", "title": "Office hours", "location": "Fictional seminar room", "start": { "dayOffset": 0, "time": "14:30" }, "end": { "dayOffset": 0, "time": "15:00" } }
+  ],
+  "deadlines": [
+    { "id": "demo-task-outline", "title": "Map the feedback loop", "course": "DES 210", "due": { "dayOffset": 2 }, "done": false, "nextStep": "List the system inputs and sketch one feedback loop." },
+    { "id": "demo-task-reading", "title": "Read the watershed example", "course": "ENV 120", "due": { "dayOffset": 3 }, "done": false, "nextStep": "Read the source and note two questions." },
+    { "id": "demo-task-date-unverified", "title": "Check the workshop reflection deadline", "course": "DES 210", "due": null, "done": false, "nextStep": "Check the announced deadline before planning the reflection." },
+    { "id": "demo-task-model-comparison", "title": "Compare two feedback models", "course": "DES 210", "due": { "dayOffset": 5 }, "done": false, "nextStep": "Choose two fictional systems and list what each model must explain." },
+    { "id": "demo-task-watershed-diagram", "title": "Sketch the watershed diagram", "course": "ENV 120", "due": { "dayOffset": 4 }, "done": false, "nextStep": "Identify the main water flows before drawing the diagram." }
+  ]
+}

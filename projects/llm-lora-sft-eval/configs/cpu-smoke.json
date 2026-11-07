@@ -1,0 +1,1 @@
+{"device":"cpu","mode":"lora","steps":2,"batch_size":1,"accumulation":2,"max_length":256,"threads":2}
