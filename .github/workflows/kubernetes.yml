@@ -105,9 +105,20 @@ jobs:
         env:
           DIGEST: ${{ steps.publish.outputs.digest }}
         run: bash deploy/kubernetes/smoke.sh "kind-$CLUSTER" "$IMAGE@$DIGEST"
+      - name: Install Flux CLI
+        uses: fluxcd/flux2/action@v2.7.5
+      - name: Install Flux controllers and test Git reconciliation
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          DIGEST: ${{ steps.publish.outputs.digest }}
+        run: |
+          flux --context "kind-$CLUSTER" install --timeout=5m
+          bash deploy/flux/test.sh "kind-$CLUSTER" "$BRANCH" "$IMAGE@$DIGEST"
       - name: Bounded diagnostics on failure
         if: failure()
         run: |
+          kubectl --context "kind-$CLUSTER" -n flux-system get gitrepositories,kustomizations -o yaml || true
+          kubectl --context "kind-$CLUSTER" -n flux-system logs deployment/kustomize-controller --tail=40 || true
           kubectl --context "kind-$CLUSTER" -n lifeos get pods,pvc,deployments || true
           kubectl --context "kind-$CLUSTER" -n lifeos get events --sort-by=.lastTimestamp | tail -25 || true
           kubectl --context "kind-$CLUSTER" -n lifeos logs deployment/lifeos --tail=30 || true
