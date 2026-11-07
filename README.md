@@ -4,23 +4,6 @@ I built a personal workspace for my schedule, coursework and lecture notes becau
 keeping deadlines, handwritten notes and recordings in separate places made it
 hard to plan my day and find the right part of a lecture later.
 
-For a local checkout, I use `make install` to install the locked dependencies,
-`make build` to build the app, and `npm start` to run it. `make help` lists the
-other shortcuts: `make lint`, `make test`, and `make docker` (which needs Docker).
-The build checks its input files and skips work when they have not changed. The
-main CI job uses the same commands and checks that a second build is skipped.
-
-I can also read a short spoken note as I record it. After the
-[local speech setup](docs/live-voice.md#setup), I open a lecture notebook's
-**Transcript → Open live microphone transcript**, choose **Start microphone**,
-and use **Finish recording** to collect the last few seconds. Timestamped text
-arrives in small pieces; a brief lost connection keeps unfinished audio for retry.
-
-In the local **Settings → Connections**, I can choose a local model or the optional
-Claude connection for [syllabus review](docs/assistant-connections.md). I paste
-only the text I want to share, check the dated proposals, then confirm before
-saving any events. The page names the answering provider and explains a fallback.
-
 ## Overview
 
 I kept needing the schedule, the deadline and the notes behind a task together.
@@ -100,6 +83,12 @@ needed. Stop with Ctrl-C. Settings lets me change themes and [time format](docs/
 save a backup. The [local guide](docs/local-workspace.md) covers configuration,
 restoring backups and running an empty workspace.
 
+For a local checkout, I use `make install` to install the locked dependencies,
+`make build` to build the app, and `npm start` to run it. `make help` lists the
+other shortcuts: `make lint`, `make test`, and `make docker` (which needs Docker).
+The build checks its input files and skips work when they have not changed. The
+main CI job uses the same commands and checks that a second build is skipped.
+
 Docker packages the app with its runtime; Compose starts that package and its
 storage together. With Docker and Compose v2 installed, I can instead run:
 
@@ -141,6 +130,12 @@ on another page or after a recording pause. After the separate
 **School → Lectures**, record in a notebook, pause and let the audio save, then
 choose **Transcript → Transcribe locally**. On a phone, Transcript is under
 **More**. I refresh the transcript and select a timestamp to listen again.
+
+I can also read a short spoken note as I record it. After the
+[local speech setup](docs/live-voice.md#setup), I open a lecture notebook's
+**Transcript → Open live microphone transcript**, choose **Start microphone**,
+and use **Finish recording** to collect the last few seconds. Timestamped text
+arrives in small pieces; a brief lost connection keeps unfinished audio for retry.
 
 Whisper, a speech-recognition model, runs on my computer after its initial
 download. A background worker checks the saved audio and saves timestamped text
@@ -223,6 +218,11 @@ requests, concurrent settlements and selective access to fictional balances.
 They are learning tools beside LifeOS, with no real accounts or money.
 
 ## Optional connections
+
+In the local **Settings → Connections**, I can choose a local model or the optional
+Claude connection for [syllabus review](docs/assistant-connections.md). I paste
+only the text I want to share, check the dated proposals, then confirm before
+saving any events. The page names the answering provider and explains a fallback.
 
 If I want coursework reminders in Microsoft 365, the
 [connection guide](integrations/m365/README.md) explains how to copy tasks from

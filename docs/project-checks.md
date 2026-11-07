@@ -13,9 +13,9 @@ walkthrough of the exported client, including a restart with the feed offline.
 Native device testing and app-store distribution are not included in that check.
 
 ```sh
-npm test
-npm run build
-npm run lint
+make test
+make build
+make lint
 npm run typecheck
 npm run privacy
 ```
@@ -46,8 +46,8 @@ desktop and phone layouts. CI runs both and uploads the question-by-question rep
 For support tickets, `npm run test:support` runs nine provider and routing tests.
 `npm run support:evaluate` measures source hits and escalation on 14 labelled
 fictional tickets with the real local model. The [support guide](../docs/support-assistant.md)
-explains the decisions and honest limits. The full local suite passed 356 Node
-tests and 19 React tests, with three optional service tests skipped.
+explains the decisions and honest limits. The full local suite passed 388 Node
+tests and 19 React tests, with four optional service tests skipped.
 
 The [local reference](../docs/local-workspace.md#testing) also covers browser tests.
 I also keep a local build desk for checking a change before packaging it. Jenkins,
@@ -98,3 +98,21 @@ I can also make a small inventory of public pages with
 headings to `page-inventory.json`; rerunning replaces the file. It checks the site's
 robots.txt instructions, waits between requests, retries temporary failures and
 only visits the paths I provide. Use it only on public pages I am allowed to read.
+
+## Live notes and reviewed connections
+
+Seven real-socket and browser-client tests cover recorded chunks, ordering,
+reconnects, busy workers, errors and final flush. CI also drives the real
+microphone page and local Whisper model. Nine syllabus tests cover the optional
+Claude tool call, chosen context, local fallback and confirmed calendar writes.
+Five MCP client/worker tests exercise both transports, scopes, rate limits,
+validation, retries and job deadlines.
+
+The [connection checks](connection-checks.md) run three C# Selenium/NUnit browser
+journeys, four real boto3/Moto publisher cases, a real Terraform container
+apply-and-destroy and a ZAP baseline scan. Separate Linux checks use actual
+PostgreSQL/pgvector and the Go Lambda on LocalStack. The review desk check
+provisions the real pinned Budibase service, drives its published form and
+requires its audit automation to write a row. Make's check also confirms an
+unchanged build is skipped, a changed public input rebuilds, and a missing
+output is regenerated.
