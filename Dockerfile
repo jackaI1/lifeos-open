@@ -13,7 +13,7 @@ COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --ignore-scripts
 
 FROM node:${NODE_VERSION}-bookworm-slim AS build
-RUN apt-get update && apt-get install -y --no-install-recommends make && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends make openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 COPY package.json package-lock.json ./
