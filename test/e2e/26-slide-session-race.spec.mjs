@@ -21,6 +21,9 @@ export default async function({page}){
   assert.equal(await page.locator('.lecture-slide-dock').count(),1,'concurrent routes must share one lecture slide dock');
   assert.equal(await page.locator('.lecture-slide-dock:visible').count(),1,'the current lecture owns its dock');
   assert.equal(mounts,1,'only one workspace may mount for a lecture');
+  // A rendered crop can precede the final deck request. Finish this phase
+  // before navigating away, so this race test does not cancel unrelated loads.
+  await page.waitForLoadState('networkidle');
   const dock=await page.locator('.lecture-slide-dock').elementHandle();
   await page.evaluate(()=>{location.hash='#today';});await page.locator('#main h1').filter({hasText:'Today'}).waitFor();assert.equal(await page.locator('.lecture-slide-dock:visible').count(),0);
   await page.evaluate(route=>{location.hash=route;},route);

@@ -63,7 +63,7 @@ def main():
     field_map = json.loads(Path('samples/forms/field-map.json').read_text())
     for citation in field_map['citations']:
         call(f"/api/public/v1/tables/{tables['FieldCitations']}/rows", 'POST', {'Field': citation['field'], 'Value': str(citation['value']), 'Source': citation['source']})
-    cleanup = call('/api/public/v1/views', 'POST', {'name':'Cleanup queue','tableId':tables['Deliverables'],'schema':{key:{**value,'name':key} for key,value in schemas['Deliverables'].items()},'query':{'logicalOperator':'all','groups':[{'logicalOperator':'all','filters':[{'field':'Cleanup','operator':'equal','value':True},{'field':'Status','operator':'notEqual','value':'approved'}]}]}})['data']
+    cleanup = call('/api/public/v1/views', 'POST', {'name':'Cleanup queue','tableId':tables['Deliverables'],'schema':{key:{'visible':True,'readonly':False,'order':order} for order,key in enumerate(schemas['Deliverables'])},'query':{'logicalOperator':'all','groups':[{'logicalOperator':'all','filters':[{'field':'Cleanup','operator':'equal','value':True},{'field':'Status','operator':'notEqual','value':'approved'}]}]}})['data']
     registry = sqlite3.connect(':memory:')
     try:
         registry.row_factory = sqlite3.Row
