@@ -14,6 +14,8 @@ own passwords and keys; the CI values are disposable examples only.
 ```sh
 export BB_ADMIN_USER_EMAIL=fictional@example.com
 export BB_ADMIN_USER_PASSWORD=replace-with-a-local-password
+export BB_REVIEWER_USER_EMAIL=reviewer@example.com
+export BB_REVIEWER_USER_PASSWORD=replace-with-another-local-password
 export BUDIBASE_JWT_SECRET=replace-with-a-random-secret
 export BUDIBASE_INTERNAL_KEY=replace-with-a-random-key
 export BUDIBASE_ENCRYPTION_KEY=replace-with-a-random-key
@@ -25,8 +27,10 @@ python tools/internal-desk/budibase.py --initialize
 
 The first-use API creates the account explicitly after the platform is ready.
 `--initialize` refuses an instance that already has an account; omit it when
-provisioning another desk on an existing instance. Open `http://127.0.0.1:10000`, sign in with the local account, and open the
-**LifeOS fictional review desk** workspace. The provisioning script creates
+provisioning another desk on an existing instance. The script prints the published
+form's address. Sign in there with the reviewer account, which has access to
+this workspace. The administrator can edit the **LifeOS fictional review desk**
+workspace at `http://127.0.0.1:10000`. The provisioning script creates
 real Budibase tables, a review form, a filtered clean-up queue, a read-only audit
 screen, the five source citations from the PDF example, and the two rows from
 the SQLite asset-inspection query. The asset screen is a copied query result;
