@@ -1,5 +1,6 @@
 import {createServer} from 'node:http';
 import {Readable} from 'node:stream';
+import {healthLog} from '../hosted/log.mjs';
 import {whisperIsBusy} from './whisper.ts';
 import {attachVoice, whisperRecognizer} from '../voice/server.ts';
 import {createService} from './service.ts';
@@ -10,6 +11,7 @@ const origin=process.env.APP_ORIGIN??`http://127.0.0.1:${port}`;
 const bindHost=process.env.LIFEOS_BIND_HOST??'127.0.0.1';
 const app=await createService({origin});
 const server=createServer(async(req,res)=>{
+ if(req.url==='/api/health')res.once('finish',()=>console.log(JSON.stringify(healthLog(res.statusCode,new Date(),'lifeos-workspace'))));
  try{
   if(req.headers.host!==new URL(origin).host){res.writeHead(403);res.end('Host denied');return;}
   const body=['GET','HEAD'].includes(req.method??'GET')?undefined:Readable.toWeb(req) as ReadableStream<Uint8Array>;

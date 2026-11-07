@@ -46,7 +46,7 @@ desktop and phone layouts. CI runs both and uploads the question-by-question rep
 For support tickets, `npm run test:support` runs nine provider and routing tests.
 `npm run support:evaluate` measures source hits and escalation on 14 labelled
 fictional tickets with the real local model. The [support guide](../docs/support-assistant.md)
-explains the decisions and honest limits. The full local suite passed 388 Node
+explains the decisions and honest limits. The full local suite passed 389 Node
 tests and 19 React tests, with four optional service tests skipped.
 
 The [local reference](../docs/local-workspace.md#testing) also covers browser tests.

@@ -55,7 +55,7 @@ The existing [AWS container guide](deploy-aws.md) and `tools/deploy-aws.mjs`
 prepare a public-demo image for ECS, AWS's container service. The Docker workflow
 runs the tests inside the build image, checks runtime health and persistence,
 scans the image and publishes successful main builds and release tags to GHCR.
-The public `/healthz` endpoint emits structured JSON with time, service, event,
+The public `/healthz` endpoint and standalone `/api/health` emit structured JSON with time, service, event,
 HTTP status and success. ECS's `awslogs` driver sends stdout to CloudWatch. The
 Terraform module now defines a log metric for `health_check` entries with
 HTTP status 500 or higher and an alarm for three such failures within five
