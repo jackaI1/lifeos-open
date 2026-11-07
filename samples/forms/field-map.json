@@ -1,0 +1,183 @@
+{
+  "fields": [
+    {
+      "name": "patient.name",
+      "type": "/Tx",
+      "fieldRef": "10 0 R",
+      "widgets": [
+        {
+          "rect": {
+            "x": 49.5,
+            "y": 639.5,
+            "width": 513,
+            "height": 23
+          },
+          "appearance": true
+        }
+      ],
+      "rule": {
+        "draft": true,
+        "path": "/demographics/name",
+        "reason": "Copy the fictional chart identity"
+      },
+      "value": "Alex Example"
+    },
+    {
+      "name": "patient.birthDate",
+      "type": "/Tx",
+      "fieldRef": "13 0 R",
+      "widgets": [
+        {
+          "rect": {
+            "x": 49.5,
+            "y": 563.5,
+            "width": 513,
+            "height": 23
+          },
+          "appearance": true
+        }
+      ],
+      "rule": {
+        "draft": true,
+        "path": "/demographics/birthDate",
+        "reason": "Copy the explicit birth date"
+      },
+      "value": "2004-03-12"
+    },
+    {
+      "name": "history.allergies",
+      "type": "/Tx",
+      "fieldRef": "18 0 R",
+      "widgets": [
+        {
+          "rect": {
+            "x": 49.5,
+            "y": 487.5,
+            "width": 513,
+            "height": 23
+          },
+          "appearance": true
+        }
+      ],
+      "rule": {
+        "draft": true,
+        "path": "/history/allergies",
+        "reason": "Copy the recorded history without interpreting it"
+      },
+      "value": "No known allergies recorded"
+    },
+    {
+      "name": "history.hasAllergies",
+      "type": "/Btn",
+      "fieldRef": "21 0 R",
+      "widgets": [
+        {
+          "rect": {
+            "x": 49.5,
+            "y": 411.5,
+            "width": 19,
+            "height": 19
+          },
+          "appearance": true
+        }
+      ],
+      "rule": {
+        "draft": true,
+        "path": "/history/hasAllergies",
+        "reason": "Copy the explicit boolean only"
+      },
+      "value": false
+    },
+    {
+      "name": "visit.reason",
+      "type": "/Tx",
+      "fieldRef": "29 0 R",
+      "widgets": [
+        {
+          "rect": {
+            "x": 49.5,
+            "y": 335.5,
+            "width": 513,
+            "height": 23
+          },
+          "appearance": true
+        }
+      ],
+      "rule": {
+        "draft": true,
+        "path": "/visit/reason",
+        "reason": "Copy the stated reason for the visit"
+      },
+      "value": "Fictional follow-up for a classroom demonstration"
+    },
+    {
+      "name": "physician.diagnosis",
+      "type": "/Tx",
+      "fieldRef": "34 0 R",
+      "widgets": [
+        {
+          "rect": {
+            "x": 49.5,
+            "y": 259.5,
+            "width": 513,
+            "height": 23
+          },
+          "appearance": true
+        }
+      ],
+      "rule": {
+        "draft": false,
+        "reason": "Clinical judgment belongs to the physician"
+      },
+      "value": ""
+    },
+    {
+      "name": "physician.signature",
+      "type": "/Sig",
+      "fieldRef": "37 0 R",
+      "widgets": [
+        {
+          "rect": {
+            "x": 50,
+            "y": 184,
+            "width": 512,
+            "height": 22
+          },
+          "appearance": false
+        }
+      ],
+      "rule": {
+        "draft": false,
+        "reason": "Only the physician may sign"
+      },
+      "value": ""
+    }
+  ],
+  "citations": [
+    {
+      "field": "patient.name",
+      "value": "Alex Example",
+      "source": "chart.json#/demographics/name"
+    },
+    {
+      "field": "patient.birthDate",
+      "value": "2004-03-12",
+      "source": "chart.json#/demographics/birthDate"
+    },
+    {
+      "field": "history.allergies",
+      "value": "No known allergies recorded",
+      "source": "chart.json#/history/allergies"
+    },
+    {
+      "field": "history.hasAllergies",
+      "value": false,
+      "source": "chart.json#/history/hasAllergies"
+    },
+    {
+      "field": "visit.reason",
+      "value": "Fictional follow-up for a classroom demonstration",
+      "source": "chart.json#/visit/reason"
+    }
+  ]
+}

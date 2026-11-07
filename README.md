@@ -10,6 +10,17 @@ other shortcuts: `make lint`, `make test`, and `make docker` (which needs Docker
 The build checks its input files and skips work when they have not changed. The
 main CI job uses the same commands and checks that a second build is skipped.
 
+I can also read a short spoken note as I record it. After the
+[local speech setup](docs/live-voice.md#setup), I open a lecture notebook's
+**Transcript → Open live microphone transcript**, choose **Start microphone**,
+and use **Finish recording** to collect the last few seconds. Timestamped text
+arrives in small pieces; a brief lost connection keeps unfinished audio for retry.
+
+In the local **Settings → Connections**, I can choose a local model or the optional
+Claude connection for [syllabus review](docs/assistant-connections.md). I paste
+only the text I want to share, check the dated proposals, then confirm before
+saving any events. The page names the answering provider and explains a fallback.
+
 ## Overview
 
 I kept needing the schedule, the deadline and the notes behind a task together.
@@ -213,6 +224,10 @@ They are learning tools beside LifeOS, with no real accounts or money.
 
 ## Optional connections
 
+## Keep a cluster copy up to date
+
+I can also run the fictional workspace on my own Kubernetes cluster, a system for running containers. Flux checks this repository and pulls the saved deployment settings into the cluster, so a reviewed change can be applied without manually editing the running copy. It also corrects configuration drift, such as an accidental change to the number of running copies. This is an optional experiment and does not change the public browser demo. The [cluster setup guide](docs/gitops.md) has the commands, storage requirements and limitations.
+
 If I want coursework reminders in Microsoft 365, the
 [connection guide](integrations/m365/README.md) explains how to copy tasks from
 the SQLite workspace to SharePoint, Microsoft's shared-list service, and import
@@ -260,7 +275,37 @@ separate host; it has not been deployed or checked against a live AWS account.
 Running it needs an AWS account and can incur charges. A smaller [static AWS option and an optional Azure container deployment](docs/study-cloud.md) have separate templates and deployment workflows. Both are account-configured options; neither has been provisioned by these tests. The usual public demo
 continues to use Cloudflare, the service hosting its public files.
 
+I also wanted to learn how to connect small review and import tools without using
+private records. My [fictional review desk](docs/review-desk.md) has a Budibase
+review form, an audit trail, a clean-up queue and source citations from a self-made
+PDF form. Its separate relational asset registry has saved water/sewer inspection
+queries and a report I can open in Excel. Diagnosis and signature fields stay
+blank in the PDF example.
+
+For a compatible local agent, my [schedule tools](docs/mcp.md) can read commitments
+and deadlines and queue validated tasks with a scoped token. I can poll a job id
+to see when a write finishes. The [shift-report search](docs/shift-search.md)
+compares word search with a local model's similarity search and returns the exact
+fictional source passage. The [record importer](docs/fhir-ingest.md) checks public
+FHIR health-record examples and quarantines missing or unsupported values, with
+an optional S3-to-Lambda-to-DynamoDB path tested in an AWS emulator.
+
 ## Checks and documentation
+
+I run [C# browser checks](docs/connection-checks.md#browser-and-data-checks) with
+Selenium and NUnit to add and edit a fictional schedule event and compare the
+screen's dates and counts with the API. CI saves NUnit results and screenshots
+on failure. My [security checks](SECURITY-TESTING.md) verify the public host's
+headers, rejected remote writes and literal display of entered text, then scan
+a locally served public build with OWASP ZAP.
+
+The [deployment checks](docs/connection-checks.md) apply and destroy a disposable
+Docker container through Terraform, check its health response, and test the
+optional S3 feed publisher with emulated AWS permissions. The public container
+writes structured health logs; its AWS template includes a CloudWatch alarm for
+failed checks. These are tested local/emulated deployment paths, not a claim of
+a new live AWS deployment. The normal live demo remains at
+[lifeos.jacklai.ca](https://lifeos.jacklai.ca).
 
 I test the workspace with fictional records before sharing changes. The [checks guide](docs/project-checks.md) explains how I run the tests and what they cover. The [contribution guide](CONTRIBUTING.md) explains how to make changes.
 

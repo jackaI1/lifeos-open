@@ -1,0 +1,14 @@
+services:
+  budibase:
+    image: budibase/budibase:3.50.0
+    ports: ['127.0.0.1:10000:80']
+    environment:
+      BB_ADMIN_USER_EMAIL: ${BB_ADMIN_USER_EMAIL:?Set a fictional local admin email}
+      BB_ADMIN_USER_PASSWORD: ${BB_ADMIN_USER_PASSWORD:?Set a local admin password}
+      JWT_SECRET: ${BUDIBASE_JWT_SECRET:?Set a random local secret}
+      INTERNAL_API_KEY: ${BUDIBASE_INTERNAL_KEY:?Set a random local key}
+      API_ENCRYPTION_KEY: ${BUDIBASE_ENCRYPTION_KEY:?Set a random local key}
+      REDIS_PASSWORD: ${BUDIBASE_REDIS_PASSWORD:?Set a random local password}
+    volumes: [budibase-data:/data]
+volumes:
+  budibase-data:

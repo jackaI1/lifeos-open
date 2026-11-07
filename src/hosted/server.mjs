@@ -1,3 +1,4 @@
+import {healthLog} from './log.mjs';
 import {createServer} from 'node:http';
 import {readFile, realpath} from 'node:fs/promises';
 import {resolve, sep, extname} from 'node:path';
@@ -43,6 +44,7 @@ export function createDemoServer({directory='.runtime/hosted/assets',parentOrigi
     const shell = await worker.fetch(new Request(demoOrigin+'/index.html'), env);
     result = Response.json({status:shell.ok?'ok':'unavailable',mode:'browser-only'},
      {status:shell.ok?200:503,headers:{'cache-control':'no-store'}});
+    console.log(JSON.stringify(healthLog(result.status)));
    } else result = await worker.fetch(incoming, env);
    response.writeHead(result.status, Object.fromEntries(result.headers));
    response.end(request.method==='HEAD' ? undefined : Buffer.from(await result.arrayBuffer()));

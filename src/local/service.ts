@@ -1,3 +1,4 @@
+import {syllabusPreview} from './syllabus.ts';
 import {operationWorldEmbed} from '../../public/operation-world.js';
 import {configuredModels} from '../shared/llm.mjs';
 import {mkdir,readFile,stat,realpath} from 'node:fs/promises';
@@ -54,6 +55,24 @@ export async function createService(options:ServiceOptions={}){
    const form=await req.formData(),candidate=Buffer.from(String(form.get('token')??'')),expected=Buffer.from(vars.LOCAL_ACCESS_TOKEN!);
    if(candidate.length!==expected.length||!timingSafeEqual(candidate,expected))return new Response('Access token rejected',{status:403});
    return new Response(null,{status:303,headers:{location:'/', 'set-cookie':`lifeos-local=${sessionToken}; Path=/; HttpOnly; SameSite=Strict`}});
+  }
+  if(['/api/assistant-connection','/api/syllabus-preview'].includes(u.pathname)){
+   const session=await cloud.fetch(new Request(origin+'/api/session',{headers:req.headers}),env);
+   if(!session.ok)return session;
+   if(req.method!=='GET'&&(req.headers.get('origin')!==origin||req.headers.get('x-lifeos-csrf')!==csrf))return Response.json({error:'Origin or CSRF denied'},{status:403});
+   const current=await db.prepare("SELECT value FROM meta WHERE key='syllabus-provider'").first();
+   const provider=current?.value==='claude'?'claude':'local';
+   if(u.pathname==='/api/assistant-connection'&&req.method==='GET')return Response.json({provider,claudeConfigured:!!vars.ANTHROPIC_API_KEY});
+   try{
+    if(Number(req.headers.get('content-length')??0)>20000)return Response.json({error:'Text too large'},{status:413});
+    const raw=await req.text();if(raw.length>20000)return Response.json({error:'Text too large'},{status:413});const body=JSON.parse(raw);
+    if(u.pathname==='/api/assistant-connection'&&req.method==='PUT'){
+     if(!['local','claude'].includes(body.provider)||Object.keys(body).some(k=>k!=='provider'))throw Error('Choose local or claude; keys belong in the environment.');
+     await db.prepare("INSERT INTO meta(key,value) VALUES('syllabus-provider',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(body.provider).run();return Response.json({provider:body.provider});
+    }
+    if(u.pathname==='/api/syllabus-preview'&&req.method==='POST')return Response.json(await syllabusPreview({text:body.text,provider,env:vars}));
+    return new Response(null,{status:405});
+   }catch{return Response.json({error:'Could not draft events. Check the selected provider and local model setup.'},{status:400});}
   }
   if(u.pathname==='/api/operation-world'&&env.LOCAL_MOCK_SERVICES)return Response.json(operationWorldEmbed(u.searchParams.get('day')));
   let response=await cloud.fetch(req,env);

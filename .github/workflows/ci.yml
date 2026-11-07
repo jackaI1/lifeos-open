@@ -85,9 +85,19 @@ jobs:
       - name: Download public model weights (setup only)
         run: python tools/whisper/transcribe.py --model tiny.en --download-only
       - name: Recognize the fixture through the offline worker
-        run: npm run test:whisper
+        run: npm run test:whisper && node --test test/voice-inference.integration.mjs
         env:
           WHISPER_PYTHON: python
+      - run: npm run build
+      - run: npx playwright install --with-deps --only-shell chromium
+      - run: node --test tools/voice-browser.test.mjs
+        env:
+          WHISPER_PYTHON: python
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: voice-browser-failures
+          path: test-results/voice
       - uses: actions/upload-artifact@v4
         with:
           name: whisper-public-clip-evaluation

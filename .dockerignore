@@ -1,6 +1,5 @@
 # Keep the build context small and free of local state or secrets.
 .git
-.github
 node_modules
 build
 dist
@@ -31,11 +30,6 @@ wrangler.toml
 .wrangler
 # Not needed to build or run the standalone server image.
 mobile
-test
-docs
-Dockerfile
-docker-compose.yml
-.dockerignore
 
 # Operator-owned AWS state/plans must never enter any Docker build stage.
 infra/aws/.terraform
@@ -56,9 +50,15 @@ integrations/azure-feed/infra/*.parameters.json
 
 # Optional study tools are built by their own workflows.
 apps
-services
 integrations/payments
 infra/azure-demo
 infra/aws-static
 compose.study.yaml
 projects
+
+**/.terraform
+**/bin
+**/obj
+**/__pycache__
+**/.pytest_cache
+**/.venv

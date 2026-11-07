@@ -32,7 +32,7 @@ WORKDIR /app
 RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /opt/yarn*
 COPY --from=public-demo-build --chown=root:root /app/.runtime/hosted/assets ./assets
 COPY --from=build --chown=root:root /app/package.json ./package.json
-COPY --from=build --chown=root:root /app/src/hosted/server.mjs /app/src/hosted/worker.ts ./src/hosted/
+COPY --from=build --chown=root:root /app/src/hosted/server.mjs /app/src/hosted/worker.ts /app/src/hosted/log.mjs ./src/hosted/
 USER node
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \

@@ -1,0 +1,6 @@
+{
+  "fictional": true,
+  "demographics": {"name": "Alex Example", "birthDate": "2004-03-12"},
+  "history": {"allergies": "No known allergies recorded", "hasAllergies": false},
+  "visit": {"reason": "Fictional follow-up for a classroom demonstration"}
+}

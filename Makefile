@@ -3,7 +3,7 @@
 # Include directory timestamps so removing an input also invalidates the build.
 BUILD_INPUTS := $(shell find src demo -type f -o -type d) tools/build.mjs tools/build-demo-feed.ts package.json package-lock.json
 BUILD_STAMP := build/.make-build-stamp
-BUILD_OUTPUTS := build/server.mjs public/vendor/document-runtime.mjs public/vendor/analytics.mjs public/vendor/workload.mjs public/react/finances.mjs public/demo/today.json
+BUILD_OUTPUTS := build/server.mjs public/vendor/document-runtime.mjs public/vendor/analytics.mjs public/vendor/workload.mjs public/vendor/voice.mjs public/react/finances.mjs public/demo/today.json
 MISSING_OUTPUTS := $(filter-out $(wildcard $(BUILD_OUTPUTS)),$(BUILD_OUTPUTS))
 
 .PHONY: help install lint test build docker FORCE

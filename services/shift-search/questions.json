@@ -1,0 +1,12 @@
+[
+ {"question":"What fixed pump P-12 vibration?","expected":"pump-1"},
+ {"question":"Why was the inlet filter replaced?","expected":"filter-1"},
+ {"question":"Which measurements were quarantined for calibration?","expected":"sensor-1"},
+ {"question":"Why did the operator stop the furnace?","expected":"valve-1"},
+ {"question":"How was the desk node wireless connection restored?","expected":"battery-1"},
+ {"question":"What restored the sharpness of inspection images?","expected":"optic-1"},
+ {"question":"What must happen before opening a cooling line?","expected":"safety-1"},
+ {"question":"What belongs in a shift handoff?","expected":"handoff-1"},
+ {"question":"What was the cafeteria menu?","expected":null},
+ {"question":"Who won the hockey championship?","expected":null}
+]
