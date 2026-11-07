@@ -2,6 +2,8 @@
 
 I built a video call app with live captions to learn how the underlying idea works. This is a learning project.
 
+The automated call checks use a synthetic speech file as microphone input.
+
 ## Try a call
 
 You need Node.js 24 or newer and a recent desktop Chrome or Edge browser. Start on one computer with two tabs and headphones:

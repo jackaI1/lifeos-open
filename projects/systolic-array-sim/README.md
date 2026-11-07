@@ -2,6 +2,8 @@
 
 I built a small simulator of an AI chip to learn how the underlying idea works. This is a learning project.
 
+I use synthetic example workloads to compare the array configurations.
+
 ## Trying my own matrices
 
 Inputs are signed 8-bit integers, numbers from -128 to 127. Results accumulate as signed 32-bit integers with wraparound on overflow. For floating-point data, `quantize` returns the integer values and a scale to convert the result back approximately.

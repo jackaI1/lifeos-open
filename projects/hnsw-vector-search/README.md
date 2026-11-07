@@ -2,6 +2,8 @@
 
 I built a way to find similar words to learn how the underlying idea works. This is a learning project.
 
+I use small example vectors and queries to exercise the index.
+
 ## Try it
 
 Install Python 3.9 or newer and Git, then open a terminal and download the project:

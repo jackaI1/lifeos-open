@@ -2,6 +2,8 @@
 
 I built a small order receiver to learn how the underlying idea works. This is a learning project.
 
+I use example event payloads and test signing keys in the bundled checks.
+
 ## Try it locally
 
 You need Node.js 22 or later and a PostgreSQL database. Create an empty database, then set its connection URL and a secret in your shell (use your own values):

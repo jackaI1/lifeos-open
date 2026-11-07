@@ -2,6 +2,8 @@
 
 I built a small video broadcast lab to learn how the underlying idea works. This is a learning project.
 
+I use a generated test stream in the lab examples.
+
 ## Try a broadcast
 
 I use Docker with the Compose plugin. Nothing needs a camera or a cloud account.
