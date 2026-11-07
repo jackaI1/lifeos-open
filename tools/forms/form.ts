@@ -31,10 +31,20 @@ export async function inspectForm(bytes:Uint8Array){
  const pdf=await PDFDocument.load(bytes),form=pdf.getForm(),fields=form.getFields(),names=new Set<string>(),widgetDicts=new Set<PDFDict>();
  const map=fields.map(field=>{
   const name=field.getName();if(names.has(name)||!rules[name])throw Error('Unknown or duplicate form field: '+name);names.add(name);
-  const widgets=field.acroField.getWidgets();for(const w of widgets)widgetDicts.add(w.dict);
+  const widgets=field.acroField.getWidgets();for(const w of widgets){
+   widgetDicts.add(w.dict);
+   const own=w.dict.get(PDFName.of('V')),canonical=field.acroField.getInheritableAttribute(PDFName.of('V'));
+   if(own&&own.toString()!==canonical?.toString())throw Error('Widget value disagrees with canonical field: '+name);
+  }
+  const hasAppearance=(w:any)=>{
+   const ap=w.dict.lookupMaybe(PDFName.of('AP'),PDFDict),normal=ap&&pdf.context.lookup(ap.get(PDFName.of('N')));
+   if(!normal)return false;
+   const nonempty=(value:any)=>typeof value?.getContents==='function'&&value.getContents().length>0;
+   return normal instanceof PDFDict?normal.keys().length>0&&normal.keys().every(key=>nonempty(pdf.context.lookup(normal.get(key)))):nonempty(normal);
+  };
   const value=field instanceof PDFTextField?field.getText()??'':field instanceof PDFCheckBox?field.isChecked():field.acroField.dict.get(PDFName.of('V'))?.toString()??'';
   if(!rules[name].draft&&value)throw Error('Physician-only field must be blank: '+name);
-  return {name,type:field.acroField.getInheritableAttribute(PDFName.of('FT'))?.toString(),fieldRef:field.ref.toString(),widgets:widgets.map(w=>({rect:w.getRectangle(),appearance:!!w.dict.lookupMaybe(PDFName.of('AP'),PDFDict)})),rule:rules[name],value};
+  return {name,type:field.acroField.getInheritableAttribute(PDFName.of('FT'))?.toString(),fieldRef:field.ref.toString(),widgets:widgets.map(w=>({rect:w.getRectangle(),appearance:hasAppearance(w)})),rule:rules[name],value};
  });
  let count=0;for(const page of pdf.getPages()){const annots=page.node.Annots();if(annots)for(const ref of annots.asArray()){const annotation=pdf.context.lookup(ref,PDFDict);if(annotation.get(PDFName.of('Subtype'))?.toString()==='/Widget'){count++;if(!widgetDicts.has(annotation))throw Error('Orphan or ambiguous widget annotation');}}}
  if(count!==widgetDicts.size||names.size!==Object.keys(rules).length)throw Error('Incomplete canonical field tree or widgets');

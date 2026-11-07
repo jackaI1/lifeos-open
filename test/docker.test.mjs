@@ -50,7 +50,7 @@ test('docker workflow builds on PRs, scans with Trivy and publishes checked main
  assert.match(wf,/aquasecurity\/trivy:/);
  assert.match(wf,/ghcr\.io\/jackai1\/lifeos-open/);
  assert.match(wf,/if:.*github\.event_name == 'push'.*refs\/heads\/main/);
- assert.match(wf,/docker run --rm lifeos-tests npm test/);
+ assert.match(wf,/docker run --rm lifeos-tests make test/);
  assert.match(wf,/packages:\s*write/);
  assert.equal((wf.match(/packages:\s*write/g)??[]).length,1,'only the publish job may write packages');
 });

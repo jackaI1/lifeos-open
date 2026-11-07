@@ -18,8 +18,7 @@ export BUDIBASE_JWT_SECRET=replace-with-a-random-secret
 export BUDIBASE_INTERNAL_KEY=replace-with-a-random-key
 export BUDIBASE_ENCRYPTION_KEY=replace-with-a-random-key
 export BUDIBASE_REDIS_PASSWORD=replace-with-a-random-password
-docker compose -p internal-desk -f compose.internal-desk.yaml up -d
-# Wait for http://127.0.0.1:10000/api/global/health to respond.
+docker compose -p internal-desk -f compose.internal-desk.yaml up -d --wait --wait-timeout 300
 python -m pip install requests
 python tools/internal-desk/budibase.py
 ```

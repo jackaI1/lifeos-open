@@ -55,3 +55,11 @@ test('cross-origin upgrade is rejected before recognition',async t=>{
  const ws=new WebSocket(f.origin.replace('http','ws')+'/api/voice',{origin:'https://evil.invalid'});
  const [error]=await once(ws,'error');assert.match(error.message,/403/);ws.terminate();
 });
+test('saved and live recognition share one inference slot, with cancellable waiting',async()=>{
+ const {withWhisperSlot,whisperIsBusy}=await import('../src/local/whisper.ts');const abort=new AbortController();let release,started;
+ const running=new Promise(r=>{started=r;}),first=withWhisperSlot(new AbortController().signal,async()=>{started();await new Promise(r=>{release=r;});});await running;assert.ok(whisperIsBusy());
+ let called=false;const waiting=withWhisperSlot(abort.signal,async()=>{called=true;});abort.abort();await assert.rejects(waiting);assert.equal(called,false);release();await first;assert.equal(whisperIsBusy(),false);
+});
+test('saved recording inference applies back-pressure before accepting a live chunk',async t=>{
+ const f=await fixture(t,async()=>{throw Error('must not run');},{workerBusy:()=>true}),a=await f.connect();assert.equal((await a.next()).credit,0);a.send({type:'audio',seq:0,wav:await audio()});const response=await a.next();assert.equal(response.code,'busy');assert.equal(response.next,0);
+});

@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 
 # Include directory timestamps so removing an input also invalidates the build.
-BUILD_INPUTS := $(shell find src demo -type f -o -type d) tools/build.mjs tools/build-demo-feed.ts package.json package-lock.json
+BUILD_INPUTS := $(shell find src demo public -path public/vendor -prune -o -path public/react -prune -o -path public/demo/today.json -prune -o -type f -print -o -type d -print) tools/build.mjs tools/build-demo-feed.ts Makefile package.json package-lock.json
 BUILD_STAMP := build/.make-build-stamp
 BUILD_OUTPUTS := build/server.mjs public/vendor/document-runtime.mjs public/vendor/analytics.mjs public/vendor/workload.mjs public/vendor/voice.mjs public/react/finances.mjs public/demo/today.json
 MISSING_OUTPUTS := $(filter-out $(wildcard $(BUILD_OUTPUTS)),$(BUILD_OUTPUTS))

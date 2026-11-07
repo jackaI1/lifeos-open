@@ -50,7 +50,10 @@ replacement socket takes ownership; an old socket cannot keep writing. Sessions
 survive a two-minute disconnection in this process. A server restart or expired
 session produces an explicit error; this is not disk-backed recovery.
 
-The worker accepts one chunk across all sessions. A busy error does not consume
+The worker accepts one chunk across all sessions. Saved-recording and live
+recognition share one inference slot, so they cannot load competing models at
+the same time. A saved recording already using that slot also produces busy
+back-pressure for the live stream. A busy error does not consume
 a sequence number. The browser retries after 500 ms and retains up to ten chunks
 (about 30 seconds). If recognition cannot keep up, recording stops with an
 explanation instead of silently losing audio. Finish first flushes the worklet's

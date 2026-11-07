@@ -29,7 +29,6 @@ wrangler.toml
 .dev.vars
 .wrangler
 # Not needed to build or run the standalone server image.
-mobile
 
 # Operator-owned AWS state/plans must never enter any Docker build stage.
 infra/aws/.terraform
@@ -49,11 +48,6 @@ integrations/azure-feed/infra/*.bicepparam
 integrations/azure-feed/infra/*.parameters.json
 
 # Optional study tools are built by their own workflows.
-apps
-integrations/payments
-infra/azure-demo
-infra/aws-static
-compose.study.yaml
 projects
 
 **/.terraform
@@ -62,3 +56,8 @@ projects
 **/__pycache__
 **/.pytest_cache
 **/.venv
+
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfvars
+**/*.tfplan

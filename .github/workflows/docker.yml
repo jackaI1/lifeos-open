@@ -30,7 +30,7 @@ jobs:
       - name: Run the test suite inside the build container
         run: |
           docker build --target build -t lifeos-tests .
-          docker run --rm lifeos-tests npm test
+          docker run --rm lifeos-tests make test
       - name: Run container and check health
         run: |
           set -eu

@@ -32,7 +32,9 @@ The ten labelled questions include eight known sources and two unrelated
 questions. CI runs the actual model, PostgreSQL text search, vector distance and
 fusion, and uploads recall at three for full-text only, vector only and combined
 search in `shift-search-evaluation`. Recall at three means the expected passage
-appeared among the first three candidates. This small set checks regressions,
+appeared among the first three candidates. In the first CI run, full-text recall at three was 5/8 (62.5%), while vector
+and combined retrieval each found 8/8 (100%). Both unrelated questions were
+declined. This small set checks regressions,
 not broad retrieval quality; fusion is not guaranteed to outperform both inputs.
 The test also requires abstention on both unrelated questions.
 

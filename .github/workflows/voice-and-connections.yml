@@ -81,6 +81,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
       - name: Build the public demo to scan
         run: docker build --target public-demo -t lifeos-zap .
       - name: Scan with OWASP ZAP and reject new medium or high findings
@@ -97,7 +100,7 @@ jobs:
           status=$?
           set -e
           test "$status" -le 2
-          python security/check-zap.py test-results/zap/report.json
+          node security/check-zap.mjs test-results/zap/report.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -213,10 +216,10 @@ jobs:
       - name: Start the real low-code platform and drive its generated review form
         run: |
           set -euo pipefail
-          docker compose -p internal-desk -f compose.internal-desk.yaml up -d
           trap 'docker compose -p internal-desk -f compose.internal-desk.yaml down --volumes' EXIT
+          docker compose -p internal-desk -f compose.internal-desk.yaml up -d --wait --wait-timeout 300
           docker compose -p internal-desk -f compose.internal-desk.yaml ps --format json
-          curl --retry 90 --retry-all-errors --retry-delay 2 --max-time 5 -fsS http://127.0.0.1:10000/api/global/health > /dev/null
+          curl -fsS http://127.0.0.1:10000/health > /dev/null
           python tools/internal-desk/budibase.py
           node tools/internal-desk/budibase-browser.mjs
       - uses: actions/upload-artifact@v4

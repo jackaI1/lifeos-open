@@ -28,7 +28,7 @@ function duration(wav: Buffer) {
 }
 type Session = {next: number; elapsed: number; textBytes:number; replies: Extract<ServerMessage, {type: 'partial'}>[]; touched: number; socket?: WebSocket; pending: boolean; ended: boolean};
 /** Retained in memory for 2 minutes after disconnection; restart expires sessions explicitly. */
-export function attachVoice(server: Server, {origin, csrf, authorize, recognize, idleMs = 120000}: {origin: string; csrf: string; authorize: (headers: Record<string, string>) => Promise<boolean>; recognize: Recognize; idleMs?: number}) {
+export function attachVoice(server: Server, {origin, csrf, authorize, recognize, workerBusy=()=>false, idleMs = 120000}: {origin: string; csrf: string; authorize: (headers: Record<string, string>) => Promise<boolean>; recognize: Recognize; workerBusy?:()=>boolean; idleMs?: number}) {
  const wss = new WebSocketServer({noServer: true, maxPayload: Math.ceil(MAX_WAV * 4 / 3) + 256, perMessageDeflate: false});
  const sessions = new Map<string, Session>(), active = new Set<Promise<void>>(), abort = new AbortController();
  let busy = false, closing = false;
@@ -38,7 +38,7 @@ export function attachVoice(server: Server, {origin, csrf, authorize, recognize,
   if (closing || req.url !== '/api/voice' || req.headers.host !== new URL(origin).host || req.headers.origin !== origin) {socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'); return;}
   try {
    if (!await authorize(req.headers)) {socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'); return;}
-   if (closing || socket.destroyed) return;
+   if (closing || socket.destroyed) {socket.destroy();return;}
    wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws));
   } catch {socket.destroy();}
  };
@@ -62,8 +62,8 @@ export function attachVoice(server: Server, {origin, csrf, authorize, recognize,
     clearTimeout(hello); session = s;
     if (s.socket && s.socket !== ws) s.socket.close(1000, 'Reconnected elsewhere');
     s.socket = ws; s.touched = Date.now();
-    send({type: 'start', session: m.session, next: s.next, credit: busy ? 0 : 1});
-    for (const partial of s.replies) if (partial.seq > m.after) send({...partial, credit: busy ? 0 : 1});
+    send({type: 'start', session: m.session, next: s.next, credit: busy || workerBusy() ? 0 : 1});
+    for (const partial of s.replies) if (partial.seq > m.after) send({...partial, credit: busy || workerBusy() ? 0 : 1});
     if (s.ended) send({type: 'final', seq: s.next - 1, segments: s.replies.flatMap(p => p.segments)});
     return;
    }
@@ -76,7 +76,7 @@ export function attachVoice(server: Server, {origin, csrf, authorize, recognize,
    if (m?.type !== 'audio' || !Number.isSafeInteger(m.seq) || m.seq < 0 || typeof m.wav !== 'string' || m.wav.length > Math.ceil(MAX_WAV * 4 / 3) || !/^[A-Za-z0-9+/]+={0,2}$/.test(m.wav)) {error('invalid', 'Invalid audio message.'); return;}
    if (m.seq < s.next) {send(s.replies[m.seq]); return;}
    if (m.seq !== s.next || s.next >= MAX_CHUNKS) {error('sequence', 'Unexpected sequence or recording limit reached.'); return;}
-   if (busy || s.pending) {error('busy', 'Worker busy; retain this chunk and retry.', true); return;}
+   if (busy || s.pending || workerBusy()) {error('busy', 'Worker busy; retain this chunk and retry.', true); return;}
    let wav: Buffer, ms: number;
    try {wav = Buffer.from(m.wav, 'base64'); ms = duration(wav);} catch (e) {error('invalid', (e as Error).message); return;}
    busy = true; s.pending = true;
