@@ -1,0 +1,32 @@
+name: django-document-review / Tests
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - projects/django-document-review/**
+    - .github/workflows/django-document-review-tests.yml
+  pull_request:
+    paths:
+    - projects/django-document-review/**
+    - .github/workflows/django-document-review-tests.yml
+  workflow_dispatch: {}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: pip
+    - run: pip install -r requirements.txt
+    - run: python manage.py check
+    - run: python manage.py makemigrations --check --dry-run
+    - run: pytest -q
+    timeout-minutes: 20
+permissions:
+  contents: read
+defaults:
+  run:
+    working-directory: projects/django-document-review

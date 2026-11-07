@@ -1,0 +1,1 @@
+{"id":"normalize-tags", "instruction":"Fix normalize_tags so it strips and lowercases tags, removes empty strings and duplicates, and preserves first-seen order.", "allowed_paths":["solution.py"], "forbidden_literals":["['python', 'ai']", "[\"python\", \"ai\"]"]}

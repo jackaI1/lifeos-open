@@ -1,0 +1,191 @@
+{
+  "source_url": "https://www.pewresearch.org/wp-content/uploads/2023/08/SR_23.08.28_views-of-ai_topline.pdf",
+  "publisher": "Pew Research Center",
+  "survey": "American Trends Panel Wave 132",
+  "field_dates": "2023-07-31 through 2023-08-06",
+  "sample_size": 11201,
+  "provenance": "Manually transcribed published weighted percentages, including no answer. Questions and labels paraphrased; original variable and PDF page retained. No individual records.",
+  "normalization": "Divide each published percentage by its row total; rounding can make the total 101.",
+  "cases": [
+    {
+      "id": "cncexc",
+      "persona": "A randomly selected United States adult, age 18 or older, in July-August 2023. Gender, ethnicity, income, and education are unspecified; represent the whole adult population.",
+      "question": "Does greater everyday AI use leave you mainly excited, mainly concerned, or equally both?",
+      "choices": {
+        "A": "Mostly excited",
+        "B": "Mostly concerned",
+        "C": "Equal mix",
+        "D": "No answer"
+      },
+      "percentages": [
+        10,
+        52,
+        36,
+        2
+      ],
+      "variable": "CNCEXC",
+      "pdf_page": 1,
+      "sample_size": 11201
+    },
+    {
+      "id": "information",
+      "persona": "A randomly selected United States adult, age 18 or older, in July-August 2023. Gender, ethnicity, income, and education are unspecified; represent the whole adult population.",
+      "question": "What is AI's overall effect on finding reliable online information?",
+      "choices": {
+        "A": "Helps",
+        "B": "Hurts",
+        "C": "Unsure",
+        "D": "No answer"
+      },
+      "percentages": [
+        33,
+        27,
+        40,
+        1
+      ],
+      "variable": "AIHLPHRT_a",
+      "pdf_page": 2,
+      "sample_size": 5621
+    },
+    {
+      "id": "health",
+      "persona": "A randomly selected United States adult, age 18 or older, in July-August 2023. Gender, ethnicity, income, and education are unspecified; represent the whole adult population.",
+      "question": "What is AI's overall effect on managing personal health?",
+      "choices": {
+        "A": "Helps",
+        "B": "Hurts",
+        "C": "Unsure",
+        "D": "No answer"
+      },
+      "percentages": [
+        33,
+        19,
+        47,
+        1
+      ],
+      "variable": "AIHLPHRT_b",
+      "pdf_page": 2,
+      "sample_size": 5621
+    },
+    {
+      "id": "cars",
+      "persona": "A randomly selected United States adult, age 18 or older, in July-August 2023. Gender, ethnicity, income, and education are unspecified; represent the whole adult population.",
+      "question": "What is AI's overall effect on manufacturing safer vehicles?",
+      "choices": {
+        "A": "Helps",
+        "B": "Hurts",
+        "C": "Unsure",
+        "D": "No answer"
+      },
+      "percentages": [
+        37,
+        19,
+        44,
+        1
+      ],
+      "variable": "AIHLPHRT_c",
+      "pdf_page": 2,
+      "sample_size": 5621
+    },
+    {
+      "id": "service",
+      "persona": "A randomly selected United States adult, age 18 or older, in July-August 2023. Gender, ethnicity, income, and education are unspecified; represent the whole adult population.",
+      "question": "What is AI's overall effect on customer support quality?",
+      "choices": {
+        "A": "Helps",
+        "B": "Hurts",
+        "C": "Unsure",
+        "D": "No answer"
+      },
+      "percentages": [
+        28,
+        34,
+        37,
+        1
+      ],
+      "variable": "AIHLPHRT_d",
+      "pdf_page": 2,
+      "sample_size": 5621
+    },
+    {
+      "id": "shopping",
+      "persona": "A randomly selected United States adult, age 18 or older, in July-August 2023. Gender, ethnicity, income, and education are unspecified; represent the whole adult population.",
+      "question": "What is AI's overall effect on finding relevant online purchases?",
+      "choices": {
+        "A": "Helps",
+        "B": "Hurts",
+        "C": "Unsure",
+        "D": "No answer"
+      },
+      "percentages": [
+        49,
+        15,
+        35,
+        1
+      ],
+      "variable": "AIHLPHRT_e",
+      "pdf_page": 2,
+      "sample_size": 5580
+    },
+    {
+      "id": "privacy",
+      "persona": "A randomly selected United States adult, age 18 or older, in July-August 2023. Gender, ethnicity, income, and education are unspecified; represent the whole adult population.",
+      "question": "What is AI's overall effect on protecting personal data?",
+      "choices": {
+        "A": "Helps",
+        "B": "Hurts",
+        "C": "Unsure",
+        "D": "No answer"
+      },
+      "percentages": [
+        10,
+        53,
+        37,
+        1
+      ],
+      "variable": "AIHLPHRT_f",
+      "pdf_page": 2,
+      "sample_size": 5580
+    },
+    {
+      "id": "policing",
+      "persona": "A randomly selected United States adult, age 18 or older, in July-August 2023. Gender, ethnicity, income, and education are unspecified; represent the whole adult population.",
+      "question": "What is AI's overall effect on police work for public safety?",
+      "choices": {
+        "A": "Helps",
+        "B": "Hurts",
+        "C": "Unsure",
+        "D": "No answer"
+      },
+      "percentages": [
+        24,
+        26,
+        49,
+        1
+      ],
+      "variable": "AIHLPHRT_g",
+      "pdf_page": 2,
+      "sample_size": 5580
+    },
+    {
+      "id": "doctors",
+      "persona": "A randomly selected United States adult, age 18 or older, in July-August 2023. Gender, ethnicity, income, and education are unspecified; represent the whole adult population.",
+      "question": "What is AI's overall effect on clinical care quality?",
+      "choices": {
+        "A": "Helps",
+        "B": "Hurts",
+        "C": "Unsure",
+        "D": "No answer"
+      },
+      "percentages": [
+        37,
+        20,
+        42,
+        1
+      ],
+      "variable": "AIHLPHRT_h",
+      "pdf_page": 2,
+      "sample_size": 5580
+    }
+  ]
+}

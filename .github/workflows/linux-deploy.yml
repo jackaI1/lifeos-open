@@ -1,5 +1,11 @@
 name: Linux self-hosting
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    paths-ignore: ['projects/**']
+  pull_request:
+    paths-ignore: ['projects/**']
+  workflow_dispatch:
+    paths-ignore: ['projects/**']
 permissions:
   contents: read
 jobs:

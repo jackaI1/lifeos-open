@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "local-llm-judgment-eval"
+version = "0.1.0"
+description = "Compare typed local-model probabilities with published survey distributions"
+requires-python = ">=3.11,<3.14"
+dependencies = ["pydantic==2.12.3", "psutil==7.1.3"]
+
+[project.optional-dependencies]
+local = ["torch==2.8.0", "transformers==4.57.1", "peft==0.17.1", "accelerate==1.11.0"]
+dev = ["pytest==8.4.2", "ruff==0.14.3"]
+
+[project.scripts]
+judgment-eval = "local_llm_judgment_eval.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

@@ -1,0 +1,87 @@
+name: local-llm-judgment-eval / CI
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - projects/local-llm-judgment-eval/**
+    - .github/workflows/local-llm-judgment-eval-ci.yml
+  pull_request:
+    paths:
+    - projects/local-llm-judgment-eval/**
+    - .github/workflows/local-llm-judgment-eval-ci.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python:
+        - '3.11'
+        - '3.12'
+        - '3.13'
+    steps:
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v6
+      with:
+        version: 0.9.8
+        python-version: ${{ matrix.python }}
+        working-directory: projects/local-llm-judgment-eval
+    - run: uv sync --frozen --extra dev
+    - run: uv run pytest -q
+    - run: uv run ruff check src tests
+    - run: uv run ruff format --check src tests
+    - run: uv run judgment-eval verify-data
+    - run: uv run judgment-eval baseline --output artifacts/ci-baseline
+    - run: uv build
+    - name: Verify installed wheel includes both datasets
+      run: 'uv venv /tmp/wheel-test
+
+        uv pip install --python /tmp/wheel-test/bin/python dist/*.whl
+
+        cd /tmp
+
+        /tmp/wheel-test/bin/judgment-eval verify-data
+
+        /tmp/wheel-test/bin/judgment-eval baseline --output /tmp/wheel-baseline
+
+        /tmp/wheel-test/bin/python -c ''from local_llm_judgment_eval.training import load_training_examples; assert len(load_training_examples())
+        == 24''
+
+        '
+    - uses: actions/upload-artifact@v4
+      with:
+        name: baseline-python-${{ matrix.python }}
+        path: projects/local-llm-judgment-eval/artifacts/ci-baseline/
+    timeout-minutes: 20
+  coding-environment:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v6
+      with:
+        version: 0.9.8
+        python-version: '3.12'
+        working-directory: projects/local-llm-judgment-eval
+    - run: uv sync --frozen --extra dev
+    - name: Run honest and cheating agents in Docker
+      run: 'uv run python -m local_llm_judgment_eval.coding_eval --agent honest --repeats 3 --output artifacts/honest
+
+        uv run python -m local_llm_judgment_eval.coding_eval --agent cheat --repeats 3 --output artifacts/cheat
+
+        python -c ''import json; h=json.load(open("artifacts/honest/results.json")); c=json.load(open("artifacts/cheat/results.json"));
+        assert h["passes"] == 3; assert c["passes"] == 0; assert all(any("outside allowed" in f for f in r["flags"]) and any("hardcoded"
+        in f for f in r["flags"]) for r in c["runs"])''
+
+        '
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coding-evaluation
+        path: projects/local-llm-judgment-eval/artifacts/
+    timeout-minutes: 20
+defaults:
+  run:
+    working-directory: projects/local-llm-judgment-eval
