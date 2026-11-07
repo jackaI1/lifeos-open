@@ -23,7 +23,7 @@ fall back to the configured local model, with a visible reason. If that model
 also fails, the page shows an error and saves no events. This connection is
 separate from the public demo's scripted example conversations.
 
-`node --test test/syllabus.test.mjs` runs six mocked-client checks for the exact
+`node --test test/syllabus.test.mjs` runs seven provider and integration checks for the exact
 outbound context, tool use, HTTP errors, timeout, absent key, invalid output and
 local failure. These do not claim to make a paid Claude call. The implementation
 follows the [Anthropic tool-use contract](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview).

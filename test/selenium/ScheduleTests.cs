@@ -8,7 +8,7 @@ public abstract class BrowserFixture {
     protected SchedulePage Page=null!;
     [SetUp] public void Start() {
         var options=new ChromeOptions(); options.AddArguments("--headless=new","--no-sandbox","--disable-dev-shm-usage","--window-size=1440,1000");
-        Driver=new ChromeDriver(options);Driver.Manage().Timeouts().AsynchronousJavaScript=TimeSpan.FromSeconds(15);Page=new SchedulePage(Driver);Page.Open();
+        Driver=new ChromeDriver(options);Driver.Manage().Timeouts().AsynchronousJavaScript=TimeSpan.FromSeconds(15);Page=new SchedulePage(Driver);Page.Wait.IgnoreExceptionTypes(typeof(StaleElementReferenceException),typeof(NoSuchElementException));Page.Open();
     }
     [TearDown] public void Stop() {
         try {if(TestContext.CurrentContext.Result.Outcome.Status==TestStatus.Failed) {var file=Path.Combine(TestContext.CurrentContext.WorkDirectory,TestContext.CurrentContext.Test.ID+".png");((ITakesScreenshot)Driver).GetScreenshot().SaveAsFile(file);TestContext.AddTestAttachment(file);}}

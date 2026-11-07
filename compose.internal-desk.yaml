@@ -1,6 +1,6 @@
 services:
   budibase:
-    image: budibase/budibase:3.50.0
+    image: budibase/budibase:v3.50.0
     ports: ['127.0.0.1:10000:80']
     environment:
       BB_ADMIN_USER_EMAIL: ${BB_ADMIN_USER_EMAIL:?Set a fictional local admin email}

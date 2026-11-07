@@ -1,1 +1,7 @@
-[]
+[
+  {
+    "alertRef": "10055-6",
+    "evidence": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; worker-src 'self'; frame-src https://widget.operationworld.org; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors https://jacklai.ca",
+    "reason": "Existing inline style attributes position the schedule, notebook and charts. Script policy still forbids inline scripts; new or changed policies are not accepted by this entry."
+  }
+]

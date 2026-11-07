@@ -13,3 +13,20 @@ test('local errors stay errors, invalid tool output never becomes a calendar ent
  await assert.rejects(syllabusPreview({text:'a',provider:'local',local:async()=>({events:[{...events[0],end:events[0].start}]})}));
  await assert.rejects(syllabusPreview({text:'a',provider:'local',local:async()=>{throw Error('offline');}}),/offline/);
 });
+test('settings never store a key; preview cannot write before explicit calendar confirmation',async()=>{
+ const {createService}=await import('../src/local/service.ts');const app=await createService({database:':memory:',env:{ANTHROPIC_API_KEY:'fictional-secret'}}),origin=app.origin;
+ const call=(path,method='GET',body)=>app.fetch(new Request(origin+path,{method,headers:{origin,'x-lifeos-csrf':app.env.LOCAL_CSRF,'content-type':'application/json'},...(body?{body:JSON.stringify(body)}:{})}));
+ const previous=globalThis.fetch;
+ try{
+  assert.equal((await call('/api/assistant-connection','PUT',{provider:'claude',key:'do-not-store'})).status,400);
+  assert.equal((await call('/api/assistant-connection','PUT',{provider:'claude'})).status,200);
+  const prefs=await(await call('/api/assistant-connection')).json();assert.equal(prefs.provider,'claude');assert.ok(!JSON.stringify(prefs).includes('fictional-secret'));
+  const count=async()=>Number((await app.db.prepare("SELECT COUNT(*) AS n FROM records WHERE kind='calendar-event'").first()).n),before=await count();
+  globalThis.fetch=async()=>Response.json({content:[{type:'tool_use',name:'draft_calendar_events',input:{events}}]});
+  const preview=await(await call('/api/syllabus-preview','POST',{text:'Chosen syllabus text'})).json();assert.equal(preview.provider,'claude');assert.equal(await count(),before);
+  const e=preview.events[0],confirmed={id:crypto.randomUUID(),version:0,mutationId:crypto.randomUUID(),title:e.title,start:e.start,end:e.end,location:''};
+  assert.equal((await call('/api/actions/local-calendar','POST',confirmed)).status,200);assert.equal(await count(),before+1);
+  assert.equal((await call('/api/actions/local-calendar','POST',confirmed)).status,200);assert.equal(await count(),before+1);
+  const rows=await app.db.prepare("SELECT * FROM meta WHERE key='syllabus-provider'").all();assert.ok(!JSON.stringify(rows).includes('fictional-secret'));
+ }finally{globalThis.fetch=previous;await app.close();}
+});

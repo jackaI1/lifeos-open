@@ -13,7 +13,7 @@ Install .NET 8, Chrome, Node 24 and the locked Node dependencies. In one termina
 start a fictional workspace with `npm run dev`; then:
 
 ```sh
-dotnet test test/selenium --logger 'nunit;LogFilePath=../../../test-results/selenium/nunit.xml'
+dotnet test test/selenium --logger "nunit;LogFilePath=$PWD/test-results/selenium/nunit.xml"
 ```
 
 `LIFEOS_TEST_URL` can select another disposable local instance. Do not point

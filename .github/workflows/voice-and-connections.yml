@@ -2,6 +2,9 @@ name: Voice and connections
 on: [push, pull_request]
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 jobs:
   selenium:
     runs-on: ubuntu-24.04
@@ -25,7 +28,8 @@ jobs:
           ps -p "$pid" -o pid,lstart,args
           echo "owner=selenium-fixture port=8787 cleanup=kill-TERM-$pid"
           curl --retry 20 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:8787/api/health
-          dotnet test test/selenium --logger 'nunit;LogFilePath=../../../test-results/selenium/nunit.xml' --results-directory test-results/selenium
+          mkdir -p test-results/selenium
+          dotnet test test/selenium --logger "nunit;LogFilePath=$PWD/test-results/selenium/nunit.xml" --results-directory test-results/selenium
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -84,7 +88,7 @@ jobs:
           set -euo pipefail
           mkdir -p test-results/zap
           chmod 777 test-results/zap
-          cid=$(docker run -d -p 127.0.0.1:8080:8080 lifeos-zap)
+          cid=$(docker run -d -e PARENT_ORIGIN=https://jacklai.ca -p 127.0.0.1:8080:8080 lifeos-zap)
           trap 'docker stop "$cid" >/dev/null; docker rm "$cid" >/dev/null' EXIT
           docker inspect --format 'owner=zap-fixture pid={{.State.Pid}} start={{.State.StartedAt}} port=8080 cleanup=docker-stop-and-rm' "$cid"
           curl --retry 20 --retry-all-errors --retry-delay 1 -fsS http://127.0.0.1:8080/healthz
