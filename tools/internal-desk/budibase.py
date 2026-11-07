@@ -73,12 +73,15 @@ def main():
     trigger_key, trigger = next((key, value) for key, value in definitions['trigger'].items() if 'row' in value['name'].lower() and 'updated' in value['name'].lower())
     action_key, action = next((key, value) for key, value in definitions['action'].items() if 'create row' in value['name'].lower())
     automation = call('/api/automations', 'POST', {'name': 'Record every deliverable review', 'type': 'automation', 'definition': {'trigger': {**trigger, 'id': str(uuid.uuid4()), 'stepId': trigger_key, 'inputs': {'tableId': tables['Deliverables']}}, 'steps': [{**action, 'id': str(uuid.uuid4()), 'stepId': action_key, 'inputs': {'row': {'tableId': tables['Audit'], 'Title': '{{trigger.row.Title}}', 'Status': '{{trigger.row.Status}}', 'SourceRow': '{{trigger.id}}'}}}]}})
-    deployment = call(f'/api/public/v1/applications/{app_id}/publish', 'POST')['data']
-    state = {'appId': app_id, 'productionId': app_id.replace('app_dev_', 'app_'), 'workspaceAppId': workspace_id, 'tables': tables, 'rowId': row['_id'], 'appUrl': deployment.get('appUrl', '/app/lifeos-review'), 'cleanupView':cleanup['id'], 'screens': len(screens), 'automation': automation.get('automation', automation).get('_id')}
+    call(f'/api/public/v1/applications/{app_id}/publish', 'POST')
+    # Match v3.50's buildLiveUrl: workspace URL, then the child app URL.
+    app_url = '/'.join(['', 'app', app['url'].strip('/'), workspace_app['url'].strip('/')])
+    state = {'appId': app_id, 'productionId': app_id.replace('app_dev_', 'app_'), 'workspaceAppId': workspace_id, 'tables': tables, 'rowId': row['_id'], 'appUrl': app_url, 'cleanupView':cleanup['id'], 'screens': len(screens), 'automation': automation.get('automation', automation).get('_id')}
     Path('.runtime/internal-desk').mkdir(parents=True, exist_ok=True)
     Path('.runtime/internal-desk/budibase.json').write_text(json.dumps(state, indent=2))
     # No API key or session cookie is written to disk or stdout.
     print('Created real Budibase review form, audit automation, source-citation view and fictional row.')
+    print('Open ' + ORIGIN + app_url + '/#/review/' + row['_id'])
 
 
 if __name__ == '__main__':

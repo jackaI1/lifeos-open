@@ -9,8 +9,8 @@ try{
  const headers={'x-budibase-api-key':key.apiKey,'x-budibase-app-id':state.productionId};
  const search=async(table)=>{const r=await context.request.post(`${origin}/api/public/v1/tables/${table}/rows/search`,{headers,data:{query:{}}});assert.ok(r.ok(),`search HTTP ${r.status()}`);return(await r.json()).data;};
  page=await context.newPage();
- const appUrl=new URL(new URL(state.appUrl,origin).pathname,origin);await page.goto(appUrl.href.replace(/\/$/,'')+'/review/'+state.rowId);
- // Budibase uses history routing in the current release. A missing route is a failure.
+ const appUrl=new URL(new URL(state.appUrl,origin).pathname.replace(/\/$/,'')+'/',origin);appUrl.hash='/review/'+encodeURIComponent(state.rowId);await page.goto(appUrl.href);
+ // Match the pinned release's child-app prefix and hash-based screen routes.
  await page.getByText('Review fictional deliverable',{exact:true}).waitFor({timeout:60000});
  const title=page.getByLabel('Title',{exact:true});await title.fill('Fictional desk node design reviewed');
  await page.getByRole('button',{name:'Save review',exact:true}).click();
