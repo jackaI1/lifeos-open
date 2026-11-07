@@ -103,6 +103,15 @@ jobs:
         env:
           DIGEST: ${{ steps.publish.outputs.digest }}
         run: bash deploy/kubernetes/smoke.sh "kind-$CLUSTER" "$IMAGE@$DIGEST"
+      - name: Install Flux CLI
+        uses: fluxcd/flux2/action@v2.7.5
+      - name: Install Flux controllers and test Git reconciliation
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          DIGEST: ${{ steps.publish.outputs.digest }}
+        run: |
+          flux --context "kind-$CLUSTER" install --timeout=5m
+          bash deploy/flux/test.sh "kind-$CLUSTER" "$BRANCH" "$IMAGE@$DIGEST"
       - name: Bounded diagnostics on failure
         if: failure()
         run: |
