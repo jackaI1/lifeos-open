@@ -43,6 +43,9 @@ capped so that proxy cannot hold up the forms. This setup uses the
 [public API](https://docs.budibase.com/docs/public-api) for data and the release's
 builder API for screens. `budibase.py` is the reproducible app definition.
 It stores only generated ids in `.runtime`, never its API key or login cookie.
+The Compose file also supplies a region for Budibase's bundled object-storage
+client, including local MinIO, as described in the
+[upstream startup issue](https://github.com/Budibase/budibase/issues/19909).
 
 Stop and remove this disposable example, including its fictional data:
 
