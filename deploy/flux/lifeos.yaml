@@ -10,6 +10,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: lifeos
-  path: ./deploy/kubernetes/base
+  path: ./deploy/kubernetes/overlays/gitops
   prune: true
   wait: true
