@@ -11,14 +11,21 @@ from publisher import publish
 FEED = json.loads((Path(__file__).parents[2] / "public/demo/today.json").read_text())
 
 
+@pytest.mark.parametrize("encryption", ["AES256", "aws:kms"])
 @mock_aws
-def test_real_s3_calls_are_idempotent_and_encrypted():
+def test_real_s3_calls_are_idempotent_and_encrypted(encryption):
     s3 = boto3.client("s3", region_name="us-east-1")
     s3.create_bucket(Bucket="fictional-lifeos")
+    rule = {"SSEAlgorithm": encryption}
+    if encryption == "aws:kms":
+        rule["KMSMasterKeyID"] = boto3.client("kms", region_name="us-east-1").create_key(Description="Fictional feed test")["KeyMetadata"]["Arn"]
+    s3.put_bucket_encryption(Bucket="fictional-lifeos", ServerSideEncryptionConfiguration={"Rules": [{"ApplyServerSideEncryptionByDefault": rule}]})
     assert publish(FEED, s3, "fictional-lifeos")["changed"]
     assert not publish(FEED, s3, "fictional-lifeos")["changed"]
     obj = s3.get_object(Bucket="fictional-lifeos", Key="demo/today.json")
-    assert obj["ServerSideEncryption"] == "AES256"
+    assert obj["ServerSideEncryption"] == encryption
+    if encryption == "aws:kms":
+        assert obj["SSEKMSKeyId"] == rule["KMSMasterKeyID"]
     assert json.loads(obj["Body"].read()) == FEED
 
 

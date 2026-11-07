@@ -3,6 +3,7 @@ import json
 import argparse
 import os
 import sqlite3
+import time
 from pathlib import Path
 import uuid
 
@@ -10,10 +11,24 @@ import requests
 
 ORIGIN = os.environ.get('BUDIBASE_URL', 'http://127.0.0.1:10000')
 session = requests.Session()
+last_request = 0.0
 
 
 def call(path, method='GET', body=None):
-    response = session.request(method, ORIGIN + path, json=body, timeout=60)
+    global last_request
+    # Keep the default platform limits. Only a rejected 429 is safe to retry
+    # for these creates; never replay an ambiguous failed write.
+    for attempt in range(5):
+        time.sleep(max(0, 0.25 - (time.monotonic() - last_request)))
+        last_request = time.monotonic()
+        response = session.request(method, ORIGIN + path, json=body, timeout=60)
+        if response.status_code != 429 or attempt == 4:
+            break
+        try:
+            delay = float(response.headers.get('Retry-After', 0.5 * 2 ** attempt))
+        except ValueError:
+            delay = 0.5 * 2 ** attempt
+        time.sleep(min(60, max(0.5, delay)))
     if not response.ok:
         raise RuntimeError(f'Budibase {method} {path}: HTTP {response.status_code}; {response.text[:160]}')
     return response.json() if response.content else None

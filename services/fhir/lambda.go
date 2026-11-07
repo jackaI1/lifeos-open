@@ -85,7 +85,7 @@ func (p *Pipeline) Handle(ctx context.Context, event events.S3Event) error {
 			}
 			source := sha256.Sum256([]byte(p.RawBucket + "/" + key))
 			rejectKey := "rejects/" + hex.EncodeToString(source[:]) + "-" + digest + ".json"
-			_, err = p.S3.PutObject(ctx, &s3.PutObjectInput{Bucket: aws.String(p.RejectBucket), Key: aws.String(rejectKey), Body: strings.NewReader(string(rejects)), ContentType: aws.String("application/json"), ServerSideEncryption: "AES256"})
+			_, err = p.S3.PutObject(ctx, &s3.PutObjectInput{Bucket: aws.String(p.RejectBucket), Key: aws.String(rejectKey), Body: strings.NewReader(string(rejects)), ContentType: aws.String("application/json")})
 			if err != nil {
 				return err
 			}

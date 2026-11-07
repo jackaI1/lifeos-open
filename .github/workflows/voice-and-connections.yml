@@ -216,7 +216,21 @@ jobs:
       - name: Start the real low-code platform and drive its generated review form
         run: |
           set -euo pipefail
-          trap 'docker compose -p internal-desk -f compose.internal-desk.yaml down --volumes' EXIT
+          cleanup() {
+            result=$?
+            trap - EXIT
+            cid=$(docker compose -p internal-desk -f compose.internal-desk.yaml ps -aq budibase)
+            if [ -n "$cid" ]; then
+              docker inspect --format 'owner=internal-desk-ci pid={{.State.Pid}} start={{.State.StartedAt}} port=10000 cleanup=compose-down-volumes' "$cid" || true
+            fi
+            docker compose -p internal-desk -f compose.internal-desk.yaml down --volumes || result=1
+            test -z "$(docker ps -aq --filter label=com.docker.compose.project=internal-desk)" || result=1
+            test -z "$(docker volume ls -q --filter label=com.docker.compose.project=internal-desk)" || result=1
+            test -z "$(ss -H -ltn 'sport = :10000')" || result=1
+            echo "Checked internal-desk container, volume and port cleanup."
+            exit "$result"
+          }
+          trap cleanup EXIT
           if ! docker compose -p internal-desk -f compose.internal-desk.yaml up -d --wait --wait-timeout 300; then
             cid=$(docker compose -p internal-desk -f compose.internal-desk.yaml ps -aq budibase)
             docker inspect --format '{{range .State.Health.Log}}{{.Output}}{{end}}' "$cid" | tail -c 2000

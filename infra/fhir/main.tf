@@ -22,20 +22,43 @@ variable "lambda_zip" {
 }
 resource "aws_s3_bucket" "raw" { bucket = "${var.name}-raw" }
 resource "aws_s3_bucket" "rejects" { bucket = "${var.name}-rejects" }
-locals { buckets = { raw = aws_s3_bucket.raw.id, rejects = aws_s3_bucket.rejects.id } }
-resource "aws_s3_bucket_public_access_block" "private" {
-  for_each                = local.buckets
-  bucket                  = each.value
+resource "aws_kms_key" "objects" {
+  description             = "Fictional FHIR raw and rejected objects"
+  enable_key_rotation     = true
+  deletion_window_in_days = 30
+}
+resource "aws_s3_bucket_public_access_block" "raw" {
+  bucket                  = aws_s3_bucket.raw.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
-resource "aws_s3_bucket_server_side_encryption_configuration" "encrypted" {
-  for_each = local.buckets
-  bucket   = each.value
+resource "aws_s3_bucket_server_side_encryption_configuration" "raw" {
+  bucket = aws_s3_bucket.raw.id
   rule {
-    apply_server_side_encryption_by_default { sse_algorithm = "AES256" }
+    bucket_key_enabled = true
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.objects.arn
+    }
+  }
+}
+resource "aws_s3_bucket_public_access_block" "rejects" {
+  bucket                  = aws_s3_bucket.rejects.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+resource "aws_s3_bucket_server_side_encryption_configuration" "rejects" {
+  bucket = aws_s3_bucket.rejects.id
+  rule {
+    bucket_key_enabled = true
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.objects.arn
+    }
   }
 }
 resource "aws_dynamodb_table" "records" {
@@ -62,6 +85,7 @@ resource "aws_iam_role_policy" "ingest" {
   policy = jsonencode({ Version = "2012-10-17", Statement = [
     { Effect = "Allow", Action = ["s3:GetObject"], Resource = "${aws_s3_bucket.raw.arn}/raw/*" },
     { Effect = "Allow", Action = ["s3:PutObject"], Resource = "${aws_s3_bucket.rejects.arn}/rejects/*" },
+    { Effect = "Allow", Action = ["kms:Decrypt", "kms:GenerateDataKey"], Resource = aws_kms_key.objects.arn },
     { Effect = "Allow", Action = ["dynamodb:PutItem"], Resource = aws_dynamodb_table.records.arn },
     { Effect = "Allow", Action = ["logs:CreateLogStream", "logs:PutLogEvents"], Resource = "${aws_cloudwatch_log_group.ingest.arn}:*" }
   ] })

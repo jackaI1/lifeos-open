@@ -61,7 +61,9 @@ terraform -chdir=infra/fhir apply -var name=your-unique-lifeos-example -var lamb
 ```
 
 The module defines private encrypted buckets, an on-demand table, seven-day logs,
-a least-privilege role and the S3 event notification. Keep this fictional; it is
+a least-privilege role and the S3 event notification. Uploads inherit the buckets’
+rotating customer-managed encryption key; the role can use only that key.
+The key has its own [storage and request charges](https://aws.amazon.com/kms/pricing/). Keep this fictional; it is
 not configured for regulated health data. Delete the example objects before
 `terraform destroy` to avoid losing a bucket unexpectedly.
 

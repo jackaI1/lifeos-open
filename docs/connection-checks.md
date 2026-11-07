@@ -74,7 +74,9 @@ aws lambda invoke --function-name lifeos-demo-publisher --cli-binary-format raw-
 
 The Python Lambda validates the complete allowlist of public feed fields before
 writing `demo/today.json` in a private encrypted S3 bucket. Its IAM role can list
-only that exact prefix and read/write only that key, plus its log stream. It
+only that exact prefix and read/write only that key, plus its log stream and
+its own encryption key. Uploads inherit the bucket’s customer-managed encryption
+key; the publisher does not override that default. It
 rejects private or malformed feeds and compares a content digest before writing
 an unchanged feed again. Moto tests make real boto3 calls to emulated S3 and
 explicitly enable IAM checks for permission-denial coverage. The bucket stays
@@ -89,5 +91,8 @@ Small fictional examples may fit an account's free allowance, but it is not a
 promise of zero cost. I check current [S3 pricing](https://aws.amazon.com/s3/pricing/),
 [Lambda pricing](https://aws.amazon.com/lambda/pricing/) and
 [CloudWatch pricing](https://aws.amazon.com/cloudwatch/pricing/) before applying.
+Each new S3 module creates one customer-managed encryption key. AWS currently
+lists a base US$1 per key per month, plus request and rotation charges
+([KMS pricing](https://aws.amazon.com/kms/pricing/), checked November 6, 2026).
 Empty the example bucket before destroying the publisher stack. Keep credentials
 in the AWS CLI environment or an operator role, never a committed file.

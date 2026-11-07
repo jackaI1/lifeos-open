@@ -28,10 +28,19 @@ resource "aws_s3_bucket_public_access_block" "feed" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
+resource "aws_kms_key" "feed" {
+  description             = "Fictional LifeOS demo feed objects"
+  enable_key_rotation     = true
+  deletion_window_in_days = 30
+}
 resource "aws_s3_bucket_server_side_encryption_configuration" "feed" {
   bucket = aws_s3_bucket.feed.id
   rule {
-    apply_server_side_encryption_by_default { sse_algorithm = "AES256" }
+    bucket_key_enabled = true
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.feed.arn
+    }
   }
 }
 resource "aws_iam_role" "publisher" {
@@ -46,6 +55,7 @@ resource "aws_iam_role_policy" "publisher" {
   role = aws_iam_role.publisher.id
   policy = jsonencode({ Version = "2012-10-17", Statement = [
     { Effect = "Allow", Action = ["s3:ListBucket"], Resource = aws_s3_bucket.feed.arn, Condition = { StringEquals = { "s3:prefix" = "demo/today.json" } } },
+    { Effect = "Allow", Action = ["kms:Decrypt", "kms:GenerateDataKey"], Resource = aws_kms_key.feed.arn },
     { Effect = "Allow", Action = ["s3:GetObject", "s3:PutObject"], Resource = "${aws_s3_bucket.feed.arn}/demo/today.json" },
     { Effect = "Allow", Action = ["logs:CreateLogStream", "logs:PutLogEvents"], Resource = "${aws_cloudwatch_log_group.publisher.arn}:*" }
   ] })

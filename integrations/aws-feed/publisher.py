@@ -61,7 +61,7 @@ def publish(feed, s3, bucket):
     except ClientError as error:
         if error.response["Error"]["Code"] not in ("404", "NoSuchKey"):
             raise
-    s3.put_object(Bucket=bucket, Key="demo/today.json", Body=body, ContentType="application/json", ServerSideEncryption="AES256", Metadata={"sha256": digest})
+    s3.put_object(Bucket=bucket, Key="demo/today.json", Body=body, ContentType="application/json", Metadata={"sha256": digest})
     return {"changed": True, "sha256": digest}
 
 
