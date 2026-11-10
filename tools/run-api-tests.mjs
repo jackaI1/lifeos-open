@@ -8,7 +8,7 @@ import {startDisposableWorkspace} from './lib/disposable-workspace.mjs';
 
 const reportDir = 'test-results/api';
 const collection = fileURLToPath(new URL('../test/api/lifeos-local.postman_collection.json', import.meta.url));
-const dataFile = name => fileURLToPath(new URL(`../test/api/data/${name}`, import.meta.url));
+const dataFile = name => fileURLToPath(new URL(`../test/api/cases/${name}`, import.meta.url));
 
 const runs = [
   {name: 'read', folder: 'Read API', data: 'read-cases.csv'},

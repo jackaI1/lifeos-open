@@ -52,7 +52,7 @@ Failed browser checks save a screenshot to `test-results/selenium/`.
 ## How the API table works
 
 Each folder in `lifeos-local.postman_collection.json` is one request. Newman
-runs that request once per row of its CSV file in `test/api/data/`:
+runs that request once per row of its CSV file in `test/api/cases/`:
 
 - `read-cases.csv` covers health, session, bootstrap, schedule and unknown
   routes.

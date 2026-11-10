@@ -6,7 +6,7 @@ import {readFile} from 'node:fs/promises';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 const csv = async name => {
-  const [header, ...rows] = (await read(`test/api/data/${name}`)).trim().split('\n');
+  const [header, ...rows] = (await read(`test/api/cases/${name}`)).trim().split('\n');
   const columns = header.split(',');
   return rows.map(line => Object.fromEntries(line.split(',').map((value, index) => [columns[index], value])));
 };

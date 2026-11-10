@@ -1,0 +1,12 @@
+case,path,expectedStatus,expectedText,expectedDate
+health,/api/health,200,online,
+health with a query string,/api/health?check=1,200,online,
+session,/api/session,200,csrf,
+bootstrap,/api/bootstrap,200,calendarWindow,
+schedule for a fictional day,/api/schedule?day=2026-11-20,200,timeline,2026-11-20
+schedule with a malformed day,/api/schedule?day=not-a-day,400,Invalid calendar date,
+schedule with an impossible day,/api/schedule?day=2026-02-30,400,Invalid calendar date,
+task records,/api/records/task,200,items,
+unknown record kind,/api/records/not-a-kind,404,Not found,
+unknown route,/api/does-not-exist,404,Not found,
+encoded path escape,/api/files/..%2Fsecret,404,Not found,

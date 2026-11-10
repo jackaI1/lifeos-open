@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "3f1c9a52-6d1e-4c8b-9a7e-1b2f0c5d7e11",
     "name": "LifeOS local workspace API",
-    "description": "Data-driven checks for a disposable local LifeOS workspace seeded with fictional records. Each folder is run by tools/run-api-tests.mjs with its own CSV file in test/api/data.",
+    "description": "Data-driven checks for a disposable local LifeOS workspace seeded with fictional records. Each folder is run by tools/run-api-tests.mjs with its own CSV file in test/api/cases.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [

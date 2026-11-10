@@ -1,0 +1,9 @@
+case,taskId,courseId,title,minutes,dueDate,expectedStatus,expectedCode,expectedDueDate
+create a task with a deadline,new,demo-course-design,Fictional deadline task,30,2026-12-01,200,,2026-12-01
+create a task without a deadline,new,demo-course-design,Fictional undated task,30,,200,,
+reject an unknown course,new,missing-course,Fictional orphan task,30,2026-12-01,400,invalid,
+reject an impossible date,new,demo-course-design,Fictional impossible date,30,2026-02-31,400,invalid,
+reject a day-first style date,new,demo-course-design,Fictional slash date,30,12/01/2026,400,invalid,
+reject negative minutes,new,demo-course-design,Fictional negative minutes,-5,2026-12-01,400,invalid,
+reject minutes over the limit,new,demo-course-design,Fictional huge task,100001,2026-12-01,400,invalid,
+reject an empty title,new,demo-course-design,,30,2026-12-01,400,invalid,

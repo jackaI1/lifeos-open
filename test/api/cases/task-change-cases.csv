@@ -1,0 +1,8 @@
+case,taskId,version,difficulty,minutes,dueDate,expectedStatus,expectedCode,expectedDueDate
+move a seeded deadline,demo-prelab,current,3,45,2026-11-25,200,,2026-11-25
+move it again at a higher difficulty,demo-prelab,current,5,60,2026-11-26,200,,2026-11-26
+reject a stale task version,demo-prelab,0,3,45,2026-11-27,409,invalid,
+reject difficulty outside 1 to 5,demo-prelab,current,9,45,2026-11-25,400,invalid,
+reject negative estimated minutes,demo-prelab,current,3,-1,2026-11-25,400,invalid,
+reject an impossible deadline,demo-prelab,current,3,45,2026-02-31,400,invalid,
+reject an unknown task,missing-task,0,3,45,2026-11-25,404,invalid,
