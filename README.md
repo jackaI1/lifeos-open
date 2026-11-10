@@ -286,6 +286,18 @@ fictional source passage. The [record importer](docs/fhir-ingest.md) checks publ
 FHIR health-record examples and quarantines missing or unsupported values, with
 an optional S3-to-Lambda-to-DynamoDB path tested in an AWS emulator.
 
+## Test suite for the demo
+
+I built a test suite for the public demo because I want to know that its main screens still work before I change them, and clicking through them by hand after every edit is slow. Each change runs the same checks, so a broken schedule or deadline should show up before it reaches the demo.
+
+The suite has three parts. Selenium drives Chrome the way a person would, without showing a window. It adds an event on Today, creates a task in School, moves that task’s deadline, and compares the Today schedule with the saved data. Postman, a tool for writing requests to a web app, and its command-line runner, Newman, send requests straight to the app’s API. Each request is one row in a table, and many rows are bad input: an event that ends before it starts, a missing security token or an out-of-date version. The app has to refuse those with the right error. Jenkins is a build server. Its pipeline runs the unit, API and browser stages in a pinned container and keeps their reports.
+
+All of the data is fictional. Each run starts its own copy of the demo with a temporary database, records which process and port it used, and removes both afterwards, so my workspace is never touched.
+
+To run the API checks, use `npm ci`, `npm run build` and `npm run test:api`. The browser checks need Chrome and Python: `python3 -m pip install -r test/selenium-python/requirements.txt`, then `npm run test:selenium`. The [test guide](docs/api-and-browser-tests.md) explains the tables, the settings and the cleanup.
+
+RESULTS_PLACEHOLDER
+
 ## Checks and documentation
 
 I run [C# browser checks](docs/connection-checks.md#browser-and-data-checks) with

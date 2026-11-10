@@ -8,6 +8,15 @@ COPY --from=node /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
 RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
  && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 COPY --from=docker /usr/local/bin/docker /usr/local/bin/docker
+# Browser and Python checks: Chromium, its driver, and a pinned Selenium/pytest venv.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends python3 python3-venv chromium chromium-driver \
+ && rm -rf /var/lib/apt/lists/*
+COPY test/selenium-python/requirements.txt /tmp/lifeos-requirements.txt
+RUN python3 -m venv /opt/lifeos-tests \
+ && /opt/lifeos-tests/bin/pip install --no-cache-dir -r /tmp/lifeos-requirements.txt \
+ && rm /tmp/lifeos-requirements.txt \
+ && chmod -R a+rX /opt/lifeos-tests
 COPY --from=docker /usr/local/libexec/docker/cli-plugins/docker-buildx /usr/local/libexec/docker/cli-plugins/docker-buildx
 USER jenkins
 COPY deploy/jenkins/plugins.txt /usr/share/jenkins/ref/plugins.txt

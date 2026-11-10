@@ -43,7 +43,7 @@ assert.equal(reports.failCount, 0);
 // TestResult exports these three counts; totalCount belongs to TestResultAction.
 const totalCount = reports.passCount + reports.failCount + reports.skipCount;
 assert.ok(totalCount > 19, 'both Node and React reports were collected');
-for (const artifact of ['test-results/node.xml', 'test-results/react.xml', 'test-results/privacy.json', 'test-results/image-id.txt']) {
+for (const artifact of ['test-results/node.xml', 'test-results/react.xml', 'test-results/privacy.json', 'test-results/image-id.txt', 'test-results/api/summary.json', 'test-results/selenium/pytest.xml']) {
   assert.ok(build.artifacts.some(item => item.relativePath === artifact), `archived ${artifact}`);
   const response = await request(`job/lifeos-open/1/artifact/${artifact}`);
   assert.equal(response.status, 200);

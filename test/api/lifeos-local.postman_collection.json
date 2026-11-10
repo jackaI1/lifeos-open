@@ -1,0 +1,238 @@
+{
+  "info": {
+    "_postman_id": "3f1c9a52-6d1e-4c8b-9a7e-1b2f0c5d7e11",
+    "name": "LifeOS local workspace API",
+    "description": "Data-driven checks for a disposable local LifeOS workspace seeded with fictional records. Each folder is run by tools/run-api-tests.mjs with its own CSV file in test/api/data.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8787"
+    }
+  ],
+  "item": [
+    {
+      "name": "Read API",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}{{path}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const row = pm.iterationData.toObject();",
+              "pm.test(row.case + ' returns HTTP ' + row.expectedStatus, () => pm.response.to.have.status(Number(row.expectedStatus)));",
+              "if (row.expectedText) {",
+              "  pm.test(row.case + ' includes ' + row.expectedText, () => pm.expect(pm.response.text()).to.include(row.expectedText));",
+              "}",
+              "if (row.expectedDate) {",
+              "  pm.test(row.case + ' reports the requested day', () => pm.expect(pm.response.json().today.date).to.eql(row.expectedDate));",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Save calendar event",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "content-type",
+            "value": "application/json"
+          },
+          {
+            "key": "origin",
+            "value": "{{baseUrl}}"
+          },
+          {
+            "key": "x-lifeos-csrf",
+            "value": "{{csrfHeader}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{{calendarBody}}"
+        },
+        "url": "{{baseUrl}}/api/actions/local-calendar"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const row = pm.iterationData.toObject();",
+              "const base = pm.variables.get('baseUrl');",
+              "const guid = () => pm.variables.replaceIn('{{$guid}}');",
+              "const title = row.title.startsWith('REPEAT:') ? 'x'.repeat(Number(row.title.slice(7))) : row.title;",
+              "const body = {mutationId: guid(), id: row.id === 'new' ? guid() : row.id, version: Number(row.version), title: title, location: row.location, start: row.start, end: row.end, deleted: row.deleted === 'true'};",
+              "if (row.extraField) body[row.extraField] = 1;",
+              "pm.sendRequest({url: base + '/api/session', method: 'GET'}, (error, response) => {",
+              "  if (error) { throw error; }",
+              "  const session = response.json().csrf;",
+              "  const header = row.sendCsrf === 'yes' ? session : (row.sendCsrf === 'wrong' ? 'not-the-session-token' : '');",
+              "  pm.variables.set('csrfHeader', header);",
+              "  pm.variables.set('calendarBody', row.rawBody || JSON.stringify(body));",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const row = pm.iterationData.toObject();",
+              "const expected = Number(row.expectedStatus);",
+              "pm.test(row.case + ': HTTP ' + expected, () => pm.response.to.have.status(expected));",
+              "if (expected === 200) {",
+              "  pm.test(row.case + ': saved event has the requested title', () => pm.expect(pm.response.json().item.data.title).to.eql(row.title));",
+              "  if (row.deleted === 'true') {",
+              "    pm.test(row.case + ': cancelled event is marked cancelled', () => pm.expect(pm.response.json().item.data.status).to.eql('cancelled'));",
+              "  }",
+              "} else {",
+              "  pm.test(row.case + ': error code is ' + row.expectedCode, () => pm.expect(pm.response.json().code).to.eql(row.expectedCode));",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create task deadline",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "content-type",
+            "value": "application/json"
+          },
+          {
+            "key": "origin",
+            "value": "{{baseUrl}}"
+          },
+          {
+            "key": "x-lifeos-csrf",
+            "value": "{{csrfHeader}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{{taskBody}}"
+        },
+        "url": "{{baseUrl}}/api/records/task/{{taskId}}"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const row = pm.iterationData.toObject();",
+              "const base = pm.variables.get('baseUrl');",
+              "const guid = () => pm.variables.replaceIn('{{$guid}}');",
+              "const taskId = row.taskId === 'new' ? guid() : row.taskId;",
+              "const fields = {title: row.title, courseId: row.courseId, remainingMinutes: Number(row.minutes), status: 'todo'};",
+              "if (row.dueDate) { fields.dueDate = row.dueDate; }",
+              "pm.variables.set('taskId', taskId);",
+              "pm.variables.set('taskBody', JSON.stringify({mutationId: guid(), data: fields, version: 0}));",
+              "pm.sendRequest({url: base + '/api/session', method: 'GET'}, (error, response) => {",
+              "  if (error) { throw error; }",
+              "  pm.variables.set('csrfHeader', response.json().csrf);",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const row = pm.iterationData.toObject();",
+              "const expected = Number(row.expectedStatus);",
+              "pm.test(row.case + ': HTTP ' + expected, () => pm.response.to.have.status(expected));",
+              "if (expected === 200) {",
+              "  pm.test(row.case + ': stored due date is ' + row.expectedDueDate, () => pm.expect(pm.response.json().item.data.dueDate).to.eql(row.expectedDueDate || undefined));",
+              "} else {",
+              "  pm.test(row.case + ': error code is ' + row.expectedCode, () => pm.expect(pm.response.json().code).to.eql(row.expectedCode));",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Change task deadline",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "content-type",
+            "value": "application/json"
+          },
+          {
+            "key": "origin",
+            "value": "{{baseUrl}}"
+          },
+          {
+            "key": "x-lifeos-csrf",
+            "value": "{{csrfHeader}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{{taskBody}}"
+        },
+        "url": "{{baseUrl}}/api/task-tools/{{taskId}}"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const row = pm.iterationData.toObject();",
+              "const base = pm.variables.get('baseUrl');",
+              "const guid = () => pm.variables.replaceIn('{{$guid}}');",
+              "pm.variables.set('taskId', row.taskId);",
+              "pm.sendRequest({url: base + '/api/session', method: 'GET'}, (sessionError, sessionResponse) => {",
+              "  if (sessionError) { throw sessionError; }",
+              "  pm.sendRequest({url: base + '/api/records/task', method: 'GET'}, (taskError, taskResponse) => {",
+              "    if (taskError) { throw taskError; }",
+              "    const current = taskResponse.json().items.find(item => item.id === row.taskId);",
+              "    const version = row.version === 'current' ? (current ? current.version : 0) : Number(row.version);",
+              "    const body = {mutationId: guid(), version: version, operation: 'planning', dueDate: row.dueDate, difficulty: Number(row.difficulty), estimatedMinutes: Number(row.minutes)};",
+              "    pm.variables.set('csrfHeader', sessionResponse.json().csrf);",
+              "    pm.variables.set('taskBody', JSON.stringify(body));",
+              "  });",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const row = pm.iterationData.toObject();",
+              "const expected = Number(row.expectedStatus);",
+              "pm.test(row.case + ': HTTP ' + expected, () => pm.response.to.have.status(expected));",
+              "if (expected === 200) {",
+              "  pm.test(row.case + ': deadline is ' + row.expectedDueDate, () => pm.expect(pm.response.json().item.data.dueDate).to.eql(row.expectedDueDate));",
+              "} else {",
+              "  pm.test(row.case + ': error code is ' + row.expectedCode, () => pm.expect(pm.response.json().code).to.eql(row.expectedCode));",
+              "}"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
