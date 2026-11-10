@@ -45,6 +45,32 @@ pipeline {
                 sh 'git diff --exit-code -- public/react public/vendor/workload.mjs'
             }
         }
+        stage('API tests') {
+            steps {
+                sh 'npm run test:api'
+            }
+            post {
+                always {
+                    junit testResults: 'test-results/api/*.xml', allowEmptyResults: true
+                }
+            }
+        }
+        stage('Browser tests') {
+            environment {
+                // Provided by the pinned Jenkins image (deploy/jenkins/Dockerfile).
+                LIFEOS_PYTHON = '/opt/lifeos-tests/bin/python'
+                CHROME_BIN = '/usr/bin/chromium'
+                CHROMEDRIVER = '/usr/bin/chromedriver'
+            }
+            steps {
+                sh 'npm run test:selenium'
+            }
+            post {
+                always {
+                    junit testResults: 'test-results/selenium/pytest.xml', allowEmptyResults: true
+                }
+            }
+        }
         stage('Build Docker image') {
             steps {
                 sh '''

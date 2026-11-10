@@ -1,0 +1,17 @@
+case,id,version,title,location,start,end,deleted,extraField,rawBody,sendCsrf,expectedStatus,expectedCode
+create a one-hour event,new,0,Fictional lab check,Fictional room A,2026-11-20T15:00:00.000Z,2026-11-20T16:00:00.000Z,false,,,yes,200,
+create an event close to a full day,new,0,Fictional long workshop,,2026-11-20T00:00:00.000Z,2026-11-20T23:00:00.000Z,false,,,yes,200,
+keep accents and punctuation,new,0,Fictional café seminar: review & notes,Fictional studio,2026-11-21T13:00:00.000Z,2026-11-21T14:30:00.000Z,false,,,yes,200,
+store markup as plain text,new,0,<b>Fictional</b> markup check,,2026-11-21T10:00:00.000Z,2026-11-21T11:00:00.000Z,false,,,yes,200,
+cancel a new event,new,0,Fictional cancelled check,,2026-11-22T10:00:00.000Z,2026-11-22T11:00:00.000Z,true,,,yes,200,
+reject end before start,new,0,Fictional reversed times,,2026-11-20T17:00:00.000Z,2026-11-20T16:00:00.000Z,false,,,yes,400,invalid
+reject a zero-length event,new,0,Fictional zero length,,2026-11-20T16:00:00.000Z,2026-11-20T16:00:00.000Z,false,,,yes,400,invalid
+reject an event longer than a day,new,0,Fictional multi day,,2026-11-20T00:00:00.000Z,2026-11-22T00:00:00.000Z,false,,,yes,400,invalid
+reject an unreadable start time,new,0,Fictional bad start,,not-a-date,2026-11-20T17:00:00.000Z,false,,,yes,400,invalid
+reject an empty title,new,0,,,2026-11-20T15:00:00.000Z,2026-11-20T16:00:00.000Z,false,,,yes,400,invalid
+reject a title over 300 characters,new,0,REPEAT:301,,2026-11-20T15:00:00.000Z,2026-11-20T16:00:00.000Z,false,,,yes,400,invalid
+reject an unsupported field,new,0,Fictional extra field,,2026-11-20T15:00:00.000Z,2026-11-20T16:00:00.000Z,false,owner,,yes,400,invalid
+reject a stale version of a seeded event,demo-workshop,0,Fictional stale edit,,2026-11-20T15:00:00.000Z,2026-11-20T16:00:00.000Z,false,,,yes,409,invalid
+reject malformed JSON,new,0,Fictional broken body,,2026-11-20T15:00:00.000Z,2026-11-20T16:00:00.000Z,false,,{bad json,yes,400,invalid
+reject a request without the CSRF header,new,0,Fictional no token,,2026-11-20T15:00:00.000Z,2026-11-20T16:00:00.000Z,false,,,no,403,csrf
+reject a wrong CSRF header,new,0,Fictional wrong token,,2026-11-20T15:00:00.000Z,2026-11-20T16:00:00.000Z,false,,,wrong,403,csrf

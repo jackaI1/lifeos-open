@@ -1,0 +1,3 @@
+# Pinned so CI and the Jenkins image run the same browser driver API.
+selenium==4.36.0
+pytest==8.4.2
