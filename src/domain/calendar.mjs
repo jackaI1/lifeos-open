@@ -1,4 +1,5 @@
 import { DEFAULT_TIME_ZONE, instant, zonedDateTime, overlap, mergeIntervals } from './time.mjs';
+import {allDayCalendarRange} from '../../public/calendar-all-day.js';
 
 const normalizedText = text => String(text ?? '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-CA');
 
@@ -19,11 +20,10 @@ export function normalizeCalendars({ events = [], allowedCalendarIds = [], schoo
     try {
       const start = eventTime(original.start, timeZone), end = eventTime(original.end, timeZone);
       if (instant(end) <= instant(start)) throw new RangeError('Calendar duration must be positive');
-      const allDay = original.allDay === true || Boolean(original.start?.date) || typeof original.start === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(original.start);
-      // Date-only school-feed notices describe the academic calendar, not a timed
-      // class. Preserve them as context. Personal all-day busy events stay busy.
-      const dayNotice = allDay && school.has(calendarId) && original.blocksTime !== true;
-      normalized.push({ ...original, providerKind: original.providerKind ?? original.kind ?? null, kind: 'calendar', calendarId, start, end, allDay, dayNotice, title: original.title ?? original.summary ?? '', location: original.location ?? '', status: original.status ?? 'confirmed', isSchool: school.has(calendarId), originalStart: original.originalStartTime ? eventTime(original.originalStartTime, timeZone) : start, sources: [{ calendarId, eventId: original.id ?? null, status: original.status ?? 'confirmed', updated: original.updated ?? null }] });
+      const range = allDayCalendarRange(original,timeZone), allDay = original.allDay === true || !!range;
+      // Keep all-day entries for day context and old clients, never capacity.
+      const dayNotice = allDay;
+      normalized.push({ ...original, ...(range?{allDayStartDate:range.startDate,allDayEndDate:range.endDate}:{}), providerKind: original.providerKind ?? original.kind ?? null, kind: 'calendar', calendarId, start, end, allDay, dayNotice, title: original.title ?? original.summary ?? '', location: original.location ?? '', status: original.status ?? 'confirmed', isSchool: school.has(calendarId), originalStart: original.originalStartTime ? eventTime(original.originalStartTime, timeZone) : start, sources: [{ calendarId, eventId: original.id ?? null, status: original.status ?? 'confirmed', updated: original.updated ?? null }] });
     } catch (error) { errors.push({ calendarId, eventId: original.id ?? null, reason: error.message }); }
   }
   const groups = new Map(), result = [];
@@ -38,7 +38,7 @@ export function normalizeCalendars({ events = [], allowedCalendarIds = [], schoo
   const conflicts = [];
   for (let a = 0; a < result.length; a++) for (let b = a + 1; b < result.length; b++) {
     const first = result[a], second = result[b];
-    if (!first.isSchool || !second.isSchool) continue;
+    if (!first.isSchool || !second.isSchool || first.allDay || second.allDay) continue;
     const acrossFeeds = first.sources.some(x => second.sources.some(y => x.calendarId !== y.calendarId));
     if (!acrossFeeds) continue;
     const recurring = first.recurringEventId || second.recurringEventId || first.originalStartTime || second.originalStartTime;
@@ -47,7 +47,7 @@ export function normalizeCalendars({ events = [], allowedCalendarIds = [], schoo
     const sameTitleOverlap = normalizedText(first.title) && normalizedText(first.title) === normalizedText(second.title) && overlap(first, second);
     if (sameIdentity || reviewedMatch || sameTitleOverlap) conflicts.push({ kind: 'source-disagreement', first: first.id ?? first.sources[0].eventId, second: second.id ?? second.sources[0].eventId, events: [first, second], reason: 'School sources disagree on time, location, status or availability', sources: [...first.sources, ...second.sources], requiresReview: true });
   }
-  const busy = result.filter(event => event.status !== 'cancelled' && event.transparency !== 'transparent' && !event.dayNotice);
+  const busy = result.filter(event => event.status !== 'cancelled' && event.transparency !== 'transparent' && !event.allDay);
   const calendarConflicts = [];
   for (let a = 0; a < busy.length; a++) for (let b = a + 1; b < busy.length; b++) {
     const first=busy[a], second=busy[b];

@@ -1,5 +1,6 @@
 import {practiceDay} from '../../public/devotional-day.js';
 import {lifeosDay} from '../../public/lifeos-day.js';
+import {isAllDayCalendarEvent} from '../../public/calendar-all-day.js';
 import { DEFAULT_TIME_ZONE, instant, localDate, zonedDateTime, weekday, addDays, addMinutes, availableIntervals, mergeIntervals, minutesBetween, overlap } from './time.mjs';
 import { assessSpiritualPlans, schoolReleaseExtension } from './spiritual.mjs';
 
@@ -19,7 +20,7 @@ export function buildDayPlan({ date, now, events = [], settings = {}, spiritual 
   const at = time => zonedDateTime(date, time, { timeZone: config.timeZone });
   const dayStart = at('00:00'), dayEnd = zonedDateTime(addDays(date, 1), '05:00', { timeZone: config.timeZone });
   const blocks = [], conflicts = [], unscheduled = [], notes = [];
-  const actual = events.filter(e => e.status !== 'cancelled' && e.transparency !== 'transparent' && overlap(e, { start: dayStart, end: dayEnd }));
+  const actual = events.filter(e => !isAllDayCalendarEvent(e,config.timeZone) && e.status !== 'cancelled' && e.transparency !== 'transparent' && overlap(e, { start: dayStart, end: dayEnd }));
   for (const event of actual) blocks.push({ ...event, kind: 'calendar', title: event.title || event.summary || 'Untitled calendar event', fixed: true });
   for (let a = 0; a < actual.length; a++) for (let b = a + 1; b < actual.length; b++) if (overlap(actual[a], actual[b])) conflicts.push({ kind: 'calendar-overlap', eventIds: [actual[a].id ?? null, actual[b].id ?? null], message: 'Calendar commitments overlap. Preserve both and review the source details.' });
   const reserve = (kind, title, start, minutes, extra = {}) => {

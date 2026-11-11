@@ -1,5 +1,6 @@
 import {ROUTINE_DEFAULTS} from './routine.mjs';
 import {dueReminders} from './reminders.mjs';
+import {calendarDayReminders} from '../../public/calendar-all-day.js';
 import {instant,localDate,zonedDateTime,addDays,overlap,availableIntervals} from './time.mjs';
 import {nextLifeosDayAt,lifeosDay} from '../../public/lifeos-day.js';
 import {suggestTicketSessions} from './tickets.mjs';
@@ -141,5 +142,6 @@ export function interpretToday({now,date,plan,calendar,school,tickets,records={}
  const boundaries=[zonedDateTime(addDays(localDate(now,tz),1),'00:00',{timeZone:tz}),...(records.reminder??[]).filter(r=>!r.data.completed&&!r.data.archived&&r.data.dueAt).map(r=>r.data.dueAt),nextLifeosDayAt(now,tz),...blocks.flatMap(b=>[instant(b.start),instant(b.end)]),...events.flatMap(e=>[instant(e.start),instant(e.end)]),...plan.academicBlocks.flatMap(b=>[instant(b.start),instant(b.end)]),...plan.discretionaryBlocks.flatMap(b=>[instant(b.start),instant(b.end)]),instant(nowAction.end),zonedDateTime(date,settings.recoveryTime??'20:30',{timeZone:tz}),plan.releaseAt].filter(Boolean).map(instant).filter(t=>t>current);
  const activeLists=new Set(rows(records['reminder-list']).filter(r=>!r.archived).map(r=>r.id));
  const datedReminders=rows(records.reminder).filter(r=>activeLists.has(r.listId)&&!r.archived&&!r.completed&&r.dueDate&&r.dueDate<=date).sort((a,b)=>a.dueDate.localeCompare(b.dueDate)||(b.priority??0)-(a.priority??0)).map(r=>({id:r.id,title:r.title,dueDate:r.dueDate,target:routeTarget('reminders',{reminderId:r.id,listId:r.listId})}));
- return {date,nowAction,urgentAction,dueReminders:datedReminders,upcoming,timeline,alerts,calendarConflicts,sourceConflicts,planConstraints,dayNotices:calendar.events.filter(e=>e.dayNotice&&e.status!=='cancelled'&&overlap(e,day)),nextRecomputeAt:iso(Math.min(...boundaries))};
+ const calendarReminders=calendarDayReminders({events:calendar.events,date,reminders:records.reminder,lists:records['reminder-list'],timeZone:tz});
+ return {date,nowAction,urgentAction,dueReminders:datedReminders,calendarReminders,upcoming,timeline,alerts,calendarConflicts,sourceConflicts,planConstraints,dayNotices:calendar.events.filter(e=>e.dayNotice&&e.status!=='cancelled'&&e.allDayStartDate<=date&&e.allDayEndDate>date),nextRecomputeAt:iso(Math.min(...boundaries))};
 }

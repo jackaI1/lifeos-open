@@ -1,3 +1,4 @@
+import {calendarDayReminders} from '../calendar-all-day.js';
 import {notificationWidgets} from '../notification-widgets.js';
 import {currentScheduleDetails,selectScheduleRow} from '../schedule-presentation.js';
 import {friendWidget} from '../friend-widget.js';
@@ -14,7 +15,7 @@ import {smallSteps} from '../devotional-accountability.js';
 
 import {shiftDay,chronologicalCards,swipeDays} from '../day-navigation.js';
 
-import {el,replace,append,button,panel,formatTime,compactTime,formatDate,getDisplayTimeZone,deadlineUrgency,busy,showResult,field,modal,safeLink,toast} from '../ui.js';
+import {el,icon,replace,append,button,panel,formatTime,compactTime,formatDate,getDisplayTimeZone,deadlineUrgency,busy,showResult,field,modal,safeLink,toast} from '../ui.js';
 
 import {targetHash,targetLabel,routeQuery} from '../targets.js';
 
@@ -43,7 +44,7 @@ export async function mount(root,ctx){
 
   if(!event)return modal('Commitment unavailable',el('p',{},'This event is no longer in the saved calendar window. Refresh Today to check it.'));
 
-  modal(event.title||'Calendar commitment',el('div',{class:'form-stack'},el('p',{},`${formatDate(event.start)}, ${range(event)}`),event.location?el('p',{},event.location):null,event.dayNotice?el('p',{},'This is a date-only school notice. It does not supply a class time or cancel the normal routine.'):null,el('p',{class:'muted'},[...new Set(event.sources?.map(s=>sourceName(s.calendarId))||[])].join(', ')),safeLink(event.htmlLink,'Open original event'),ctx.state.session?.mode?button('Edit event',()=>editEvent((()=>{const record=ctx.records('calendar-event').find(r=>r.id===id);return {...record,data:{...record.data,start:event.start,end:event.end}};})()),'quiet'):null,ctx.state.session?.mode?button('Delete event',()=>deleteEvent(ctx.records('calendar-event').find(r=>r.id===id)),'quiet'):null));
+  modal(event.title||'Calendar commitment',el('div',{class:'form-stack'},el('p',{},`${formatDate(event.allDay?event.allDayStartDate??event.start:event.start)}, ${range(event)}`),event.location?el('p',{},event.location):null,el('p',{class:'muted'},[...new Set(event.sources?.map(s=>sourceName(s.calendarId))||[])].join(', ')),safeLink(event.htmlLink,'Open original event'),ctx.state.session?.mode?button('Edit event',()=>editEvent((()=>{const record=ctx.records('calendar-event').find(r=>r.id===id);return {...record,data:{...record.data,start:event.start,end:event.end}};})()),'quiet'):null,ctx.state.session?.mode?button('Delete event',()=>deleteEvent(ctx.records('calendar-event').find(r=>r.id===id)),'quiet'):null));
 
  }
 
@@ -181,7 +182,7 @@ export async function mount(root,ctx){
 
   if(!scheduleLoading&&!scheduleError&&selectedDay===view.date)schedule=view;renderSchedule();
 
-  const notices=view.dayNotices?.length?el('details',{class:'day-notices'},el('summary',{},'School calendar notices'),view.dayNotices.map(e=>button(`${e.title}, ${formatDate(e.start)}`,()=>eventDetails(e.id),'list-button'))):null;
+
 
   const updates=panel(null);updates.setAttribute('aria-label','Updates');updates.hidden=true;
 
@@ -195,12 +196,14 @@ export async function mount(root,ctx){
   const photoButton=ctx.capabilities?.dailyPhotos===false?null:button(controlIcon('camera'),()=>ctx.go('photos'),'quiet icon-button today-photo-button');photoButton?.setAttribute('aria-label','Daily photos');
   const dueRows=(view.academicRanked||view.school?.ranked||ctx.records('task')).filter(t=>!['complete','completed','submitted','cancelled','archived'].includes(t.data?.status??t.status)).slice(0,4);
   const due=el('section',{},el('h2',{},'Due'),dueRows.length?dueRows.map(t=>{const d=t.data||t,urgency=deadlineUrgency(d,view.date||ctx.date(),Date.parse(ctx.state.bootstrap.now||view.now)||Date.now());return button(el('span',{class:'today-list-row'},el('span',{},d.title),el('small',{class:urgency},d.dueAt||d.dueDate?formatDate(d.dueAt||d.dueDate):'Date unknown')),()=>ctx.go('school?brief='+encodeURIComponent(t.id||t.taskId)),'text-button today-due');}):el('p',{class:'empty'},'No saved due work.'));
-  const reminders=el('section',{},el('h2',{},'Reminders'),...(view.dueReminders||[]).map(r=>button(el('span',{class:'today-list-row'},el('span',{},r.title)),()=>open(r.target),'text-button now-reminder')),button('Add reminder',()=>ctx.go('reminders?create=1'),'section-spacer'));
+  // All-day calendar entries read as reminders for their days, read-only, never as schedule blocks.
+  const calendarRows=calendarDayReminders({events:view.calendar?.events??[],date:view.date||ctx.date(),reminders:ctx.records('reminder'),lists:ctx.records('reminder-list'),timeZone:getDisplayTimeZone()}).map(item=>button(el('span',{class:'today-list-row'},icon('calendar'),el('span',{},item.title)),()=>eventDetails(item.id),'text-button now-reminder'));
+  const reminders=el('section',{},el('h2',{},'Reminders'),...(view.dueReminders||[]).map(r=>button(el('span',{class:'today-list-row'},el('span',{},r.title)),()=>open(r.target),'text-button now-reminder')),...calendarRows,button('Add reminder',()=>ctx.go('reminders?create=1'),'section-spacer'));
   reminders.classList.add('now-reminders');reminders.setAttribute('aria-label','Due reminders');
   replace(root,el('div',{class:'today-dispatcher'},
    el('div',{class:'today-layout'},el('div',{class:'today-now-column'},hero),
     el('div',{class:'page-heading'},el('div',{},el('div',{class:'today-title-row'},el('h1',{},'Today'))),el('div',{class:'actions workspace-tools'},notifications.bell,photoButton,ctx.capabilities?.personalAssistant===false?null:assistantButton(ctx,'today'))),
-    applicationButton,scheduleHost,el('aside',{class:'today-rail'},el('div',{class:'today-lists'},due,canOpen({route:'reminders'})?reminders:null),el('div',{class:'today-rail-content'},notifications.node,checkins,dayOptionsHost,updates))),notices));
+    applicationButton,scheduleHost,el('aside',{class:'today-rail'},el('div',{class:'today-lists'},due,canOpen({route:'reminders'})?reminders:null),el('div',{class:'today-rail-content'},notifications.node,checkins,dayOptionsHost,updates)))));
 
   selectScheduleRow(scheduleHost,selectedCard,{scroll:scrollSelection});scrollSelection=false;
   releaseApplicationFit();if(applicationButton)releaseApplicationFit=fitApplicationLines(applicationButton,steps);releaseReminderFit();
