@@ -1,0 +1,10 @@
+---
+# Listed in the order they must run: units are reloaded before the service restarts.
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart lifeos
+  ansible.builtin.systemd:
+    name: lifeos.service
+    state: restarted

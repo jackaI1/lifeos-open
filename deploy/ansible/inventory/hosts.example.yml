@@ -1,0 +1,14 @@
+---
+# Copy this file to inventory/hosts.yml (git-ignored) and put your own server in it.
+# Nothing here is a real host. 192.0.2.10 is a documentation address.
+all:
+  children:
+    lifeos_servers:
+      hosts:
+        lifeos-home:
+          ansible_host: 192.0.2.10
+          ansible_user: ubuntu
+      vars:
+        # Pin a commit or tag so every run installs the same code.
+        lifeos_version: main
+        lifeos_demo_seed: false

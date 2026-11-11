@@ -1,0 +1,57 @@
+name: Performance smoke
+on:
+  push:
+    paths: ['perf/jmeter/**', 'src/server/**', 'src/local/**', 'src/shared/**', 'package.json', 'package-lock.json', '.github/workflows/perf-smoke.yml']
+  pull_request:
+    paths: ['perf/jmeter/**', 'src/server/**', 'src/local/**', 'src/shared/**', 'package.json', 'package-lock.json', '.github/workflows/perf-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Test the analysis and sampling code
+        run: python3 -m unittest discover -s perf/jmeter/tests -v
+      - name: Check the committed JMeter plans match their generator
+        run: |
+          python3 perf/jmeter/build_plans.py
+          test -z "$(git status --porcelain -- perf/jmeter/plans)" || { git status --short -- perf/jmeter/plans; exit 1; }
+  smoke:
+    # Short runs of three plans in JMeter's non-GUI mode against a freshly built LifeOS server.
+    needs: unit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install Apache JMeter 5.6.3 (SHA-512 checked)
+        run: |
+          curl -fsSLo "$RUNNER_TEMP/jmeter.tgz" https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz
+          echo "5978a1a35edb5a7d428e270564ff49d2b1b257a65e17a759d259a9283fc17093e522fe46f474a043864aea6910683486340706d745fcdf3db1505fd71e689083  $RUNNER_TEMP/jmeter.tgz" | sha512sum -c -
+          tar -xzf "$RUNNER_TEMP/jmeter.tgz" -C "$RUNNER_TEMP"
+          echo "JMETER_BIN=$RUNNER_TEMP/apache-jmeter-5.6.3/bin/jmeter" >> "$GITHUB_ENV"
+      - run: npm ci
+      - run: npm run build
+      - name: Run the smoke profile (benchmark, load and a short endurance run)
+        run: python3 perf/jmeter/run_suite.py --profile smoke --out perf/jmeter/results
+      - name: Make sure no server is left running
+        if: always()
+        run: |
+          if pgrep -fa 'build/server.mjs' ; then pkill -TERM -f 'build/server.mjs'; exit 1; fi
+      - name: Upload the report and dashboards
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifeos-perf-smoke
+          path: perf/jmeter/results
+          if-no-files-found: ignore

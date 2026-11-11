@@ -1,0 +1,60 @@
+---
+- name: Verify the installed service
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Read the service state from systemd
+      ansible.builtin.service_facts:
+
+    - name: Assert the service is running
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services['lifeos.service'].state == 'running'
+          - ansible_facts.services['lifeos.service'].status == 'enabled'
+        fail_msg: lifeos.service is not running and enabled
+
+    - name: Read the access token from the installed environment file
+      ansible.builtin.slurp:
+        src: /etc/lifeos/lifeos.env
+      register: envfile_raw
+      no_log: true
+
+    - name: Sign in and check health through the running service
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8787/auth/local
+        method: POST
+        body_format: form-urlencoded
+        body:
+          token: "{{ (envfile_raw.content | b64decode | regex_findall('^LOCAL_ACCESS_TOKEN=(.+)$', multiline=True)).0 }}"
+        headers:
+          Origin: http://127.0.0.1:8787
+        status_code: 303
+        follow_redirects: none
+        return_content: false
+      register: signin
+      no_log: true
+
+    - name: Read the data marker
+      ansible.builtin.slurp:
+        src: /var/lib/lifeos/molecule-marker.txt
+      register: marker
+
+    - name: Assert sign-in works and the data marker survived every run
+      ansible.builtin.assert:
+        that:
+          - signin.status == 303
+          - marker.content | b64decode == "keep me\n"
+        fail_msg: sign-in failed or the data directory was changed
+
+    - name: Read the environment file permissions
+      ansible.builtin.stat:
+        path: /etc/lifeos/lifeos.env
+      register: envfile
+
+    - name: Assert the environment file is root-owned, group lifeos, mode 0640
+      ansible.builtin.assert:
+        that:
+          - envfile.stat.mode == '0640'
+          - envfile.stat.pw_name == 'root'
+          - envfile.stat.gr_name == 'lifeos'

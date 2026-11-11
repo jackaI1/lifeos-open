@@ -1,0 +1,93 @@
+{
+  "_comment": "Single source of truth for the four JMeter plans. build_plans.py writes plans/*.jmx from 'properties'. run_suite.py applies 'smoke' when --profile smoke is used. 'thresholds' are pass/fail limits checked by analyze.py.",
+  "plans": {
+    "benchmark": {
+      "description": "One user, repeated sessions, no pauses: the response times of an idle server.",
+      "properties": {
+        "threads": 1,
+        "ramp": 0,
+        "duration": 0,
+        "loops": 100,
+        "think_ms": 0,
+        "scheduled": false
+      },
+      "smoke": {
+        "loops": 15
+      },
+      "thresholds": {
+        "p95_ms": 300,
+        "error_pct": 0.5
+      }
+    },
+    "load": {
+      "description": "Ramped load: 25 users join over 2 minutes, then keep working for 15 minutes with a one-second pause between actions.",
+      "properties": {
+        "threads": 25,
+        "ramp": 120,
+        "duration": 900,
+        "loops": -1,
+        "think_ms": 1000,
+        "scheduled": true
+      },
+      "smoke": {
+        "threads": 3,
+        "ramp": 5,
+        "duration": 45
+      },
+      "thresholds": {
+        "p95_ms": 800,
+        "error_pct": 1.0,
+        "cpu_mean_pct": 85,
+        "rss_peak_mb": 1024
+      }
+    },
+    "stress": {
+      "description": "Past expected capacity: up to 200 users over 10 minutes. The goal is to find where errors or slow responses begin.",
+      "properties": {
+        "threads": 200,
+        "ramp": 600,
+        "duration": 900,
+        "loops": -1,
+        "think_ms": 500,
+        "scheduled": true
+      },
+      "smoke": {
+        "threads": 10,
+        "ramp": 5,
+        "duration": 30
+      },
+      "thresholds": {
+        "p95_ms": 3000,
+        "error_pct": 5.0,
+        "rss_peak_mb": 2048
+      }
+    },
+    "endurance": {
+      "description": "Two hours with 15 users. Memory and garbage-collection pauses are watched for a steady rise, which can mean a leak.",
+      "properties": {
+        "threads": 15,
+        "ramp": 120,
+        "duration": 7200,
+        "loops": -1,
+        "think_ms": 1500,
+        "scheduled": true
+      },
+      "smoke": {
+        "duration": 120
+      },
+      "thresholds": {
+        "p95_ms": 1000,
+        "error_pct": 1.0,
+        "cpu_mean_pct": 85,
+        "gc_max_pause_ms": 250
+      }
+    }
+  },
+  "leak_check": {
+    "min_run_minutes": 30,
+    "warmup_fraction": 0.25,
+    "max_slope_mb_per_hour": 5,
+    "min_growth_pct": 5,
+    "min_r2": 0.6
+  }
+}

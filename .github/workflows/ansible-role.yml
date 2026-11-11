@@ -1,0 +1,47 @@
+name: Ansible role
+on:
+  push:
+    paths: ['deploy/ansible/**', 'deploy/linux/**', 'package.json', 'package-lock.json', '.github/workflows/ansible-role.yml']
+  pull_request:
+    paths: ['deploy/ansible/**', 'deploy/linux/**', 'package.json', 'package-lock.json', '.github/workflows/ansible-role.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install ansible-core and ansible-lint
+        run: python -m pip install --disable-pip-version-check ansible-core==2.17.* ansible-lint==25.*
+      - name: Check the playbook syntax
+        working-directory: deploy/ansible
+        run: ansible-playbook --syntax-check playbook.yml
+      - name: Lint the role and playbooks
+        working-directory: deploy/ansible
+        run: ansible-lint
+  molecule:
+    # Runs the role twice in a disposable Ubuntu 22.04 container with systemd,
+    # then checks the service, sign-in and data preservation (see molecule/default/verify.yml).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    needs: lint
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Molecule with the Docker driver
+        run: python -m pip install --disable-pip-version-check molecule==24.* molecule-plugins[docker]==23.* ansible-core==2.17.* ansible-lint==25.*
+      - name: Create, converge twice, verify and destroy
+        working-directory: deploy/ansible
+        run: molecule test
+        env:
+          ANSIBLE_FORCE_COLOR: '0'
+      - name: Show the service log on failure
+        if: failure()
+        run: docker ps -a --format '{{.Names}} {{.Status}}' && docker logs $(docker ps -aq | head -n 1) 2>&1 | tail -n 80

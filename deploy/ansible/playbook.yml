@@ -1,0 +1,7 @@
+---
+# Installs or updates LifeOS Open on the hosts in the inventory. Safe to run again.
+- name: Install LifeOS Open as a systemd service
+  hosts: lifeos_servers
+  become: true
+  roles:
+    - role: lifeos
