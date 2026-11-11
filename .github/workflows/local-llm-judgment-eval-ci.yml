@@ -82,6 +82,82 @@ jobs:
         name: coding-evaluation
         path: projects/local-llm-judgment-eval/artifacts/
     timeout-minutes: 20
+  scoring-kernel:
+    # The Triton kernel runs in Triton's interpreter on CPU, so no GPU is needed.
+    runs-on: ubuntu-latest
+    env:
+      TRITON_INTERPRET: '1'
+    steps:
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v6
+      with:
+        version: 0.9.8
+        python-version: '3.12'
+    - run: uv sync --frozen --extra dev --extra local
+      working-directory: projects/local-llm-judgment-eval
+    - name: Kernel tests (Triton interpreter and CPU fallback)
+      run: uv run pytest -q tests/test_kernels.py -p no:cacheprovider
+      working-directory: projects/local-llm-judgment-eval
+    - name: Seeded kernel benchmark on CPU (reference path only)
+      run: uv run judgment-eval bench-kernel --device cpu --batch-sizes 64 4096 --repeats 3 --output artifacts/kernel
+      working-directory: projects/local-llm-judgment-eval
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: kernel-benchmark
+        path: projects/local-llm-judgment-eval/artifacts/kernel/
+    timeout-minutes: 30
+  profiling:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v6
+      with:
+        version: 0.9.8
+        python-version: '3.12'
+    - run: uv sync --frozen --extra dev --extra local
+      working-directory: projects/local-llm-judgment-eval
+    - name: Profiling tests on a tiny random model (CPU, no download)
+      run: uv run pytest -q tests/test_profiling.py -p no:cacheprovider
+      working-directory: projects/local-llm-judgment-eval
+    timeout-minutes: 30
+  mlflow-registry:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v6
+      with:
+        version: 0.9.8
+        python-version: '3.12'
+    - run: uv sync --frozen --extra dev --extra tracking
+      working-directory: projects/local-llm-judgment-eval
+    - name: Logging, promotion and rollback tests against a local store
+      run: uv run pytest -q tests/test_tracking.py -p no:cacheprovider
+      working-directory: projects/local-llm-judgment-eval
+    - name: Log a baseline run, register it, promote and show the champion
+      run: |
+        uv run judgment-eval baseline --output artifacts/baseline
+        export MLFLOW_TRACKING_URI="sqlite:///$PWD/artifacts/mlflow.db"
+        uv run judgment-eval log artifacts/baseline/results.json --experiment ci-smoke
+        uv run judgment-eval registry register --experiment ci-smoke --min-coverage 0.9
+        uv run judgment-eval registry promote 1
+        uv run judgment-eval registry show
+      working-directory: projects/local-llm-judgment-eval
+    timeout-minutes: 20
+  vllm-stub:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v6
+      with:
+        version: 0.9.8
+        python-version: '3.12'
+    - run: uv sync --frozen --extra dev
+      working-directory: projects/local-llm-judgment-eval
+    - name: vLLM and Ollama backend tests against stub servers (no GPU)
+      run: uv run pytest -q tests/test_vllm.py tests/test_backends.py -p no:cacheprovider
+      working-directory: projects/local-llm-judgment-eval
+    timeout-minutes: 15
 defaults:
   run:
     working-directory: projects/local-llm-judgment-eval
