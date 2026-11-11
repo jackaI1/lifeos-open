@@ -86,6 +86,16 @@
   ansible.builtin.set_fact:
     lifeos_rev: "{{ lifeos_src.after }}"
 
+- name: Look at the release directory before building (diagnostic, read only)
+  ansible.builtin.command: "ls -la {{ lifeos_prefix }}/releases/{{ lifeos_rev }}"
+  register: lifeos_release_listing
+  changed_when: false
+  failed_when: false
+
+- name: Show what the release directory holds
+  ansible.builtin.debug:
+    var: lifeos_release_listing.stdout_lines
+
 - name: Build the release as the service user (once per commit)
   ansible.builtin.shell: |
     set -euo pipefail
