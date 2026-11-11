@@ -181,12 +181,10 @@ It uses the same fictional material as the [demo video](#demo) and
 
 ## Starting a theme from a Figma file
 
-I added a Figma import for the Instrument themes because I wanted to learn how
-Figma files are organised by using them on a real piece of this project. The
-themes are a few named colours, so a design file can hold them.
-
-A Figma file keeps colours as **styles**, named swatches that every shape
-shares. I made three Fill styles called `Theme/Primary`, `Theme/Display` and
+I built a small import that takes the colours of a theme from a design file
+because typing six-digit colour codes into Settings by hand is slow and easy to
+get wrong. Figma is a design tool that is widely used for app screens. In it, a
+**style** is a named colour that every shape can share. I made three Fill styles called `Theme/Primary`, `Theme/Display` and
 `Theme/Chassis`. The tool in [`tools/figma-theme.mjs`](tools/figma-theme.mjs)
 reads those styles, converts each colour to the six-digit codes LifeOS uses,
 and prints a custom theme. It runs the result through the same check Settings
