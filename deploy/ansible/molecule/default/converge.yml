@@ -7,8 +7,8 @@
     lifeos_repo_url: /src
     lifeos_version: "{{ lookup('ansible.builtin.pipe', 'git -C ' ~ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/../.. rev-parse HEAD') }}"
     lifeos_demo_seed: false
-  pre_tasks:
-    # A marker in the data directory. Later runs must leave it exactly as it was.
+  post_tasks:
+    # A marker in the data directory, created after the role has made it. Later runs must leave it exactly as it was.
     - name: Create a data marker (only written on the first run)
       ansible.builtin.copy:
         dest: /var/lib/lifeos/molecule-marker.txt
