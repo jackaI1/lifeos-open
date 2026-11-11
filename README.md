@@ -179,6 +179,22 @@ provided example questions; schedule examples make local changes with Undo.
 It uses the same fictional material as the [demo video](#demo) and
 [screenshots](docs/screenshots/today.png).
 
+## Exporting coursework to Microsoft Project
+
+I built an export because I wanted my coursework deadlines and work estimates in a file that Microsoft Project can open. Project is a scheduling program that many engineering teams use to track tasks against dates, and I wanted to learn how a real project plan is put together. The export reads the tasks in **School** and writes one file. Each course becomes a summary row, each task sits under its course, and its length comes from the minutes I still expect it to take.
+
+Every due date becomes a "Finish no later than" rule. When I open the file, Project marks any task that cannot finish before its deadline at the planned pace. Drafts, notes, next steps and links are never written to the file, so it holds only titles, lengths, percentages done and dates.
+
+To export my own plan, I keep LifeOS running and open `http://localhost:8787/api/export` in the same browser (8787 is the default port of the local server). I save that page as `lifeos-export.json`, then run:
+
+```bash
+npm run export:project -- --input lifeos-export.json --out school-plan.xml
+```
+
+To see the feature with the fictional demo data, run `npm run export:project -- --demo --out demo-plan.xml`. In Microsoft Project, I choose **File > Open** and pick the `.xml` file. The command refuses to overwrite a file that already exists, so an older plan is never lost.
+
+The code is in [`src/domain/school-project.mjs`](src/domain/school-project.mjs) and the command is in [`tools/export-school-project.mjs`](tools/export-school-project.mjs). Limitation: I have not opened these files in Microsoft Project on my own computer yet. The tests check that the XML is well-formed and that the fields follow Project's XML format, but they cannot check how Project itself displays the schedule. Project calculates the dates from the durations, and task dependencies are not exported yet.
+
 ## Keeping it running elsewhere
 
 For a Linux machine that stays on, the [self-hosting guide](docs/self-host-linux.md)
