@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p src/frontend/react",
     "test:smoke": "node tools/smoke.mjs",
     "privacy": "node tools/privacy.mjs",
+    "theme:figma": "node tools/figma-theme.mjs",
     "restore": "node tools/restore.mjs",
     "m365": "node --env-file-if-exists=.env integrations/m365/src/cli.ts",
     "m365:pack-flow": "node integrations/m365/flow/pack.ts",
