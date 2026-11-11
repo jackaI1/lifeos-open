@@ -217,6 +217,28 @@ pages. The separate [account examples](docs/study-accounts.md) let me try repeat
 requests, concurrent settlements and selective access to fictional balances.
 They are learning tools beside LifeOS, with no real accounts or money.
 
+## Running the demo on Azure
+
+I also run the fictional public demo as a container on Azure Container Apps, a
+service that runs a container and scales it to zero when nobody is visiting. The
+infrastructure is described in [Bicep](deploy/azure/main.bicep), Azure's template
+language, so I can rebuild the same setup from the repository. The demo's secret
+lives in Azure Key Vault, a secure store, and the container reads it through a
+managed identity, an Azure login the app is given. No secret is written into the
+code or an environment file. A GitHub Actions workflow tests the template and the
+image, then deploys on merge to `main` and rolls back if the health check fails.
+
+**What it costs.** The Consumption plan of Container Apps includes a monthly free
+grant of 180,000 vCPU-seconds, 360,000 GiB-seconds and 2 million requests. With
+0.25 vCPU and 0.5 GiB, that grant covers about 200 hours of running time a month.
+The demo scales to zero, so an idle month costs close to nothing; a copy kept awake
+all month would go past the grant. Key Vault and the Log Analytics workspace add
+small charges. The workspace is capped at 1 GB of logs a day. I checked the free
+grant on Microsoft's pricing page but not the paid rates, so look those up on the
+[Container Apps pricing page](https://azure.microsoft.com/pricing/details/container-apps/)
+before relying on a number. [The Azure guide](docs/azure-container-apps.md) has the
+setup, rollback and cleanup steps.
+
 ## Optional connections
 
 In the local **Settings → Connections**, I can choose a local model or the optional

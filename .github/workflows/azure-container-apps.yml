@@ -1,0 +1,157 @@
+name: Azure Container Apps demo
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['projects/**']
+  pull_request:
+    paths-ignore: ['projects/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: azure-container-apps-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  AZURE_LOCATION: canadacentral
+  AZURE_RESOURCE_GROUP: lifeos-public-aca
+  AZURE_PREFIX: lifeosdemo
+  DEMO_SECRET_NAME: lifeos-demo-session-secret
+jobs:
+  validate:
+    name: Template and health-check tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Compile the Bicep template with the Azure CLI bicep tools
+        run: |
+          az bicep install
+          az bicep build --file deploy/azure/main.bicep --outfile "$RUNNER_TEMP/lifeos-aca.json"
+      - name: Check the compiled template for Key Vault, identity and ingress
+        run: node deploy/azure/test/check-template.mjs "$RUNNER_TEMP/lifeos-aca.json"
+      - name: Run the health-check unit tests
+        run: npm run test:azure
+
+  container-health:
+    name: Build the public image and health-check it
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build the public-demo target
+        run: docker build --target public-demo -t lifeos-public:ci .
+      - name: Start the container and check /healthz
+        run: |
+          docker run -d --name lifeos-health -p 8080:8080 lifeos-public:ci
+          node deploy/azure/healthcheck.mjs http://127.0.0.1:8080
+      - name: Stop the owned container
+        if: always()
+        run: docker rm -f lifeos-health || true
+
+  what-if:
+    name: Bicep what-if
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && vars.AZURE_DEMO_CLIENT_ID != ''
+    needs: validate
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_DEMO_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_DEMO_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_DEMO_SUBSCRIPTION_ID }}
+      - name: Preview the foundation changes
+        run: |
+          az group create --name "$AZURE_RESOURCE_GROUP" --location "$AZURE_LOCATION" --output none
+          az deployment group what-if --resource-group "$AZURE_RESOURCE_GROUP" \
+            --template-file deploy/azure/main.bicep \
+            --parameters prefix="$AZURE_PREFIX" location="$AZURE_LOCATION" \
+              containerImage="ghcr.io/placeholder/lifeos-public:what-if" deployApp=false
+
+  deploy:
+    name: Deploy on merge to main
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.AZURE_DEMO_CLIENT_ID != ''
+    needs: [validate, container-health]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: azure-public-demo
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_DEMO_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_DEMO_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_DEMO_SUBSCRIPTION_ID }}
+      - name: Create or update the foundation (Key Vault, identity, environment)
+        run: |
+          deployer=$(az ad sp show --id "$AZURE_CLIENT_ID" --query id -o tsv)
+          az group create --name "$AZURE_RESOURCE_GROUP" --location "$AZURE_LOCATION" --output none
+          az deployment group create --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name lifeos-aca-foundation --template-file deploy/azure/main.bicep \
+            --parameters prefix="$AZURE_PREFIX" location="$AZURE_LOCATION" \
+              containerImage="ghcr.io/placeholder/lifeos-public:foundation" \
+              deployerObjectId="$deployer" deployApp=false --output none
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_DEMO_CLIENT_ID }}
+      - name: Store the demo secret in Key Vault if it is missing
+        run: |
+          vault=$(az deployment group show --resource-group "$AZURE_RESOURCE_GROUP" --name lifeos-aca-foundation --query properties.outputs.vaultName.value -o tsv)
+          echo "VAULT_NAME=$vault" >> "$GITHUB_ENV"
+          # Role assignments can take a minute to apply, so retry the write.
+          for attempt in 1 2 3 4 5 6; do
+            if az keyvault secret show --vault-name "$vault" --name "$DEMO_SECRET_NAME" --query id -o tsv >/dev/null 2>&1; then
+              echo "Secret already present; the value is never printed."
+              exit 0
+            fi
+            if az keyvault secret set --vault-name "$vault" --name "$DEMO_SECRET_NAME" \
+                --value "$(openssl rand -hex 32)" --output none 2>/dev/null; then
+              echo "Secret created in Key Vault; the value is never printed."
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "Could not write the secret after retries" >&2
+          exit 1
+      - name: Build and push the public image to GHCR
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "IMAGE=ghcr.io/${owner}/lifeos-public:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker build --target public-demo -t "$IMAGE" .
+          docker push "$IMAGE"
+      - name: Record the currently running image for rollback
+        run: |
+          previous=$(az containerapp show --name "${AZURE_PREFIX}-demo" --resource-group "$AZURE_RESOURCE_GROUP" \
+            --query "properties.template.containers[0].image" -o tsv 2>/dev/null || true)
+          echo "PREVIOUS_IMAGE=$previous" >> "$GITHUB_ENV"
+          echo "Previous image: ${previous:-none (first deploy)}"
+      - name: Deploy the Container App with the new image
+        run: |
+          az deployment group create --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name lifeos-aca-release --template-file deploy/azure/main.bicep \
+            --parameters prefix="$AZURE_PREFIX" location="$AZURE_LOCATION" \
+              containerImage="$IMAGE" deployApp=true --output json > "$RUNNER_TEMP/release.json"
+          url=$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['properties']['outputs']['demoUrl']['value'])" "$RUNNER_TEMP/release.json")
+          echo "DEMO_URL=$url" >> "$GITHUB_ENV"
+      - name: Post-deploy health check
+        env:
+          HEALTH_ATTEMPTS: '18'
+          HEALTH_DELAY_MS: '5000'
+        run: node deploy/azure/healthcheck.mjs "$DEMO_URL"
+      - name: Roll back to the previous image if the release failed
+        if: failure() && env.PREVIOUS_IMAGE != ''
+        run: |
+          echo "Rolling back to $PREVIOUS_IMAGE"
+          az containerapp update --name "${AZURE_PREFIX}-demo" --resource-group "$AZURE_RESOURCE_GROUP" \
+            --image "$PREVIOUS_IMAGE" --output none
+          HEALTH_ATTEMPTS=18 HEALTH_DELAY_MS=5000 node deploy/azure/healthcheck.mjs "$DEMO_URL"
