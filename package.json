@@ -40,7 +40,8 @@
     "test:selenium": "node tools/run-selenium-tests.mjs",
     "support": "node --env-file-if-exists=.env src/support/cli.mjs",
     "support:evaluate": "node tools/support-evaluate.mjs",
-    "test:support": "node --test test/support-assistant.test.mjs test/azure-provider.test.mjs"
+    "test:support": "node --test test/support-assistant.test.mjs test/azure-provider.test.mjs",
+    "test:azure": "node --test deploy/azure/test/healthcheck.test.mjs"
   },
   "dependencies": {
     "@azure/msal-node": "7.1.2",
