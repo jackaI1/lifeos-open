@@ -186,6 +186,13 @@ sets up the service, daily backups and upgrades that can switch back if startup
 fails. It also explains how to uninstall it and how to reach it through an SSH
 tunnel, an encrypted connection to that machine.
 
+I also wrote an [Ansible role](deploy/ansible/README.md) that does the same install
+as the Bash scripts. Ansible runs a list of steps from a file I keep in version control.
+The role installs the packages, the service user, Node.js and the systemd unit, then
+keeps my access token and data when I run it again. It only changes what is out of date.
+Its Molecule test runs the role twice in a disposable container and fails if the second
+run changes anything.
+
 If I already have a cluster, I can also run the workspace with
 [Kubernetes](docs/kubernetes.md), which keeps the app running and connects it to
 a separate disk. My notes stay on that disk when I replace the app. The guide
@@ -253,7 +260,9 @@ a daily reminder workflow for Teams messages and Outlook email. It needs an acco
 runs only when requested; it does not change the LifeOS workspace. I can keep tasks
 without a deadline in the shared list; the reminder workflow skips them and keeps
 the reminders for tasks due tomorrow. A live tenant
-connection still needs its own check.
+connection still needs its own check. On my Linux server, a systemd timer can run
+the sync every hour; [`install-timer.sh`](integrations/m365/deploy/install-timer.sh)
+installs it, and the connection guide explains which account it runs as.
 
 I want to know which demo screens people try and whether they go on to add
 something. The public demo can use Google Analytics 4 (GA4), which counts visits
@@ -321,6 +330,14 @@ To run the API checks, use `npm ci`, `npm run build` and `npm run test:api`. The
 ### Latest results
 
 On my last CI run for this change, the API checks sent 42 requests from four tables and made 86 checks with 0 failures. The browser checks ran 4 tests in headless Chrome in 17.7 seconds with 0 failures. The Jenkins pipeline built the app and ran 508 tests, then archived four reports. Each run stopped its temporary workspace and deleted its database afterwards.
+
+## Performance tests
+
+I built a load-test suite for LifeOS because I want to know how many people my own server can handle before I invite anyone else. [Apache JMeter](https://jmeter.apache.org/), a load-testing program, signs in as simulated users, reads and writes calendar events, looks up tasks and pauses between actions. Four plans cover a single-user baseline, a ramped load, a stress run past my expected use and a two-hour endurance run.
+
+While each plan runs, the script records the server's CPU, its memory, the time that SQLite takes for two fixed reads and Node's garbage-collection pauses. The report lists which checks passed or failed, and the endurance run flags memory that keeps rising, which can mean a leak. Each run starts a fresh server with fictional data and stops it afterwards.
+
+The [performance guide](perf/jmeter/README.md) explains how to run the short smoke profile or a full plan, what each limit means and what the numbers do not prove. CI runs the analysis tests and the smoke profile on every change to the server or the tests.
 
 ## Checks and documentation
 
