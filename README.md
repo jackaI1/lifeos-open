@@ -179,6 +179,31 @@ provided example questions; schedule examples make local changes with Undo.
 It uses the same fictional material as the [demo video](#demo) and
 [screenshots](docs/screenshots/today.png).
 
+## Starting a theme from a Figma file
+
+I added a Figma import for the Instrument themes because I wanted to learn how
+Figma files are organised by using them on a real piece of this project. The
+themes are a few named colours, so a design file can hold them.
+
+A Figma file keeps colours as **styles**, named swatches that every shape
+shares. I made three Fill styles called `Theme/Primary`, `Theme/Display` and
+`Theme/Chassis`. The tool in [`tools/figma-theme.mjs`](tools/figma-theme.mjs)
+reads those styles, converts each colour to the six-digit codes LifeOS uses,
+and prints a custom theme. It runs the result through the same check Settings
+uses, so a bad colour is caught before I touch the app.
+
+To try it, run `npm run theme:figma -- --file design.json --name "My theme"`
+with a saved Figma file, or give it a file key and a token with `--key`. The
+output lists the name and three colours. I then open Settings, choose Theme,
+press Customize and type them in. The setup steps, including where to find the
+file key, are in [docs/figma-theme.md](docs/figma-theme.md).
+
+The tests in [`test/figma-theme.test.mjs`](test/figma-theme.test.mjs) use a
+made-up file in Figma's format, so they run without an account. They cover the
+colour conversion, a missing style, a gradient or see-through fill, a fetch that
+is refused, and the command line. The limit is that the tool reads only solid
+Fill styles. Gradients and images stop the import with a message.
+
 ## Exporting coursework to Microsoft Project
 
 I built an export because I wanted my coursework deadlines and work estimates in a file that Microsoft Project can open. Project is a scheduling program that many engineering teams use to track tasks against dates, and I wanted to learn how a real project plan is put together. The export reads the tasks in **School** and writes one file. Each course becomes a summary row, each task sits under its course, and its length comes from the minutes I still expect it to take.
