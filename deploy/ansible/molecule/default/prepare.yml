@@ -1,0 +1,15 @@
+---
+# The container sees the checkout read-only at /src, so the role can clone the code under test
+# (not whatever is on GitHub) and install exactly this commit.
+- name: Prepare the container
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Refresh the package index
+      ansible.builtin.raw: apt-get -y update
+      changed_when: false
+
+    - name: Allow git to read the mounted checkout
+      ansible.builtin.raw: git config --system --add safe.directory '*'
+      changed_when: false

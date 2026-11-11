@@ -1,0 +1,32 @@
+---
+# Where LifeOS lives on the server. These match deploy/linux/common.sh, so the
+# Ansible role and the Bash installer produce the same layout.
+lifeos_prefix: /opt/lifeos
+lifeos_user: lifeos
+lifeos_state_dir: /var/lib/lifeos
+lifeos_env_file: /etc/lifeos/lifeos.env
+lifeos_port: 8787
+lifeos_app_origin: "http://127.0.0.1:{{ lifeos_port }}"
+
+# Which LifeOS code to run. Pin lifeos_version to a commit or tag for repeatable installs.
+lifeos_repo_url: https://github.com/jackaI1/lifeos-open.git
+lifeos_version: main
+
+# Node.js runtime. LifeOS needs Node 24; the tarball is checked against the official SHASUMS file.
+lifeos_node_version: 24.22.2
+lifeos_node_arch: "{{ 'x64' if ansible_architecture == 'x86_64' else 'arm64' }}"
+lifeos_node_dir: "{{ lifeos_prefix }}/node-v{{ lifeos_node_version }}-linux-{{ lifeos_node_arch }}"
+
+# false = an empty workspace on first start. true = the fictional demo workspace (loopback only).
+lifeos_demo_seed: false
+
+# Files copied from the checkout into each release before building. Same list as the Bash installer.
+lifeos_release_paths:
+  - package.json
+  - package-lock.json
+  - src
+  - public
+  - demo
+  - tools/build.mjs
+  - tools/build-demo-feed.ts
+  - deploy/linux

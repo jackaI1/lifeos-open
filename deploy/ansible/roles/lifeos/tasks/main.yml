@@ -1,0 +1,229 @@
+---
+# Every task is written so a second run changes nothing unless the inputs changed:
+# a new commit, a new Node version, a new unit file or a new environment value.
+# Data in lifeos_state_dir is never touched by this role.
+
+- name: Stop early on systems this role does not support
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == 'Debian'
+    fail_msg: >-
+      This role supports Debian and Ubuntu. On other systems use deploy/linux/install.sh.
+    quiet: true
+
+- name: Install the packages LifeOS needs
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - git
+      - sqlite3
+      - tar
+      - util-linux
+      - xz-utils
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create the service group
+  ansible.builtin.group:
+    name: "{{ lifeos_user }}"
+    system: true
+
+- name: Create the service user with no login shell
+  ansible.builtin.user:
+    name: "{{ lifeos_user }}"
+    group: "{{ lifeos_user }}"
+    system: true
+    home: "{{ lifeos_state_dir }}"
+    create_home: false
+    shell: /usr/sbin/nologin
+
+- name: Create the install, build and data directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - {path: "{{ lifeos_prefix }}", owner: root, group: root, mode: "0755"}
+    - {path: "{{ lifeos_prefix }}/releases", owner: root, group: root, mode: "0755"}
+    - {path: "{{ lifeos_prefix }}/downloads", owner: root, group: root, mode: "0755"}
+    - {path: "{{ lifeos_prefix }}/builds", owner: "{{ lifeos_user }}", group: "{{ lifeos_user }}", mode: "0755"}
+    - {path: "{{ lifeos_state_dir }}", owner: "{{ lifeos_user }}", group: "{{ lifeos_user }}", mode: "0700"}
+    - {path: "{{ lifeos_env_file | dirname }}", owner: root, group: "{{ lifeos_user }}", mode: "0750"}
+
+- name: Download Node.js and check it against the official SHA-256 list
+  ansible.builtin.get_url:
+    url: "https://nodejs.org/dist/v{{ lifeos_node_version }}/node-v{{ lifeos_node_version }}-linux-{{ lifeos_node_arch }}.tar.xz"
+    dest: "{{ lifeos_prefix }}/downloads/node-v{{ lifeos_node_version }}-linux-{{ lifeos_node_arch }}.tar.xz"
+    checksum: "sha256:https://nodejs.org/dist/v{{ lifeos_node_version }}/SHASUMS256.txt"
+    mode: "0644"
+
+- name: Unpack Node.js
+  ansible.builtin.unarchive:
+    src: "{{ lifeos_prefix }}/downloads/node-v{{ lifeos_node_version }}-linux-{{ lifeos_node_arch }}.tar.xz"
+    dest: "{{ lifeos_prefix }}"
+    remote_src: true
+    creates: "{{ lifeos_node_dir }}/bin/node"
+
+- name: Point the node path at this Node.js version
+  ansible.builtin.file:
+    src: "{{ lifeos_node_dir }}"
+    dest: "{{ lifeos_prefix }}/node"
+    state: link
+
+- name: Fetch the LifeOS source at the pinned version
+  ansible.builtin.git:
+    repo: "{{ lifeos_repo_url }}"
+    dest: "{{ lifeos_prefix }}/src"
+    version: "{{ lifeos_version }}"
+    update: true
+  register: lifeos_src
+
+- name: Remember the exact commit being installed
+  ansible.builtin.set_fact:
+    lifeos_rev: "{{ lifeos_src.after }}"
+
+- name: Build the release as the service user (once per commit)
+  ansible.builtin.shell: |
+    set -euo pipefail
+    build="{{ lifeos_prefix }}/builds/{{ lifeos_rev }}"
+    rm -rf "$build"
+    mkdir -p "$build"
+    for path in {{ lifeos_release_paths | join(' ') }}; do
+      [ -e "{{ lifeos_prefix }}/src/$path" ] || { echo "source is missing $path" >&2; exit 1; }
+      mkdir -p "$build/$(dirname "$path")"
+      cp -a "{{ lifeos_prefix }}/src/$path" "$build/$(dirname "$path")/"
+    done
+    cd "$build"
+    npm ci --ignore-scripts --no-audit --no-fund --cache "$build/.npm-cache"
+    npm run build
+    npm prune --omit=dev --ignore-scripts --no-audit --no-fund
+    rm -rf "$build/.npm-cache"
+    touch "$build/.complete"
+  args:
+    executable: /bin/bash
+    creates: "{{ lifeos_prefix }}/releases/{{ lifeos_rev }}/.complete"
+  become: true
+  become_user: "{{ lifeos_user }}"
+  environment:
+    PATH: "{{ lifeos_prefix }}/node/bin:/usr/bin:/bin"
+    HOME: "{{ lifeos_prefix }}/builds"
+  changed_when: true
+
+- name: Move the finished build into releases and make it read-only
+  ansible.builtin.shell: |
+    set -euo pipefail
+    release="{{ lifeos_prefix }}/releases/{{ lifeos_rev }}"
+    rm -rf "$release"
+    mv "{{ lifeos_prefix }}/builds/{{ lifeos_rev }}" "$release"
+    chown -R root:root "$release"
+    chmod -R go-w "$release"
+  args:
+    executable: /bin/bash
+    creates: "{{ lifeos_prefix }}/releases/{{ lifeos_rev }}/.complete"
+  changed_when: true
+
+- name: Point current at this release
+  ansible.builtin.file:
+    src: "releases/{{ lifeos_rev }}"
+    dest: "{{ lifeos_prefix }}/current"
+    state: link
+  notify:
+    - Reload systemd
+    - Restart lifeos
+
+- name: Install the systemd unit shipped with this release
+  ansible.builtin.copy:
+    remote_src: true
+    src: "{{ lifeos_prefix }}/current/deploy/linux/systemd/lifeos.service"
+    dest: /etc/systemd/system/lifeos.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart lifeos
+
+- name: Check for an existing environment file
+  ansible.builtin.stat:
+    path: "{{ lifeos_env_file }}"
+  register: lifeos_env_stat
+
+- name: Read the access token already in use
+  ansible.builtin.slurp:
+    src: "{{ lifeos_env_file }}"
+  register: lifeos_env_old
+  when: lifeos_env_stat.stat.exists
+  no_log: true
+
+- name: Keep the existing access token, or generate one on first run
+  ansible.builtin.set_fact:
+    lifeos_access_token: >-
+      {{ (lifeos_env_old.content | b64decode | regex_findall('^LOCAL_ACCESS_TOKEN=(.+)$', multiline=True) | first)
+         | default(lookup('ansible.builtin.password', '/dev/null', length=48, chars=['hexdigits']), true) }}
+  when: lifeos_env_stat.stat.exists
+  no_log: true
+
+- name: Generate the access token on first run
+  ansible.builtin.set_fact:
+    lifeos_access_token: "{{ lookup('ansible.builtin.password', '/dev/null', length=48, chars=['hexdigits']) }}"
+  when: not lifeos_env_stat.stat.exists
+  no_log: true
+
+- name: Write the environment file (the token is kept between runs)
+  ansible.builtin.template:
+    src: lifeos.env.j2
+    dest: "{{ lifeos_env_file }}"
+    owner: root
+    group: "{{ lifeos_user }}"
+    mode: "0640"
+  notify: Restart lifeos
+  no_log: true
+
+- name: Run the handlers now, so the service is checked after its config changes
+  ansible.builtin.meta: flush_handlers
+
+- name: Start LifeOS now and at boot
+  ansible.builtin.systemd:
+    name: lifeos.service
+    enabled: true
+    state: started
+
+- name: Wait for LifeOS to listen
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: "{{ lifeos_port }}"
+    timeout: 90
+
+- name: Sign in with the access token
+  ansible.builtin.uri:
+    url: "{{ lifeos_app_origin }}/auth/local"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      token: "{{ lifeos_access_token }}"
+    headers:
+      Origin: "{{ lifeos_app_origin }}"
+    status_code: 303
+    follow_redirects: none
+    return_content: false
+  register: lifeos_signin
+  changed_when: false
+  no_log: true
+
+- name: Check the health endpoint with that session
+  ansible.builtin.uri:
+    url: "{{ lifeos_app_origin }}/api/health"
+    headers:
+      Cookie: "{{ lifeos_signin.cookies_string }}"
+    status_code: 200
+    return_content: true
+  register: lifeos_health
+  until: lifeos_health.json is defined and lifeos_health.json.status == 'online'
+  retries: 30
+  delay: 2
+  changed_when: false
+  no_log: true
