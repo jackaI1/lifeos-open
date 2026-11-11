@@ -42,7 +42,15 @@ class LifeOSPage:
 
     def button(self, name):
         xpath = f"//button[normalize-space(.)={literal(name)} or @aria-label={literal(name)}]"
-        return self.wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+        # Row option menus keep their items in the page, hidden, after they have been opened.
+        # The first match can therefore be a hidden copy, so the first clickable match is used.
+        def clickable(driver):
+            for element in driver.find_elements(By.XPATH, xpath):
+                if element.is_displayed() and element.is_enabled():
+                    return element
+            return False
+
+        return self.wait.until(clickable)
 
     def field(self, label):
         # The app wraps each input in its label, so the label text identifies it.
