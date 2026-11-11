@@ -53,3 +53,4 @@ services/shift-search/evaluation.json
 services/fhir/bootstrap
 services/fhir/function.zip
 services/fhir/output/
+perf/jmeter/results/
