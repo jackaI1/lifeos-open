@@ -81,3 +81,23 @@ export function buildToday({ now, records = {}, events = [], settings = {}, jobs
   const interpreted=interpretToday({now,date,plan,calendar,school,tickets,records,presence,settings:{...config,...config.exceptions?.[date]},jobs});
   return { date, now, capacityWarning:capacityWarning(data(records.task),[...plan.academicBlocks,...(config.academicCapacity??[]).filter(b=>instant(b.start)>=nextDayAt)],now,config.timeZone),carryForward:dayCarryForward(data(records.task),date,config.timeZone), ...plan, schedule: plan.blocks, availability: { academicMinutes: plan.academicMinutes, discretionaryMinutes: plan.discretionaryMinutes, currentBlock: school.availableBlock, academicBlocks: plan.academicBlocks, discretionaryBlocks: plan.discretionaryBlocks }, calendar, tickets, ticketSuggestions: suggestTicketSessions({ date, ledger: ticketLedger, intervals: plan.discretionaryBlocks, timeZone: config.timeZone }), presence, school, academicNext, academicRanked, nextTask: school.next, training: assessTraining({ baseline: training.baseline, now, raceDate: training.raceDate, raceExceptionConfirmed: training.raceExceptionConfirmed, requestedAdaptation: training.requestedAdaptation }), ...interpreted, nextTransition:interpreted.upcoming, nextAction:interpreted.nowAction, conflicts:[...interpreted.calendarConflicts,...interpreted.sourceConflicts] };
 }
+
+export function buildReminderDay({ now, records = {}, events = [], settings = {}, jobs = [], date = null }) {
+  const storedSettings = data(records.settings).reduce((all, record) => ({ ...all, ...record }), {});
+  const config = normalizeDomainSettings({ ...storedSettings, ...settings });
+  date ??= lifeosDay(now,config.timeZone??DEFAULT_TIME_ZONE);
+  const states = data(records.spiritual).filter(record => practiceDay(record,undefined,config.timeZone) === date);
+  const spiritual = {};
+  for (const kind of ['devotional', 'prayer']) {
+    const candidates=states.filter(record => record.kind === kind || record.practice === kind);
+    const state = candidates.filter(r=>r.complete).sort((a,b)=>String(a.completedAt??'').localeCompare(String(b.completedAt??'')))[0] ?? candidates.at(-1) ?? {};
+    spiritual[kind] = { ...state, completedAt: state.completedAt ?? state.observedAt ?? null };
+  }
+  const calendar = normalizeCalendars({ events, allowedCalendarIds: config.allowedCalendarIds ?? [], schoolCalendarIds: config.schoolCalendarIds ?? [], timeZone: config.timeZone });
+  const plan = buildDayPlan({ date, now, events: calendar.busy, settings: config, spiritual });
+  // These slots already reduce academic capacity. Show them in the same timeline
+  // so a current campus practice cannot disappear behind a later meal or task.
+  plan.blocks.push(...plan.campusSlots.map(slot => ({ ...slot, title: slot.kind === 'devotional' ? 'Campus devotional' : 'Campus prayer', minutes: slot.kind==='prayer'?15:30, fallback: true })));
+  plan.blocks.sort((a, b) => instant(a.start) - instant(b.start));
+  return plan;
+}

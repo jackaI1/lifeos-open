@@ -339,3 +339,15 @@ main.project-help-open{display:flex;flex-direction:column;height:100dvh;min-heig
 
 /* React views (docs/react-migration.md): hosts a shell control without adding a layout box. */
 .react-legacy-slot{display:contents}
+
+/* Touch targets measured on a phone. */
+button.schedule-clock-button,button.schedule-title{min-width:44px;min-height:44px}
+.reminder-list-name{min-width:44px}
+.settings-section-body .text-button{text-decoration:underline;text-underline-offset:3px;min-width:44px;margin-inline-end:12px}
+.settings-section-body a.text-button,.settings-section-body a.source-link{display:inline-flex;align-items:center;min-height:44px;min-width:44px}
+.settings-section-body .actions{column-gap:16px;row-gap:8px}
+.editor-footer .actions{flex-wrap:wrap}
+.day-story .schedule-clock .schedule-clock-button{width:auto;min-width:44px}
+.story-item:has(.schedule-destination) .schedule-body .schedule-title{min-height:44px}
+a.schedule-destination{min-height:44px;margin-top:0;align-items:center}
+#main:has(.deleted-list)>.page-heading .text-button{text-decoration:underline;text-underline-offset:3px;min-width:44px;padding-inline:12px}
