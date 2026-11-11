@@ -7,3 +7,5 @@ build/
 dist/
 artifacts/
 *.log
+mlflow.db
+mlruns/
