@@ -186,44 +186,59 @@
 - name: Run the handlers now, so the service is checked after its config changes
   ansible.builtin.meta: flush_handlers
 
-- name: Start LifeOS now and at boot
-  ansible.builtin.systemd:
-    name: lifeos.service
-    enabled: true
-    state: started
+- name: Start LifeOS, then check that it answers
+  block:
+    - name: Start LifeOS now and at boot
+      ansible.builtin.systemd:
+        name: lifeos.service
+        enabled: true
+        state: started
 
-- name: Wait for LifeOS to listen
-  ansible.builtin.wait_for:
-    host: 127.0.0.1
-    port: "{{ lifeos_port }}"
-    timeout: 90
+    - name: Wait for LifeOS to listen
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: "{{ lifeos_port }}"
+        timeout: 90
 
-- name: Sign in with the access token
-  ansible.builtin.uri:
-    url: "{{ lifeos_app_origin }}/auth/local"
-    method: POST
-    body_format: form-urlencoded
-    body:
-      token: "{{ lifeos_access_token }}"
-    headers:
-      Origin: "{{ lifeos_app_origin }}"
-    status_code: 303
-    follow_redirects: none
-    return_content: false
-  register: lifeos_signin
-  changed_when: false
-  no_log: true
+    - name: Sign in with the access token
+      ansible.builtin.uri:
+        url: "{{ lifeos_app_origin }}/auth/local"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          token: "{{ lifeos_access_token }}"
+        headers:
+          Origin: "{{ lifeos_app_origin }}"
+        status_code: 303
+        follow_redirects: none
+        return_content: false
+      register: lifeos_signin
+      changed_when: false
+      no_log: true
 
-- name: Check the health endpoint with that session
-  ansible.builtin.uri:
-    url: "{{ lifeos_app_origin }}/api/health"
-    headers:
-      Cookie: "{{ lifeos_signin.cookies_string }}"
-    status_code: 200
-    return_content: true
-  register: lifeos_health
-  until: lifeos_health.json is defined and lifeos_health.json.status == 'online'
-  retries: 30
-  delay: 2
-  changed_when: false
-  no_log: true
+    - name: Check the health endpoint with that session
+      ansible.builtin.uri:
+        url: "{{ lifeos_app_origin }}/api/health"
+        headers:
+          Cookie: "{{ lifeos_signin.cookies_string }}"
+        status_code: 200
+        return_content: true
+      register: lifeos_health
+      until: lifeos_health.json is defined and lifeos_health.json.status == 'online'
+      retries: 30
+      delay: 2
+      changed_when: false
+  rescue:
+    - name: Show the last service log lines to explain the failure
+      ansible.builtin.command: journalctl -u lifeos.service -n 80 --no-pager
+      register: lifeos_journal
+      changed_when: false
+      failed_when: false
+
+    - name: Print the log
+      ansible.builtin.debug:
+        var: lifeos_journal.stdout_lines
+
+    - name: Stop the play after showing the log
+      ansible.builtin.fail:
+        msg: LifeOS did not answer its health check; the log is shown above.
