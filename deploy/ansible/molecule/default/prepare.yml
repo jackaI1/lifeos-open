@@ -10,6 +10,10 @@
       ansible.builtin.raw: apt-get -y update
       changed_when: false
 
+    - name: Install git, which the role uses to fetch the source
+      ansible.builtin.raw: DEBIAN_FRONTEND=noninteractive apt-get install -y git ca-certificates
+      changed_when: false
+
     - name: Allow git to read the mounted checkout
       ansible.builtin.raw: git config --system --add safe.directory '*'
       changed_when: false
