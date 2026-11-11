@@ -220,7 +220,7 @@
       ansible.builtin.uri:
         url: "{{ lifeos_app_origin }}/api/health"
         headers:
-          Cookie: "{{ lifeos_signin.cookies_string }}"
+          Cookie: "{{ lifeos_signin.set_cookie.split(';')[0] }}"
         status_code: 200
         return_content: true
       register: lifeos_health
