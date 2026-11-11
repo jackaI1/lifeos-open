@@ -121,7 +121,6 @@
   environment:
     PATH: "{{ lifeos_prefix }}/node/bin:/usr/bin:/bin"
     HOME: "{{ lifeos_prefix }}/builds"
-  changed_when: true
 
 - name: Move the finished build into releases and make it read-only
   ansible.builtin.shell: |
@@ -134,7 +133,6 @@
   args:
     executable: /bin/bash
     creates: "{{ lifeos_prefix }}/releases/{{ lifeos_rev }}/.complete"
-  changed_when: true
 
 - name: Point current at this release
   ansible.builtin.file:
