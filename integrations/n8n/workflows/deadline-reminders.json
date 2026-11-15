@@ -1,0 +1,87 @@
+{
+  "id": "lifeos-deadline-reminders",
+  "name": "LifeOS deadline reminders",
+  "active": false,
+  "nodes": [
+    {
+      "id": "webhook",
+      "name": "Signed LifeOS event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "5f0c2c1e-8b8a-4d7e-9a57-1b1d2a3c4e5f",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lifeos/deadlines",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      }
+    },
+    {
+      "id": "verify",
+      "name": "Verify, dedupe, remind",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Webhook guard for the LifeOS n8n workflow. It has no imports on purpose: the build\n// step copies this file into the n8n Code node, so it must run as plain JavaScript\n// with only Web Crypto (globalThis.crypto.subtle) and TextEncoder available.\n\nconst GUARD_LIMITS = Object.freeze({\n  toleranceSeconds: 300,\n  replayWindowMs: 24 * 60 * 60 * 1000,\n  maxBodyBytes: 8192,\n  dueWindowMs: 24 * 60 * 60 * 1000,\n  attempts: 4,\n  baseDelayMs: 500,\n  logEntries: 50,\n});\nconst EVENT_TYPES = Object.freeze(['deadline.due-soon', 'calendar.changed']);\n\nconst hex = bytes => [...new Uint8Array(bytes)].map(byte => byte.toString(16).padStart(2, '0')).join('');\n\n/** HMAC-SHA256 over \"<timestamp>.<raw body>\", returned as lowercase hex. */\nasync function hmacHex(subtle, secret, message) {\n  const key = await subtle.importKey('raw', new TextEncoder().encode(secret), {name: 'HMAC', hash: 'SHA-256'}, false, ['sign']);\n  return hex(await subtle.sign('HMAC', key, new TextEncoder().encode(message)));\n}\n\nasync function signBody(subtle, secret, timestamp, rawBody) {\n  return `sha256=${await hmacHex(subtle, secret, `${timestamp}.${rawBody}`)}`;\n}\n\n/** Compare every character so the answer does not depend on where a guess first differs. */\nfunction sameSignature(expected, given) {\n  if (typeof given !== 'string' || given.length !== expected.length) return false;\n  let difference = 0;\n  for (let i = 0; i < expected.length; i++) difference |= expected.charCodeAt(i) ^ given.charCodeAt(i);\n  return difference === 0;\n}\n\nconst fail = (status, reason) => ({ok: false, status, reason});\n\n/** Returns {ok: true, event} or {ok: false, status, reason}. Malformed input never reaches the reminder step. */\nfunction parseEvent(rawBody, now) {\n  let event;\n  try { event = JSON.parse(rawBody); } catch { return fail(400, 'Body is not JSON'); }\n  if (!event || typeof event !== 'object' || Array.isArray(event)) return fail(422, 'Body must be an object');\n  if (!EVENT_TYPES.includes(event.type)) return fail(422, 'Unknown event type');\n  if (typeof event.id !== 'string' || !/^[A-Za-z0-9._:-]{1,80}$/.test(event.id)) return fail(422, 'Event id is missing or malformed');\n  if (typeof event.title !== 'string' || !event.title.trim() || event.title.length > 200) return fail(422, 'Title is missing or longer than 200 characters');\n  if (typeof event.dueAt !== 'string' || !Number.isFinite(Date.parse(event.dueAt))) return fail(422, 'dueAt must be an ISO time');\n  const due = Date.parse(event.dueAt);\n  if (event.type === 'deadline.due-soon' && Math.abs(due - now) > GUARD_LIMITS.dueWindowMs) return fail(422, 'A due-soon deadline must be within 24 hours');\n  if (event.changedFields !== undefined && (!Array.isArray(event.changedFields) || event.changedFields.length > 10 || event.changedFields.some(f => typeof f !== 'string' || f.length > 40))) {\n    return fail(422, 'changedFields must be a short list of names');\n  }\n  return {ok: true, event};\n}\n\n/** Replay memory: an event id is refused for 24 hours after it was accepted. */\nfunction createSeenStore(state = {}) {\n  return {\n    has(id, now) {\n      const until = state[id];\n      if (until === undefined) return false;\n      if (until <= now) { delete state[id]; return false; }\n      return true;\n    },\n    add(id, now) {\n      state[id] = now + GUARD_LIMITS.replayWindowMs;\n      for (const key of Object.keys(state)) if (state[key] <= now) delete state[key];\n    },\n  };\n}\n\n/** Check headers, signature, timestamp, body, then replay, in that order. */\nasync function verifyDelivery({subtle, secret, headers, rawBody, now, seen}) {\n  if (!secret) return fail(500, 'Webhook secret is not configured');\n  if (typeof rawBody !== 'string' || new TextEncoder().encode(rawBody).length > GUARD_LIMITS.maxBodyBytes) return fail(413, 'Body is missing or larger than 8 KB');\n  const timestamp = headers['x-lifeos-timestamp'];\n  if (typeof timestamp !== 'string' || !/^\\d{10}$/.test(timestamp)) return fail(401, 'Timestamp header is missing or malformed');\n  if (Math.abs(Math.floor(now / 1000) - Number(timestamp)) > GUARD_LIMITS.toleranceSeconds) return fail(401, 'Timestamp is outside the five-minute window');\n  const expected = await signBody(subtle, secret, timestamp, rawBody);\n  if (!sameSignature(expected, headers['x-lifeos-signature'])) return fail(401, 'Signature does not match');\n  const parsed = parseEvent(rawBody, now);\n  if (!parsed.ok) return parsed;\n  if (seen.has(parsed.event.id, now)) return fail(409, 'This event was already accepted (replay)');\n  return {ok: true, status: 202, event: parsed.event};\n}\n\nfunction buildReminder(event) {\n  const prefix = event.type === 'deadline.due-soon' ? 'Due soon' : 'Changed';\n  return {type: 'lifeos.reminder', eventId: event.id, title: `${prefix}: ${event.title}`, dueAt: event.dueAt};\n}\n\nconst retryable = status => status === 0 || status === 408 || status === 429 || status >= 500;\n\n/** Exponential backoff: 500 ms, 1 s, 2 s. Client errors (other than 408 and 429) are not retried. */\nasync function deliverWithRetry({send, sleep, attempts = GUARD_LIMITS.attempts, baseDelayMs = GUARD_LIMITS.baseDelayMs}) {\n  let reason = 'no attempt made';\n  for (let attempt = 1; attempt <= attempts; attempt++) {\n    let status = 0;\n    try { status = Number(await send(attempt)) || 0; } catch { status = 0; }\n    if (status >= 200 && status < 300) return {delivered: true, attempts: attempt, status};\n    reason = status ? `HTTP ${status}` : 'network error';\n    if (!retryable(status)) return {delivered: false, attempts: attempt, status, reason};\n    if (attempt < attempts) await sleep(baseDelayMs * 2 ** (attempt - 1));\n  }\n  return {delivered: false, attempts, reason};\n}\n\n\n// Workflow entry: verify, deliver with retries, log the outcome.\nconst item = $input.first();\nconst headers = item.json.headers ?? {};\nconst encoded = item.binary?.data?.data;\nconst rawBody = encoded ? new TextDecoder().decode(Uint8Array.from(atob(encoded), c => c.charCodeAt(0))) : null;\nconst state = $getWorkflowStaticData('global');\nstate.seen = state.seen ?? {};\nstate.log = state.log ?? [];\nconst seen = createSeenStore(state.seen);\nconst now = Date.now();\nconst verdict = rawBody === null\n  ? {ok: false, status: 400, reason: 'Raw body was not received'}\n  : await verifyDelivery({subtle: globalThis.crypto.subtle, secret: $env.LIFEOS_WEBHOOK_SECRET, headers, rawBody, now, seen});\nlet result;\nif (!verdict.ok) {\n  result = {status: verdict.status, outcome: 'rejected', reason: verdict.reason};\n} else {\n  seen.add(verdict.event.id, now);\n  const reminder = buildReminder(verdict.event);\n  const send = async () => {\n    try {\n      const response = await this.helpers.httpRequest({\n        method: 'POST', url: $env.LIFEOS_NOTIFY_URL, body: reminder, json: true, timeout: 5000,\n        headers: {authorization: 'Bearer ' + $env.LIFEOS_NOTIFY_TOKEN},\n        ignoreHttpStatusErrors: true, returnFullResponse: true,\n      });\n      return response.statusCode;\n    } catch (error) {\n      return 0;\n    }\n  };\n  const delivery = await deliverWithRetry({send, sleep: ms => new Promise(resolve => setTimeout(resolve, ms))});\n  result = delivery.delivered\n    ? {status: 202, outcome: 'delivered', attempts: delivery.attempts}\n    : {status: 502, outcome: 'failed', attempts: delivery.attempts, reason: delivery.reason};\n  result.eventId = verdict.event.id;\n}\nresult.at = new Date(now).toISOString();\nstate.log = [...state.log, {at: result.at, eventId: result.eventId ?? null, outcome: result.outcome, status: result.status}].slice(-50);\nreturn [{json: result}];\n"
+      }
+    },
+    {
+      "id": "respond",
+      "name": "Respond with outcome",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        520,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": "={{ $json.status }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Signed LifeOS event": {
+      "main": [
+        [
+          {
+            "node": "Verify, dedupe, remind",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify, dedupe, remind": {
+      "main": [
+        [
+          {
+            "node": "Respond with outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Toronto"
+  },
+  "pinData": {},
+  "tags": []
+}
