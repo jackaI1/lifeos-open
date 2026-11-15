@@ -15,16 +15,29 @@ const VERIFY = 'Verify signature and replay';
 const DELIVER = 'Deliver reminder with retries';
 
 /** Run one n8n Code node body the same way n8n wraps it: an async function with $input, $env and a helper. */
-async function runNode(name, {input, env = {}, store = {}, httpRequest, delays = []}) {
+const REPLAY_URL = 'http://sink.invalid/claim';
+
+/** Stands in for the reminder service that remembers accepted event ids. */
+function replayStore() {
+  const ids = new Set();
+  return {ids, httpRequest: async options => {
+    if (options.url !== REPLAY_URL) throw Error('unexpected url');
+    const accepted = !ids.has(options.body.id);
+    ids.add(options.body.id);
+    return {accepted};
+  }};
+}
+
+async function runNode(name, {input, env = {}, store = {}, httpRequest, replay = replayStore(), delays = []}) {
   const sandbox = {
     $input: {first: () => ({json: input})},
-    $env: {WEBHOOK_SIGNING_SECRET: SECRET, REMINDER_URL: 'http://sink.invalid/notify', REMINDER_RETRY_BASE_MS: '1000', ...env},
+    $env: {WEBHOOK_SIGNING_SECRET: SECRET, REMINDER_URL: 'http://sink.invalid/notify', REPLAY_STORE_URL: REPLAY_URL, REMINDER_RETRY_BASE_MS: '1000', ...env},
     $getWorkflowStaticData: () => store,
     crypto: webcrypto, TextEncoder, require, console,
     setTimeout: (resolve, ms) => { delays.push(ms); resolve(); },
   };
   const run = runInNewContext(`(async function(){${code(name)}\n})`, sandbox);
-  return (await run.call({helpers: {httpRequest: httpRequest ?? (async () => ({}))}}))[0].json;
+  return (await run.call({helpers: {httpRequest: httpRequest ?? replay.httpRequest}}))[0].json;
 }
 
 const soon = (overrides = {}) => ({
@@ -39,14 +52,14 @@ const request = (event, {secret = SECRET, at = Date.now(), body = event, signatu
 };
 
 test('a correctly signed deadline event is accepted once, and its replay is refused', async () => {
-  const store = {};
+  const shared = replayStore();
   const event = soon();
-  const first = await runNode(VERIFY, {input: request(event), store});
+  const first = await runNode(VERIFY, {input: request(event), replay: shared});
   assert.equal(first.accepted, true);
   assert.equal(first.status, 202);
-  const replay = await runNode(VERIFY, {input: request(event), store});
-  assert.equal(replay.status, 409);
-  assert.equal(replay.body.error, 'replayed_event');
+  const again = await runNode(VERIFY, {input: request(event), replay: shared});
+  assert.equal(again.status, 409);
+  assert.equal(again.body.error, 'replayed_event');
 });
 
 test('wrong secret, tampered title and stale timestamps are rejected with 401', async () => {
@@ -108,6 +121,12 @@ test('a delivery that keeps failing stops after four attempts, logs the failure 
   assert.equal(result.body.attempts.length, 4);
   assert.deepEqual(delays, [1000, 2000, 4000]);
   assert.equal(store.log.at(-1).delivered, false);
+});
+
+test('the replay store being unreachable fails closed with 503', async () => {
+  const result = await runNode(VERIFY, {input: request(soon()), httpRequest: async () => { throw Object.assign(new Error('down'), {}); }});
+  assert.equal(result.status, 503);
+  assert.equal(result.body.error, 'replay_store_unavailable');
 });
 
 test('the sender and the workflow agree on the signed bytes', async () => {

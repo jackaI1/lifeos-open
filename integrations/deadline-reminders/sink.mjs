@@ -6,10 +6,31 @@ import {resolve} from 'node:path';
 
 export function createSink({failFirst = 0} = {}) {
   const received = [];
+  const claimed = new Set();
   let failures = 0;
   const server = createServer(async (request, response) => {
     if (request.method === 'GET' && request.url === '/stats') {
       response.writeHead(200, {'content-type': 'application/json'}).end(JSON.stringify({received: received.length, failures, items: received}));
+      return;
+    }
+    if (request.method === 'POST' && request.url === '/claim') {
+      let raw = '';
+      for await (const chunk of request) {
+        raw += chunk;
+        if (raw.length > 1024) {
+          response.writeHead(413).end();
+          return;
+        }
+      }
+      try {
+        const {id} = JSON.parse(raw);
+        if (typeof id !== 'string' || !id || id.length > 200) throw Error('bad id');
+        const accepted = !claimed.has(id);
+        claimed.add(id);
+        response.writeHead(200, {'content-type': 'application/json'}).end(JSON.stringify({accepted}));
+      } catch {
+        response.writeHead(400).end();
+      }
       return;
     }
     if (request.method !== 'POST' || request.url !== '/notify') {
