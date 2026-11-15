@@ -8,6 +8,26 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || url.origin !== self.location.origin || !INERT.has(url.pathname)) return;
   event.respondWith(fetch(event.request).then(async response => { if (response.ok && response.type === 'basic') { const cache = await caches.open(CACHE); await cache.put(event.request, response.clone()); } return response; }).catch(async () => (await caches.match(event.request)) || Response.error()));
 });
+// Web Share Target: the phone's share sheet opens /share-target/ with title, text and url.
+// The shared item is kept in IndexedDB until the app turns it into a study note.
+self.addEventListener('fetch', event => {
+ const url = new URL(event.request.url);
+ if (event.request.mode !== 'navigate' || url.origin !== self.location.origin || url.pathname !== '/share-target/') return;
+ event.respondWith(receiveShare(url));
+});
+async function receiveShare(url){
+ const field = name => String(url.searchParams.get(name) || '').slice(0, 10000);
+ const item = {title: field('title'), text: field('text'), url: field('url'), receivedAt: Date.now()};
+ try{
+  const db = await new Promise((resolve, reject) => {const r = indexedDB.open('lifeos-share-inbox', 1); r.onupgradeneeded = () => r.result.createObjectStore('items'); r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);});
+  try{
+   await new Promise((resolve, reject) => {const tx = db.transaction('items', 'readwrite'); tx.objectStore('items').put(item, 'latest'); tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error);});
+  } finally { db.close(); }
+ }catch{
+  return new Response('LifeOS could not keep this shared item. Open LifeOS and share it again.', {status: 500, headers: {'content-type': 'text/plain; charset=utf-8'}});
+ }
+ return Response.redirect(new URL('/#today', self.location.origin).href, 303);
+}
 async function claimNotice(id,expiresAt){
  const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('lifeos-notification-receipts',1);r.onupgradeneeded=()=>r.result.createObjectStore('seen');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
  try{return await new Promise((resolve,reject)=>{const tx=db.transaction('seen','readwrite'),store=tx.objectStore('seen'),request=store.get(id);let fresh=false;request.onsuccess=()=>{if(!request.result){store.put(expiresAt,id);fresh=true;}const cursor=store.openCursor();cursor.onsuccess=()=>{const c=cursor.result;if(c){if(c.value<Date.now())c.delete();c.continue();}};};tx.oncomplete=()=>resolve(fresh);tx.onerror=()=>reject(tx.error);});}finally{db.close();}

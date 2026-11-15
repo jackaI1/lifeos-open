@@ -10,6 +10,7 @@ import {restoreLiveNoteDock} from './lecture-session.js';
 import {settleRouteTop} from './route-scroll.js';
 import {cachedTimeFormat,applyWorkspacePreferences} from './workspace-preferences.js';
 import {openActionFinder} from './action-finder.js';
+import {offerSharedItem} from './shared-item.js';
 import {updateBlockReason,editingElement} from './update-safety.js';
 import {controlIcon} from './quiet-controls.js';
 import {compactDisclosure} from './quiet-controls.js';
@@ -256,5 +257,5 @@ window.addEventListener('online', () => {void context.timers?.refresh(true); voi
 window.addEventListener('offline', () => setConnection(window.__LIFEOS_BROWSER_DEMO__===true));
 window.addEventListener('beforeunload', event => { if (active?.dirty?.()) { event.preventDefault(); event.returnValue = ''; } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && state.session) void refresh().catch(() => {}); });
-try { await refresh();context.timers=createTaskTimers(context);void context.timers.refresh(); restoreLiveNoteDock(context); await navigate(); if ('serviceWorker' in navigator&&!window.__LIFEOS_BROWSER_DEMO__) await navigator.serviceWorker.register('/sw.js', { scope: '/' }); }
+try { await refresh();context.timers=createTaskTimers(context);void context.timers.refresh(); restoreLiveNoteDock(context); await navigate(); void offerSharedItem(context).catch(() => {}); if ('serviceWorker' in navigator&&!window.__LIFEOS_BROWSER_DEMO__) await navigator.serviceWorker.register('/sw.js', { scope: '/' }); }
 catch (error) { $('#main').replaceChildren(heading('Your workspace is unavailable', 'Your saved local drafts remain on this device.'), errorNotice(error), el('div', { class: 'actions' }, el('a', { href: '/login' }, 'Sign in'), button('Try again', () => location.reload()), button('Download local drafts', async () => download('lifeos-local-recovery.json', JSON.stringify(await store.list('draft:'), null, 2), 'application/json'), 'quiet'))); }

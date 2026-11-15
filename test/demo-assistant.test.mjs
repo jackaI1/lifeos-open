@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {demoAssistantOptions,demoAssistantAnswer} from '../public/demo-assistant.js';
 import {createService} from './helpers/service.mjs';
+// The demo calendar repeats by weekday; pin a weekday so these checks do not depend on the day they run.
+const DEMO_WEEKDAY='2026-11-11T15:00:00Z';
 test('each assistant has distinct ready-to-send examples',()=>{
  const all=['today','academics','finances','lecture','project','support'].flatMap(scope=>{const options=demoAssistantOptions(scope);assert.ok(options.length>=3,scope);return options;});
  assert.equal(new Set(all.map(o=>o.id)).size,all.length);
@@ -15,7 +17,8 @@ test('planning questions use real free intervals without pretending to edit',()=
  assert.equal(add.proposals[0].operation,'calendar-create');assert.match(add.reply,/Apply change/);
  assert.equal(demoAssistantAnswer('today','A different question',context),null);
 });
-test('demo schedule examples produce reviewable local changes and preserve the source calendar',async()=>{
+test('demo schedule examples produce reviewable local changes and preserve the source calendar',async(t)=>{
+ t.mock.timers.enable({apis:['Date'],now:Date.parse(DEMO_WEEKDAY)});
  const app=await createService({database:':memory:',origin:'http://127.0.0.1:18751'});
  try{const session=await(await app.fetch(new Request(app.origin+'/api/session'))).json();const api=async(path,method='GET',body)=>{const r=await app.fetch(new Request(app.origin+path,{method,headers:{origin:app.origin,'x-lifeos-csrf':session.csrf,'content-type':'application/json'},...(body?{body:JSON.stringify(body)}:{})}));assert.equal(r.status,200,await r.clone().text());return r.json();};
  const id=crypto.randomUUID();await api('/api/assistant/threads','POST',{id,scope:'today',mutationId:crypto.randomUUID()});
