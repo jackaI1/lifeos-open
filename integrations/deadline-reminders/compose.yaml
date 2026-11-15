@@ -1,0 +1,28 @@
+# Self-hosted n8n for LifeOS deadline reminders. Secrets come from the environment; nothing is committed.
+#   WEBHOOK_SIGNING_SECRET  shared with sender.mjs (at least 24 characters)
+#   N8N_ENCRYPTION_KEY      n8n's own encryption key
+#   REMINDER_URL            where reminders are posted (the sink in tests, or your notification route)
+#   REPLAY_STORE_URL        the service that remembers accepted event ids (POST {id} -> {accepted}); must be durable in production
+services:
+  n8n:
+    image: n8nio/n8n:2.48.4
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY}
+      - WEBHOOK_SIGNING_SECRET=${WEBHOOK_SIGNING_SECRET:?set WEBHOOK_SIGNING_SECRET}
+      - REMINDER_URL=${REMINDER_URL:-http://host.docker.internal:8099/notify}
+      - REMINDER_RETRY_BASE_MS=${REMINDER_RETRY_BASE_MS:-1000}
+      - REPLAY_STORE_URL=${REPLAY_STORE_URL:-http://host.docker.internal:8099/claim}
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - NODE_FUNCTION_ALLOW_BUILTIN=crypto
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - GENERIC_TIMEZONE=America/Toronto
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/workflows:ro
+volumes:
+  n8n_data:

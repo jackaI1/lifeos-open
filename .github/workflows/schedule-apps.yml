@@ -1,0 +1,56 @@
+name: Schedule apps (Next.js and Vue)
+on:
+  push:
+    paths:
+      - apps/schedule-next/**
+      - apps/schedule-vue/**
+      - .github/workflows/schedule-apps.yml
+  pull_request:
+    paths:
+      - apps/schedule-next/**
+      - apps/schedule-vue/**
+      - .github/workflows/schedule-apps.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+jobs:
+  next:
+    name: Next.js schedule page
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/schedule-next
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/schedule-next/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+  vue:
+    name: Vue weekly schedule
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/schedule-vue
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/schedule-vue/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build

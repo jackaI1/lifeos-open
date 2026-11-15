@@ -43,7 +43,13 @@
     "support": "node --env-file-if-exists=.env src/support/cli.mjs",
     "support:evaluate": "node tools/support-evaluate.mjs",
     "test:support": "node --test test/support-assistant.test.mjs test/azure-provider.test.mjs",
-    "test:azure": "node --test deploy/azure/test/healthcheck.test.mjs"
+    "test:azure": "node --test deploy/azure/test/healthcheck.test.mjs",
+    "mcp:readonly": "node src/mcp/readonly.ts",
+    "assistant": "node src/mcp/assistant.ts",
+    "graphql:schedule": "node src/graphql/server.ts",
+    "reminders:send": "node integrations/deadline-reminders/sender.mjs",
+    "test:bot-harness": "LIFEOS_BOT_HARNESS=1 node --test test/bot-detection-harness.integration.mjs",
+    "test:rls": "node --test test/postgres-rls.integration.mjs"
   },
   "dependencies": {
     "@azure/msal-node": "7.1.2",
@@ -64,6 +70,7 @@
     "d3-scale": "4.0.2",
     "d3-selection": "3.0.0",
     "google-auth-library": "11.0.2",
+    "graphql": "16.11.0",
     "pdf-lib": "^1.17.1",
     "pg": "^8.23.1",
     "react": "19.3.1",

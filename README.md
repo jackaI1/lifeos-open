@@ -247,6 +247,13 @@ follow the [database guide](docs/postgresql.md), including the transfer command
 for an existing SQLite workspace. The transfer checks the copied records and
 files and refuses a populated destination. Keep a backup first.
 
+The PostgreSQL profile also has row-level security on the `records` table, which holds the
+calendar, coursework and finance rows. The database itself returns only the rows of the
+workspace a connection names (set with `LIFEOS_WORKSPACE_ID`), so a query for another workspace
+finds nothing and a write into it is refused. Migration 3 adds that policy. Superusers skip
+row-level security by design, so the app should connect as an ordinary role. Audit, job and
+session tables are not covered yet. Tests run against a PostgreSQL 17 service in GitHub Actions.
+
 For repeated reads of saved tasks, reminders and coursework, I can turn on an
 optional Redis cache, a temporary copy kept in memory. Every saved change makes
 the previous copy unusable, and the API reads the database if Redis is down.
@@ -355,6 +362,101 @@ compares word search with a local model's similarity search and returns the exac
 fictional source passage. The [record importer](docs/fhir-ingest.md) checks public
 FHIR health-record examples and quarantines missing or unsupported values, with
 an optional S3-to-Lambda-to-DynamoDB path tested in an AWS emulator.
+
+## Running the demo on Google Cloud Run
+
+I wrote a second way to run the public demo, on Google Cloud Run, so the demo has a stable
+address that does not depend on one hosting account. Cloud Run starts the demo's Docker image
+(a packaged copy of the app) when a visitor arrives and gives it an HTTPS address. The
+Dockerfile's `public-demo` target builds the static demo that the other hosting setups use.
+
+Each version tag, such as `v0.2.0`, starts a GitHub Actions workflow. It builds the image,
+starts it on a test machine, and checks `/healthz`, a health route that answers
+`{"status":"ok"}` only when the demo page can be read. The image is pushed and deployed only
+after that check passes. The one runtime setting, `PARENT_ORIGIN`, is read from Google Secret
+Manager, and GitHub signs in to Google with a short-lived token, so no password or key file is
+stored in the repository.
+
+The live Cloud Run service is not switched on yet. It needs a Google Cloud project with billing
+turned on, and I have not set that up. The one-time steps, the rollback command and the limits
+are in the [Cloud Run guide](deploy/cloud-run/README.md). The image check and the deploy tests
+run in GitHub Actions on every change.
+
+## Deadline reminders from a self-hosted n8n workflow
+
+I built a reminder path because I want a nudge outside the app when a deadline is less than a
+day away. A sender reads open tasks from a copy of my workspace file, finds deadlines due in the
+next 24 hours, and posts each one to a webhook, a web address that receives events. Every post is
+signed with HMAC-SHA256, a keyed fingerprint of the request, so the receiver can check that the
+event came from the sender and was not changed.
+
+The receiver is [n8n](https://n8n.io), an open-source workflow tool that runs in Docker Compose on
+my own machine. The exported workflow is in `integrations/deadline-reminders/workflows/`. It
+checks the timestamp (within five minutes), recomputes the signature, and refuses an event it has
+already accepted, which stops a replay. A malformed event gets a 400 and a bad signature gets a 401.
+A valid event is delivered with up to four tries, waiting 1, 2 and 4 seconds between tries. The
+outcome is written to the workflow's own log.
+
+To try it, set `WEBHOOK_SIGNING_SECRET` (at least 24 characters) and `N8N_ENCRYPTION_KEY`, start
+`docker compose -f integrations/deadline-reminders/compose.yaml up -d`, import and activate the
+workflow as the compose file's CI steps show, and run `npm run reminders:send` with
+`LIFEOS_DATABASE` pointing at a copy of the workspace. Limitations: the reminder address in
+this repository is a test sink, and the link to my phone's notification route is not wired yet.
+Calendar-change events use the same signed format, but nothing in LifeOS sends them yet.
+
+## Read-only assistant tools over MCP
+
+I built a read-only tool server so a local assistant can answer questions about my schedule,
+deadlines and notes without the data leaving my computer. MCP (Model Context Protocol) is a
+standard way for an assistant to call tools. The server in `src/mcp/readonly.ts` offers three
+tools: `today_schedule`, `unfinished_deadlines` and `search_notes`. Each checks its inputs with
+a schema, returns a clear error for a bad date or an out-of-range number, returns at most 50
+results, and runs only SELECT statements. The database file is opened read-only as well, so a
+later change cannot write by accident.
+
+The client loop in `src/mcp/assistant.ts` sends a question to a model that runs on this machine
+through Ollama, a local model runner. The model can call the three tools, and the results go back
+into the conversation for up to four steps. Every tool call is logged as one JSON line with its
+name, arguments, duration and result. A tool name that is not on the allowlist is refused, and
+the loop refuses any model address that is not this computer.
+
+To try it, point `LIFEOS_MCP_DATABASE` at a copy of the workspace and run
+`npm run assistant -- "what is due this week?"`. Use a copy, not my real file. The tests use a
+scripted model, so the loop is checked without a model download. I have not yet run it against
+a real Ollama model in this repository.
+
+## Visitor check for the demo
+
+I added an optional visitor check to the public demo, because I want the usage numbers to count
+people rather than scripts. The page at `/bot-check/` runs only after a visitor presses its
+button. For three seconds it reads a few browser settings, and it watches mouse and keyboard
+events. The scorer in `public/bot-check/scorer.mjs` lists each signal as fired, clear or
+unavailable, and returns automated, human or uncertain. Uncertain is the honest answer when the
+evidence is thin. A human verdict needs real input that was actually observed.
+
+Nothing is stored or sent. The check code never touches local storage, cookies or the network,
+and a test checks the source for that. The harness in `tools/bot-detection-harness.mjs` drives real
+Chromium through Playwright in three modes: headed (a visible window, under a virtual display in
+CI), headless, and a stealth mode with a small set of patches. It records which signals fire in
+each mode and for each kind of input. The measured results and what they do not show are in
+[the findings](docs/bot-detection-findings.md). Headed mode opens a browser window, so
+`npm run test:bot-harness` is meant for CI or a machine where that is fine.
+
+## Today's schedule over GraphQL, Next.js and Vue
+
+I built a read-only GraphQL endpoint because I wanted my planner's data in a second front end
+without giving that front end write access. The endpoint is in `src/graphql/`. It has two
+queries: `day(date)` returns the events and deadlines for one day, and `deadlines(withinDays)`
+returns open tasks, overdue first. A request needs a bearer token. It is refused if it is longer
+than 2,000 bytes, nests deeper than four levels, selects more than 40 fields, or tries to change
+anything. The resolvers call the same read-only functions as the MCP tools.
+
+Two clients use it. `apps/schedule-next` is a Next.js page. It renders the first view on the server,
+and its Refresh button goes through a server route, so the token never reaches the browser. The
+full description is in [its README](apps/schedule-next/README.md). `apps/schedule-vue` is a Vue 3
+weekly view with loading, ready, offline and error states, documented in
+[its README](apps/schedule-vue/README.md). Both have tests, lint and type checks in the
+"Schedule apps" GitHub Actions workflow.
 
 ## Test suite for the demo
 

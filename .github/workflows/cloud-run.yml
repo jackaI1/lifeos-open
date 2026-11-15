@@ -1,0 +1,102 @@
+name: Cloud Run demo
+on:
+  push:
+    tags: ['v*']
+    paths:
+      - deploy/cloud-run/**
+      - test/cloud-run-deploy.test.mjs
+      - Dockerfile
+      - .github/workflows/cloud-run.yml
+  pull_request:
+    paths:
+      - deploy/cloud-run/**
+      - test/cloud-run-deploy.test.mjs
+      - Dockerfile
+      - .github/workflows/cloud-run.yml
+  workflow_dispatch:
+    inputs:
+      action:
+        description: deploy the current tag, or roll back to a revision
+        type: choice
+        options: [deploy, rollback]
+        default: deploy
+      revision:
+        description: Cloud Run revision to roll back to (rollback only)
+        required: false
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: cloud-run-demo
+  cancel-in-progress: false
+jobs:
+  test:
+    name: Container starts and /healthz responds
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm ci --ignore-scripts
+      - name: Unit tests for the deploy files and the health route
+        run: node --test test/cloud-run-deploy.test.mjs
+      - name: Build the public-demo image and check its health route
+        run: deploy/cloud-run/smoke.sh
+
+  deploy:
+    name: Deploy the tagged image to Cloud Run
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') && vars.GCP_PROJECT_ID != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: cloud-run-demo
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      ARTIFACT_REPOSITORY: ${{ vars.ARTIFACT_REPOSITORY }}
+      PARENT_ORIGIN_SECRET: ${{ vars.PARENT_ORIGIN_SECRET }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Build and push the image to Artifact Registry
+        run: |
+          gcloud auth configure-docker "$GCP_REGION-docker.pkg.dev" --quiet
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REPOSITORY/lifeos-demo:$GITHUB_REF_NAME"
+          docker build --target public-demo -t "$IMAGE" .
+          docker push "$IMAGE"
+      - name: Render the service and deploy it
+        run: deploy/cloud-run/deploy.sh deploy "$GITHUB_REF_NAME"
+
+  rollback:
+    name: Roll back to an earlier revision
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'rollback' && vars.GCP_PROJECT_ID != ''
+    runs-on: ubuntu-24.04
+    environment: cloud-run-demo
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      ARTIFACT_REPOSITORY: ${{ vars.ARTIFACT_REPOSITORY }}
+      PARENT_ORIGIN_SECRET: ${{ vars.PARENT_ORIGIN_SECRET }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Send all traffic back to the chosen revision
+        run: deploy/cloud-run/deploy.sh rollback "$REVISION"
+        env:
+          REVISION: ${{ inputs.revision }}
