@@ -8,6 +8,9 @@ const decode=(value:Cell)=>{if(value&&typeof value==='object'){if(Object.keys(va
 export async function tableNames(db:WorkspaceDatabase){return (db.tableNames?await db.tableNames():(await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all()).results.map(r=>String(r.name))).filter(n=>!n.startsWith('_')&&!excluded.has(n));}
 export async function createBackup(db:WorkspaceDatabase):Promise<WorkspaceBackup>{
  const tables:WorkspaceBackup['tables']={};for(const name of await tableNames(db)){const rows=(await db.prepare('SELECT * FROM '+identifier(name)).all()).results;// workspace_id is the PostgreSQL row-level security owner. It is not portable data, so backups leave it out.
- tables[name]=rows.filter(row=>name!=='meta'||!['local-backup','local-backup-last'].includes(row.key)).map(({workspace_id:_owner,...row})=>Object.fromEntries(Object.entries(row).map(([key,value])=>[key,encode(value)])));}
+ tables[name]=rows.filter(row=>name!=='meta'||!['local-backup','local-backup-last'].includes(row.key)).map(({workspace_id:_owner,...row})=>Object.fromEntries(Object.entries(row).map(([key,value])=>[key,encode(value)])));
+ // Row order differs between SQLite and PostgreSQL once row-level security adds an index. Backups sort these tables, so both sides compare equal.
+ if(name==='records')tables[name].sort((a,c)=>String(a.kind).localeCompare(String(c.kind))||String(a.id).localeCompare(String(c.id)));
+ if(name==='audit')tables[name].sort((a,c)=>String(a.id).localeCompare(String(c.id)));}
  return {format:'lifeos-local-backup-v1',createdAt:new Date().toISOString(),tables};
 }

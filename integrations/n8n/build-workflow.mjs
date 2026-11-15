@@ -10,6 +10,8 @@ const OUTPUT = new URL('./workflows/deadline-reminders.json', import.meta.url);
 
 // Entry body for the n8n Code node. Runs once per webhook call with `this.helpers`.
 export const ENTRY = `// Workflow entry: verify, deliver with retries, log the outcome.
+// n8n Code nodes may not expose globalThis.crypto; NODE_FUNCTION_ALLOW_BUILTIN=crypto makes require() work.
+const webcrypto = globalThis.crypto ?? require("crypto").webcrypto;
 const item = $input.first();
 const headers = item.json.headers ?? {};
 const encoded = item.binary?.data?.data;
@@ -21,7 +23,7 @@ const seen = createSeenStore(state.seen);
 const now = Date.now();
 const verdict = rawBody === null
   ? {ok: false, status: 400, reason: 'Raw body was not received'}
-  : await verifyDelivery({subtle: globalThis.crypto.subtle, secret: $env.LIFEOS_WEBHOOK_SECRET, headers, rawBody, now, seen});
+  : await verifyDelivery({subtle: webcrypto.subtle, secret: $env.LIFEOS_WEBHOOK_SECRET, headers, rawBody, now, seen});
 let result;
 if (!verdict.ok) {
   result = {status: verdict.status, outcome: 'rejected', reason: verdict.reason};
