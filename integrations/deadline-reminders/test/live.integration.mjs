@@ -26,8 +26,11 @@ test('n8n retries a failing reminder, delivers it and reports the attempts', {sk
 test('a replayed signed event is refused with 409 and not delivered twice', {skip: !enabled && 'set N8N_URL', timeout: 60000}, async () => {
   const body = event('live-replay');
   const headers = signedHeaders(WEBHOOK_SIGNING_SECRET, body);
-  assert.equal((await send(body, headers)).status, 202);
-  assert.equal((await send(body, headers)).status, 409);
+  const first = await send(body, headers);
+  assert.equal(first.status, 202, await first.clone().text());
+  const second = await send(body, headers);
+  const secondBody = await second.clone().text();
+  assert.equal(second.status, 409, secondBody);
   const stats = await (await fetch(`${SINK_URL}/stats`)).json();
   assert.equal(stats.items.filter(item => item.id === 'reminder-live-replay').length, 1);
 });
