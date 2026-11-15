@@ -1,0 +1,45 @@
+name: Bot detection harness
+on:
+  push:
+    branches: [main]
+    paths:
+      - src/bot-detection/**
+      - tools/bot-harness.mjs
+      - test/bot-*.test.mjs
+      - .github/workflows/bot-detection.yml
+  pull_request:
+    paths:
+      - src/bot-detection/**
+      - tools/bot-harness.mjs
+      - test/bot-*.test.mjs
+      - .github/workflows/bot-detection.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  harness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Unit tests for the scorer
+        run: node --test test/bot-scorer.test.mjs
+      - name: Drive headed, headless and stealth Chromium
+        run: xvfb-run -a node --test test/bot-harness.integration.test.mjs
+        env:
+          LIFEOS_BOT_HARNESS: '1'
+      - name: Measure the matrix and print it
+        run: xvfb-run -a node tools/bot-harness.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bot-harness-results
+          path: test-results/bot-harness.json
+          retention-days: 7

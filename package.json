@@ -43,7 +43,9 @@
     "support": "node --env-file-if-exists=.env src/support/cli.mjs",
     "support:evaluate": "node tools/support-evaluate.mjs",
     "test:support": "node --test test/support-assistant.test.mjs test/azure-provider.test.mjs",
-    "test:azure": "node --test deploy/azure/test/healthcheck.test.mjs"
+    "test:azure": "node --test deploy/azure/test/healthcheck.test.mjs",
+    "bot:harness": "node tools/bot-harness.mjs",
+    "test:bot": "node --test test/bot-scorer.test.mjs test/bot-harness.integration.test.mjs"
   },
   "dependencies": {
     "@azure/msal-node": "7.1.2",
