@@ -1,0 +1,47 @@
+name: Bot detection harness
+on:
+  push:
+    paths:
+      - public/bot-check/**
+      - tools/bot-detection-harness.mjs
+      - test/bot-detection-*.mjs
+      - .github/workflows/bot-detection.yml
+      - package.json
+      - package-lock.json
+  pull_request:
+    paths:
+      - public/bot-check/**
+      - tools/bot-detection-harness.mjs
+      - test/bot-detection-*.mjs
+      - .github/workflows/bot-detection.yml
+      - package.json
+      - package-lock.json
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  harness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Install Chromium and its system libraries for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Scorer unit tests
+        run: node --test test/bot-detection-scorer.test.mjs
+      - name: Run headed (under a virtual display), headless and stealth Chromium
+        run: xvfb-run --auto-servernum node --test test/bot-detection-harness.integration.mjs
+        env:
+          LIFEOS_BOT_HARNESS: '1'
+      - name: Keep the measured results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bot-detection-results
+          path: test-results/bot-detection.json
+          if-no-files-found: warn

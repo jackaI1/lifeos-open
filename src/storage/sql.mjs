@@ -1,5 +1,7 @@
 /** Compile the application's SQLite/D1 SQL subset. Values never enter SQL text. */
 export function postgresSQL(sql,values=[]){
+ // records gained workspace_id in migration 3. Keep the shared SQLite text unchanged and rewrite only here.
+ sql=sql.replace(/INSERT INTO records VALUES\(/g,'INSERT INTO records(kind,id,data,version,created_at,updated_at) VALUES(').replace(/ON CONFLICT\(kind,id\)/g,'ON CONFLICT(workspace_id,kind,id)');
  const tokens=sql.match(/'(?:''|[^'])*'|"(?:""|[^"])*"|--[^\n]*(?:\n|$)|\/\*[\s\S]*?\*\/|\?|[A-Za-z_][\w.]*|\d+(?:\.\d+)?|<=|>=|<>|!=|\|\||\S/g)??[];
  let position=0,parameter=0;
  function group(end){

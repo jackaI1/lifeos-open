@@ -1,0 +1,67 @@
+name: Deadline reminders (n8n)
+on:
+  push:
+    paths:
+      - integrations/deadline-reminders/**
+      - test/deadline-reminders.test.mjs
+      - .github/workflows/deadline-reminders-n8n.yml
+  pull_request:
+    paths:
+      - integrations/deadline-reminders/**
+      - test/deadline-reminders.test.mjs
+      - .github/workflows/deadline-reminders-n8n.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  n8n:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      COMPOSE: docker compose -f integrations/deadline-reminders/compose.yaml
+      WEBHOOK_SIGNING_SECRET: ci-only-signing-secret-0123456789
+      N8N_ENCRYPTION_KEY: ci-only-n8n-encryption-key-0123456789
+      REMINDER_URL: http://host.docker.internal:8099/notify
+      REMINDER_RETRY_BASE_MS: '200'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Unit tests for the signing rules and the workflow code
+        run: node --test test/deadline-reminders.test.mjs
+      - name: Start the reminder sink; its first two requests fail on purpose
+        run: |
+          FAIL_FIRST=2 HOST=0.0.0.0 PORT=8099 node integrations/deadline-reminders/sink.mjs > sink.log 2>&1 &
+          echo $! > sink.pid
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8099/stats >/dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:8099/stats
+      - name: Start n8n with Docker Compose
+        run: |
+          $COMPOSE up -d
+          for i in $(seq 1 90); do curl -sf http://127.0.0.1:5678/healthz >/dev/null && break; sleep 2; done
+          curl -sf http://127.0.0.1:5678/healthz
+      - name: Import the exported workflow and activate it
+        run: |
+          $COMPOSE exec -T n8n n8n import:workflow --input=/workflows/deadline-reminders.json
+          $COMPOSE exec -T n8n n8n update:workflow --all --active=true
+          $COMPOSE restart n8n
+          for i in $(seq 1 90); do curl -sf http://127.0.0.1:5678/healthz >/dev/null && break; sleep 2; done
+      - name: Live checks against the running n8n container
+        run: node --test integrations/deadline-reminders/test/live.integration.mjs
+        env:
+          N8N_URL: http://127.0.0.1:5678
+          SINK_URL: http://127.0.0.1:8099
+      - name: Show container and sink logs when something failed
+        if: failure()
+        run: |
+          $COMPOSE logs --tail 200 n8n || true
+          tail -50 sink.log || true
+      - name: Stop the disposable fixtures and check they are gone
+        if: always()
+        run: |
+          $COMPOSE down --volumes || true
+          kill "$(cat sink.pid)" 2>/dev/null || true
+          sleep 1
+          ! curl -sf http://127.0.0.1:8099/stats >/dev/null
+          ! curl -sf http://127.0.0.1:5678/healthz >/dev/null

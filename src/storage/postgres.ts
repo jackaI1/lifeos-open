@@ -16,22 +16,33 @@ class PostgresStatement implements WorkspaceStatement {
 }
 /** One bounded pool per service; every transaction owns one checked-out client. */
 export class PostgresDatabase implements WorkspaceDatabase {
- readonly dialect='postgres';pool:pg.Pool;client?:PoolClient;ownsPool:boolean;closed=false;
- constructor(config:PoolConfig|string,client?:PoolClient,pool?:pg.Pool){
+ readonly dialect='postgres';pool:pg.Pool;client?:PoolClient;ownsPool:boolean;closed=false;workspaceId?:string;
+ constructor(config:PoolConfig|string,client?:PoolClient,pool?:pg.Pool,workspaceId?:string){
+  if(workspaceId!==undefined&&!/^[A-Za-z0-9_.-]{1,80}$/.test(workspaceId))throw Error('Workspace id must be 1 to 80 letters, digits, dots, dashes or underscores.');
+  this.workspaceId=workspaceId;
   this.pool=pool??new pg.Pool({max:5,idleTimeoutMillis:10000,connectionTimeoutMillis:5000,statement_timeout:30000,...typeof config==='string'?{connectionString:config}:config,types});
   this.client=client;this.ownsPool=!pool;
   if(this.ownsPool)this.pool.on('error',()=>{console.error('An idle PostgreSQL connection closed; the pool will reconnect.');});
  }
  prepare(query:string){return new PostgresStatement(this,query);}
+ /** Run one statement. With a workspace, the statement runs in a transaction that sets app.workspace_id. */
+ private async send(query:string,args:any[]=[]){
+  if(this.client)return this.client.query(query,args);
+  if(!this.workspaceId)return this.pool.query(query,args);
+  const client=await this.pool.connect();
+  try{await client.query('BEGIN');await client.query("SELECT set_config('app.workspace_id',$1,true)",[this.workspaceId]);const value=await client.query(query,args);await client.query('COMMIT');return value;}
+  catch(error){await client.query('ROLLBACK').catch(()=>{});throw error;}
+  finally{client.release();}
+ }
  async execute(query:string,args:any[]=[]){
-  try{return result(await (this.client??this.pool).query(postgresSQL(query,args),args));}
+  try{return result(await this.send(postgresSQL(query,args),args));}
   catch(error:any){if(['23505','23514','40001','40P01'].includes(error.code))throw new Error((error.code==='23505'?'UNIQUE constraint':'CHECK constraint')+' failed; transaction rejected.');throw error;}
  }
- async exec(sql:string){await (this.client??this.pool).query(postgresSQL(sql));}
+ async exec(sql:string){await this.send(postgresSQL(sql));}
  async transaction<T>(fn:(db:PostgresDatabase)=>Promise<T>):Promise<T>{
   if(this.client)throw Error('Nested transactions are not supported.');
   const client=await this.pool.connect();
-  try{await client.query('BEGIN');const value=await fn(new PostgresDatabase({},client,this.pool));await client.query('COMMIT');return value;}
+  try{await client.query('BEGIN');if(this.workspaceId)await client.query("SELECT set_config('app.workspace_id',$1,true)",[this.workspaceId]);const value=await fn(new PostgresDatabase({},client,this.pool,this.workspaceId));await client.query('COMMIT');return value;}
   catch(error){await client.query('ROLLBACK');throw error;}
   finally{client.release();}
  }
@@ -42,7 +53,7 @@ export class PostgresDatabase implements WorkspaceDatabase {
  }
  async migrate(){
   const migrations=await loadMigrations('postgres');
-  await this.transaction(async tx=>{
+  await new PostgresDatabase({},undefined,this.pool).transaction(async tx=>{
    await tx.client!.query('SELECT pg_advisory_xact_lock(182736451)');
    await tx.client!.query('CREATE TABLE IF NOT EXISTS _workspace_migrations(version INTEGER PRIMARY KEY,applied_at TEXT NOT NULL)');
    for(const {version,sql} of migrations)if(!await tx.prepare('SELECT version FROM _workspace_migrations WHERE version=?').bind(version).first()){

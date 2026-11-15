@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LifeOS demo visitor check</title>
+</head>
+<body>
+<main>
+<h1>Visitor check</h1>
+<p>This optional check reads a few browser settings on this page for three seconds, then
+scores them locally. Nothing is saved, sent or linked to you. It helps me keep the demo's
+usage numbers honest by separating scripted visits from people.</p>
+<button id="consent" type="button">Run the check</button>
+<p id="result" aria-live="polite"></p>
+<ul id="reasons"></ul>
+</main>
+<script type="module" src="./page.mjs"></script>
+</body>
+</html>
