@@ -102,7 +102,7 @@ export async function deletedRoute({store,env,config,req,path,body,deleteFile=re
 
   const sessionSlots=sessions.map(()=>'?').join(',');const preconditions=[store.assertion('SELECT EXISTS(SELECT 1 FROM records WHERE kind=? AND id=? AND version=?)',[body.kind,body.id,body.version]),store.assertion(`SELECT NOT EXISTS(SELECT 1 FROM upload_pending WHERE session_id IN (${sessionSlots}) AND lease_until>?)`,[...sessions,Date.now()]),store.assertion(`SELECT NOT EXISTS(SELECT 1 FROM jobs WHERE status='running' AND (${jobs.where}))`,jobs.args),store.assertion(`SELECT json_group_array(kind||':'||id||':'||version)=? FROM (SELECT kind,id,version FROM records WHERE ${sel.where} ORDER BY kind,id)`,[JSON.stringify(rows.map(r=>r.kind+':'+r.id+':'+r.version)),...sel.args])];
 
-  extra.push(store.sql('INSERT INTO audit VALUES(?,?,?,?,?,?,?,NULL)',crypto.randomUUID(),'deletion',id,null,JSON.stringify({operation:'trash',kind:body.kind,id:body.id}),now,'owner-confirmed-deletion'));
+  extra.push(store.sql('INSERT INTO audit(id,kind,record_id,before_json,after_json,created_at,actor,undo_of)VALUES(?,?,?,?,?,?,?,NULL)',crypto.randomUUID(),'deletion',id,null,JSON.stringify({operation:'trash',kind:body.kind,id:body.id}),now,'owner-confirmed-deletion'));
 
   return Response.json(await store.commit({id:mid,fingerprint,preconditions,extra,result}));
 

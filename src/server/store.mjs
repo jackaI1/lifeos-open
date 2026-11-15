@@ -32,8 +32,8 @@ export class Store {
     if(!this.db.isTransaction)return this.transaction(()=>this.put(kind,id,data,version,{actor,undoOf}));
     const old=this.get(kind,id);if((old?.version??0)!==version)throw new AppError('This record changed. Your writing has been kept for comparison.',409,'conflict',old);
     const now=new Date().toISOString();const item={id,kind,data,version:version+1,createdAt:old?.createdAt??now,updatedAt:now};
-    this.db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data,version=excluded.version,updated_at=excluded.updated_at').run(kind,id,JSON.stringify(data),item.version,item.createdAt,now);
-    const auditId=randomUUID();this.db.prepare('INSERT INTO audit VALUES(?,?,?,?,?,?,?,?)').run(auditId,kind,id,old?JSON.stringify(old):null,JSON.stringify(item),now,actor,undoOf);
+    this.db.prepare('INSERT INTO records(kind,id,data,version,created_at,updated_at)VALUES(?,?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data,version=excluded.version,updated_at=excluded.updated_at').run(kind,id,JSON.stringify(data),item.version,item.createdAt,now);
+    const auditId=randomUUID();this.db.prepare('INSERT INTO audit(id,kind,record_id,before_json,after_json,created_at,actor,undo_of)VALUES(?,?,?,?,?,?,?,?)').run(auditId,kind,id,old?JSON.stringify(old):null,JSON.stringify(item),now,actor,undoOf);
     return {...item,auditId};
   }
   upsertInternal(kind,id,data,actor='integration'){return this.put(kind,id,data,this.get(kind,id)?.version??0,{actor});}

@@ -95,7 +95,7 @@ test('workspace initialization preserves an explicit completion and does not see
   await makeWorkspace(db,{now:new Date('2026-10-20T14:00:00Z')});
   assert.equal((await db.prepare("SELECT count(*) n FROM records WHERE kind='spiritual'").first()).n,0);
   const data=JSON.stringify({practice:'prayer',date:'2026-10-20',complete:true,completedAt:'2026-10-20T14:15:00Z'});
-  await db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?)').bind('spiritual','owner-prayer',data,1,'2026-10-20T14:15:00Z','2026-10-20T14:15:00Z').run();
+  await db.prepare('INSERT INTO records(kind,id,data,version,created_at,updated_at)VALUES(?,?,?,?,?,?)').bind('spiritual','owner-prayer',data,1,'2026-10-20T14:15:00Z','2026-10-20T14:15:00Z').run();
   await makeWorkspace(db,{now:new Date('2026-10-21T14:00:00Z')});
   assert.deepEqual((await db.prepare("SELECT id,data FROM records WHERE kind='spiritual'").all()).results.map(row=>({...row})),[{id:'owner-prayer',data}]);
  }finally{db.close();}

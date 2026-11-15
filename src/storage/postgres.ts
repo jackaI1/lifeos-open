@@ -16,9 +16,15 @@ class PostgresStatement implements WorkspaceStatement {
 }
 /** One bounded pool per service; every transaction owns one checked-out client. */
 export class PostgresDatabase implements WorkspaceDatabase {
- readonly dialect='postgres';pool:pg.Pool;client?:PoolClient;ownsPool:boolean;closed=false;
- constructor(config:PoolConfig|string,client?:PoolClient,pool?:pg.Pool){
-  this.pool=pool??new pg.Pool({max:5,idleTimeoutMillis:10000,connectionTimeoutMillis:5000,statement_timeout:30000,...typeof config==='string'?{connectionString:config}:config,types});
+ readonly dialect='postgres';readonly workspaceId:string;pool:pg.Pool;client?:PoolClient;ownsPool:boolean;closed=false;
+ constructor(config:(PoolConfig&{workspaceId?:string})|string,client?:PoolClient,pool?:pg.Pool){
+  const settings=typeof config==='string'?{connectionString:config}:config;
+  const {workspaceId='default',...poolSettings}=settings;
+  if(!/^[a-z0-9][a-z0-9-]{0,62}$/.test(workspaceId))throw Error('Workspace id must be 1-63 lowercase letters, digits or hyphens.');
+  this.workspaceId=workspaceId;
+  // Every pooled connection starts with its workspace set, so row-level security sees it on each query.
+  const options=[(poolSettings as {options?:string}).options,'-c lifeos.workspace_id='+workspaceId].filter(Boolean).join(' ');
+  this.pool=pool??new pg.Pool({max:5,idleTimeoutMillis:10000,connectionTimeoutMillis:5000,statement_timeout:30000,...poolSettings,options,types});
   this.client=client;this.ownsPool=!pool;
   if(this.ownsPool)this.pool.on('error',()=>{console.error('An idle PostgreSQL connection closed; the pool will reconnect.');});
  }
@@ -31,7 +37,7 @@ export class PostgresDatabase implements WorkspaceDatabase {
  async transaction<T>(fn:(db:PostgresDatabase)=>Promise<T>):Promise<T>{
   if(this.client)throw Error('Nested transactions are not supported.');
   const client=await this.pool.connect();
-  try{await client.query('BEGIN');const value=await fn(new PostgresDatabase({},client,this.pool));await client.query('COMMIT');return value;}
+  try{await client.query('BEGIN');const value=await fn(new PostgresDatabase({workspaceId:this.workspaceId},client,this.pool));await client.query('COMMIT');return value;}
   catch(error){await client.query('ROLLBACK');throw error;}
   finally{client.release();}
  }

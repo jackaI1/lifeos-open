@@ -22,8 +22,8 @@ export class CloudStore {
    if(c.kind==='task')after.data=recordDeadlineChange(old?.data,after.data,now);
    if(after.kind!==c.kind||after.id!==c.id||after.version!==(old?.version??0)+1)throw new AppError('Invalid record revision');
    statements.push(this.assertion('SELECT COALESCE((SELECT version FROM records WHERE kind=? AND id=?),0)=?',[c.kind,c.id,old?.version??0]));
-   statements.push(this.sql('INSERT INTO records VALUES(?,?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data,version=excluded.version,updated_at=excluded.updated_at',c.kind,c.id,JSON.stringify(after.data),after.version,after.createdAt,after.updatedAt));
-   statements.push(this.sql('INSERT INTO audit VALUES(?,?,?,?,?,?,?,?)',c.auditId,c.kind,c.id,old?JSON.stringify(old):null,JSON.stringify(after),now,c.actor??'owner',c.undoOf??null));
+   statements.push(this.sql('INSERT INTO records(kind,id,data,version,created_at,updated_at)VALUES(?,?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data,version=excluded.version,updated_at=excluded.updated_at',c.kind,c.id,JSON.stringify(after.data),after.version,after.createdAt,after.updatedAt));
+   statements.push(this.sql('INSERT INTO audit(id,kind,record_id,before_json,after_json,created_at,actor,undo_of)VALUES(?,?,?,?,?,?,?,?)',c.auditId,c.kind,c.id,old?JSON.stringify(old):null,JSON.stringify(after),now,c.actor??'owner',c.undoOf??null));
   }
   for(const j of jobs)statements.push(this.sql("INSERT INTO jobs(id,type,payload,status,priority,available_at,created_at,updated_at,authority,dedupe_key,component) VALUES(?,?,?,'queued',?,?,?,?,?,?,?)",j.id,j.type,JSON.stringify(j.payload),j.priority??5,j.availableAt??Date.now(),Date.now(),Date.now(),j.authority,j.dedupeKey??null,j.component??'ai'));
   statements.push(...extra,this.sql('INSERT INTO mutations VALUES(?,?,?,?)',id,fp,JSON.stringify(result),now),this.sql('DELETE FROM assertions'));
