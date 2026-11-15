@@ -39,6 +39,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+      - run: npm ci --ignore-scripts
       - name: Unit tests for the deploy files and the health route
         run: node --test test/cloud-run-deploy.test.mjs
       - name: Build the public-demo image and check its health route
