@@ -44,7 +44,7 @@ jobs:
       - name: Import the exported workflow and activate it
         run: |
           $COMPOSE exec -T n8n n8n import:workflow --input=/workflows/deadline-reminders.json
-          $COMPOSE exec -T n8n n8n update:workflow --all --active=true
+          $COMPOSE exec -T n8n n8n publish:workflow --id=lifeosDeadlineReminders
           $COMPOSE restart n8n
           for i in $(seq 1 90); do curl -sf http://127.0.0.1:5678/healthz >/dev/null && break; sleep 2; done
       - name: Live checks against the running n8n container
