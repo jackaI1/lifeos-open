@@ -17,9 +17,9 @@ const headers = item.json.headers ?? {};
 const encoded = item.binary?.data?.data;
 const rawBody = encoded ? new TextDecoder().decode(Uint8Array.from(atob(encoded), c => c.charCodeAt(0))) : null;
 const state = $getWorkflowStaticData('global');
-state.seen = state.seen ?? {};
+const seenState = {...(state.seen ?? {})};
 state.log = state.log ?? [];
-const seen = createSeenStore(state.seen);
+const seen = createSeenStore(seenState);
 const now = Date.now();
 const verdict = rawBody === null
   ? {ok: false, status: 400, reason: 'Raw body was not received'}
@@ -29,6 +29,8 @@ if (!verdict.ok) {
   result = {status: verdict.status, outcome: 'rejected', reason: verdict.reason};
 } else {
   seen.add(verdict.event.id, now);
+  // Reassign the top-level property: n8n saves static data by reference, not by nested edits.
+  state.seen = seenState;
   const reminder = buildReminder(verdict.event);
   const send = async () => {
     try {
