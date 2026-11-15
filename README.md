@@ -401,6 +401,47 @@ I test the workspace with fictional records before sharing changes. The [checks 
 
 https://github.com/user-attachments/assets/5397817a-6c90-41f8-9ad9-6138a0c4023d
 
+## Sharing a link or text from my phone
+
+I built a share option because I want to send an article, a slide link or a
+passage from my phone straight into the notes for a course, without retyping it
+later at my desk. Once LifeOS is installed on the phone (the browser's
+"Add to Home Screen" or "Install app" option), it appears in the phone's share
+menu. Share a link or some text to LifeOS and a short form opens with a title,
+the text, and the link on its own line. I pick the course and press
+"Save as study note". The note appears in that course's study notes with the
+status "Not reviewed", so I can check it later.
+
+Nothing is sent anywhere until I press Save. The shared item waits on the phone
+in the browser's own storage. If I close the form, it stays there. "Discard"
+removes it. If the phone is offline, Save queues the note the same way other
+study-note saves are queued.
+
+How it works, in more detail:
+
+- [`public/manifest.webmanifest`](public/manifest.webmanifest) declares a
+  `share_target`, which tells the phone where to send shared content.
+- [`public/sw.js`](public/sw.js) is the background worker the browser keeps for
+  the app. It catches the `/share-target/` request, stores the title, text and
+  link in IndexedDB, and redirects to the Today page.
+- [`public/share-target.js`](public/share-target.js) holds the rules: only
+  `http` and `https` links are kept, long text is cut to the note limit with the
+  link kept, and the result matches what the study-notes API accepts.
+- [`public/shared-item.js`](public/shared-item.js) shows the form on startup and
+  saves through the same outbox used by the other study-note screens.
+
+To try it on a computer, run `npm run dev` and open
+<http://127.0.0.1:8787/share-target/?title=Test&text=Hello&url=https://example.com>.
+Then open <http://127.0.0.1:8787/#today>: the form appears. To try it on a phone,
+serve LifeOS over HTTPS as described in
+[Keeping it running elsewhere](#keeping-it-running-elsewhere), install it, and
+share a link to it from the phone's browser.
+
+Tests: `test/share-target.test.mjs` has five checks, including one that saves a
+shared item through the real `/api/learning-notes` route. The end-to-end check
+`test/e2e/share-target.spec.mjs` opens the share URL in Chromium, saves the form,
+and confirms the note is listed and the inbox is empty.
+
 ## License
 
 MIT; see [LICENSE](LICENSE). Dependency and asset terms are in

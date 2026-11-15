@@ -67,7 +67,7 @@ jobs:
       - name: Render workload charts and verify clock and lecture lifecycle
         run: npm run test:e2e
         env:
-          E2E_FOCUS: '^(25|26|27|28)-|^time-format'
+          E2E_FOCUS: '^(25|26|27|28)-|^time-format|^share-target'
   whisper:
     name: Real offline Whisper public-clip test
     runs-on: ubuntu-latest
