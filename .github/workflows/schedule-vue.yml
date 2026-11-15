@@ -1,0 +1,39 @@
+name: Vue weekly schedule
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/schedule-vue/**
+      - src/shared/today.ts
+      - src/domain/time.mjs
+      - public/demo/today.json
+      - .github/workflows/schedule-vue.yml
+  pull_request:
+    paths:
+      - apps/schedule-vue/**
+      - src/shared/today.ts
+      - src/domain/time.mjs
+      - public/demo/today.json
+      - .github/workflows/schedule-vue.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  vue:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/schedule-vue
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/schedule-vue/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build

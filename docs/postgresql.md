@@ -162,3 +162,29 @@ native engines in both matrix jobs. New contracts cover atomic rollback,
 concurrent transaction isolation, JSON ordering, blobs, migration idempotency,
 source checksum failures and failed/duplicate imports. CI uses a PostgreSQL 17
 service container and runs the full unit/API suite in both matrix jobs.
+
+## Keeping each workspace's rows apart
+
+I wanted the database to enforce workspace separation, not only my app code. Every
+row in `records` (calendar entries, school items and finance transactions are all
+records) and every row in `audit` now has a `workspace_id`. Migration
+`0003-workspace-rls.sql` turns on row-level security (PostgreSQL rules that filter
+rows for each connection) and forces it, so the rules also apply to the table owner.
+
+`PostgresDatabase` sets `lifeos.workspace_id` when each pooled connection starts.
+Pass `workspaceId` when you create it (default `default`); the value may use 1 to 63
+lowercase letters, digits or hyphens. Without a workspace, a session sees no rows and
+cannot write any. A row written without a workspace ID gets the connection's
+workspace, and an explicit foreign ID is refused by the policy.
+
+Two limits to know about:
+
+- Superusers and roles with `BYPASSRLS` skip these rules even when forced. Connect
+  the app as an ordinary role. The tests create one (`lifeos_rls_test_app`) for this.
+- Record IDs are still unique across the whole table (`PRIMARY KEY (kind, id)`), because
+  the shared SQL for SQLite and PostgreSQL uses `ON CONFLICT(kind, id)`. Two workspaces
+  cannot use the same record ID.
+
+`test/postgres-rls.test.mjs` runs in the PostgreSQL matrix job. It checks reads,
+updates, deletes, forged workspace IDs, default stamping, the three record kinds,
+the audit table, a session with no workspace, and the flags on both tables.

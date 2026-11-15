@@ -32,7 +32,7 @@ export function demoAvailableSlots(days:any[],now:string){
  }).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));
 }
 export async function drainJobs(db:WorkspaceDatabase,env:Record<string,any>){
- const put=async(kind:string,id:string,data:any)=>{const old=await db.prepare('SELECT * FROM records WHERE kind=? AND id=?').bind(kind,id).first(),now=new Date().toISOString();await db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data,version=excluded.version,updated_at=excluded.updated_at').bind(kind,id,JSON.stringify(data),(old?.version??0)+1,old?.created_at??now,now).run();};
+ const put=async(kind:string,id:string,data:any)=>{const old=await db.prepare('SELECT * FROM records WHERE kind=? AND id=?').bind(kind,id).first(),now=new Date().toISOString();await db.prepare('INSERT INTO records(kind,id,data,version,created_at,updated_at)VALUES(?,?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data,version=excluded.version,updated_at=excluded.updated_at').bind(kind,id,JSON.stringify(data),(old?.version??0)+1,old?.created_at??now,now).run();};
  const get=async(kind:string,id:string)=>{const row=await db.prepare('SELECT data FROM records WHERE kind=? AND id=?').bind(kind,id).first();return row?JSON.parse(row.data):null;};
  const jobs=(await db.prepare("SELECT * FROM jobs WHERE status='queued' AND type!='lecture-transcription' AND available_at<=? ORDER BY priority,created_at LIMIT 20").bind(Date.now()).all()).results;
  for(const job of jobs){

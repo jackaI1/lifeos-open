@@ -38,7 +38,7 @@ test('untouched old training and devotional fixtures upgrade without changing co
  await set('training','baseline',{raceDate:'2027-01-14',goalMinutes:150,notes:'Fictional fitness plan; edit for your own ability.'});
  await set('training-source','fictional-plan',{source:{title:'Fictional gentle activity reference'},sourceWeeks:[]});
  await set('devotional','2026-10-22',{points:['Notice something good.','Consider the context.','Reflect on kindness.','Name a human need.','Choose one practical act.','Listen with care.','Take a quiet moment.'],complete:false});
- await db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?)').bind('run','my-run',JSON.stringify({date:'2026-10-22',distanceKm:5,durationMinutes:30}),1,now.toISOString(),now.toISOString()).run();
+ await db.prepare('INSERT INTO records(kind,id,data,version,created_at,updated_at)VALUES(?,?,?,?,?,?)').bind('run','my-run',JSON.stringify({date:'2026-10-22',distanceKm:5,durationMinutes:30}),1,now.toISOString(),now.toISOString()).run();
  const run=await row(db,'run','my-run');await makeWorkspace(db,{now});
  assert.equal((await row(db,'training-source','fictional-plan')).data.sourceWeeks.length,18);
  assert.deepEqual((await row(db,'devotional','2026-10-22')).data.points,Array(7).fill(''));

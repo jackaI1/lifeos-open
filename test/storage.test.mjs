@@ -16,7 +16,7 @@ for(const backend of ['sqlite',...(process.env.TEST_DATABASE_URL?['postgres']:[]
    await db.prepare('INSERT INTO sample VALUES(?,?,?)').bind("? ' ; --",2,Buffer.from([0,255])).run();
    assert.deepEqual([...await db.prepare('SELECT content FROM sample WHERE id=?').bind("? ' ; --").first('content')],[0,255]);
    const stamp=new Date().toISOString();
-   await db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?)').bind('task','types',JSON.stringify({archived:false,version:2,points:['yes'],nested:{value:'x'}}),1,stamp,stamp).run();
+   await db.prepare('INSERT INTO records(kind,id,data,version,created_at,updated_at)VALUES(?,?,?,?,?,?)').bind('task','types',JSON.stringify({archived:false,version:2,points:['yes'],nested:{value:'x'}}),1,stamp,stamp).run();
    const row=await db.prepare("SELECT json_extract(data,'$.points[0]') point FROM records WHERE kind=? AND COALESCE(json_extract(data,'$.archived'),0)=0 AND json_extract(data,'$.version')>=?").bind('task',2).first();
    assert.equal(row.point,'yes');
    assert.equal(await db.prepare("SELECT version FROM kind_revisions WHERE kind='task'").first('version'),1);

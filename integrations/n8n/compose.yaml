@@ -1,0 +1,65 @@
+# Self-hosted n8n for LifeOS reminders. Ports are bound to 127.0.0.1 only.
+# Set the three secrets in your shell first (use your own random values):
+#   export LIFEOS_WEBHOOK_SECRET=...   LIFEOS_NOTIFY_TOKEN=...   N8N_ENCRYPTION_KEY=...
+name: lifeos-n8n
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:2.47.7
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      GENERIC_TIMEZONE: America/Toronto
+      TZ: America/Toronto
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_SECURE_COOKIE: "false"
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY}
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      NODE_FUNCTION_ALLOW_BUILTIN: crypto
+      LIFEOS_WEBHOOK_SECRET: ${LIFEOS_WEBHOOK_SECRET:?set LIFEOS_WEBHOOK_SECRET}
+      LIFEOS_NOTIFY_TOKEN: ${LIFEOS_NOTIFY_TOKEN:?set LIFEOS_NOTIFY_TOKEN}
+      LIFEOS_NOTIFY_URL: http://sink:8080/notify
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/workflows:ro
+    depends_on:
+      n8n-activate:
+        condition: service_completed_successfully
+      sink:
+        condition: service_started
+  # The n8n image has no shell, so import and activation run as one-shot commands in order.
+  n8n-import:
+    image: docker.n8n.io/n8nio/n8n:2.47.7
+    command: ["import:workflow", "--input=/workflows/deadline-reminders.json"]
+    environment:
+      GENERIC_TIMEZONE: America/Toronto
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/workflows:ro
+  n8n-activate:
+    image: docker.n8n.io/n8nio/n8n:2.47.7
+    command: ["publish:workflow", "--id=lifeos-deadline-reminders"]
+    environment:
+      GENERIC_TIMEZONE: America/Toronto
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      n8n-import:
+        condition: service_completed_successfully
+  sink:
+    image: node:24-alpine
+    working_dir: /app
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      LIFEOS_NOTIFY_TOKEN: ${LIFEOS_NOTIFY_TOKEN:?set LIFEOS_NOTIFY_TOKEN}
+      SINK_FAIL_FIRST: ${SINK_FAIL_FIRST:-0}
+    volumes:
+      - ./sink:/app:ro
+    command: ["node", "server.mjs"]
+volumes:
+  n8n_data:

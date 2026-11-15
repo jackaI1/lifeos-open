@@ -1,0 +1,69 @@
+name: n8n webhook workflow
+on:
+  push:
+    branches: [main]
+    paths:
+      - integrations/n8n/**
+      - test/n8n-*.test.mjs
+      - .github/workflows/n8n-webhooks.yml
+  pull_request:
+    paths:
+      - integrations/n8n/**
+      - test/n8n-*.test.mjs
+      - .github/workflows/n8n-webhooks.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  unit:
+    name: Guard, workflow and sender tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: The committed workflow JSON matches its source
+        run: node integrations/n8n/build-workflow.mjs --check
+      - run: node --test test/n8n-webhook-guard.test.mjs test/n8n-workflow.test.mjs test/n8n-sender.test.mjs
+  stack:
+    name: Run n8n in Docker Compose and send signed events
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    needs: unit
+    env:
+      LIFEOS_WEBHOOK_SECRET: fictional-ci-webhook-secret-0123456789
+      LIFEOS_NOTIFY_TOKEN: fictional-ci-notify-token-0123456789
+      N8N_ENCRYPTION_KEY: fictional-ci-encryption-key-0123456789
+      LIFEOS_N8N_URL: http://127.0.0.1:5678/webhook/lifeos/deadlines
+      LIFEOS_SINK_URL: http://127.0.0.1:8080
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Start n8n and the notification stand-in
+        run: docker compose -f integrations/n8n/compose.yaml up -d
+      - name: Wait for n8n to answer
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:5678/healthz >/dev/null 2>&1 && curl -fsS http://127.0.0.1:8080/health >/dev/null 2>&1; then
+              echo "n8n is up after $i attempts"; exit 0
+            fi
+            sleep 3
+          done
+          docker compose -f integrations/n8n/compose.yaml logs --no-color | tail -80
+          exit 1
+      - name: Signed, replayed and forged events against the live workflow
+        run: node --test test/n8n-compose.integration.test.mjs
+      - name: Show the last container logs
+        if: always()
+        run: docker compose -f integrations/n8n/compose.yaml logs --no-color --tail 120
+      - name: Stop and remove the disposable stack
+        if: always()
+        run: docker compose -f integrations/n8n/compose.yaml down --volumes

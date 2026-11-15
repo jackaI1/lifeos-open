@@ -15,7 +15,7 @@ try{
   storage=new PostgresDatabase({connectionString:process.env.BENCH_DATABASE_URL,options:'-c search_path='+schema});
  }
  app=await createService({database:':memory:',storage,demo:false,env:{REDIS_URL:url}});
- const rows=Array.from({length:500},(_,i)=>app.db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?)').bind('task',`bench-${String(i).padStart(4,'0')}`,JSON.stringify({title:`Fictional coursework ${i}`,status:'todo',userNotes:'Fictional planning notes. '.repeat(40)}),1,'2026-01-01','2026-01-01'));
+ const rows=Array.from({length:500},(_,i)=>app.db.prepare('INSERT INTO records(kind,id,data,version,created_at,updated_at)VALUES(?,?,?,?,?,?)').bind('task',`bench-${String(i).padStart(4,'0')}`,JSON.stringify({title:`Fictional coursework ${i}`,status:'todo',userNotes:'Fictional planning notes. '.repeat(40)}),1,'2026-01-01','2026-01-01'));
  await app.db.batch(rows);
  const cache=app.env.RECORD_CACHE,latencies={database:[],redis:[]},payloadReads={database:0,redis:0},states={};let current;
  const prepare=app.db.prepare.bind(app.db);

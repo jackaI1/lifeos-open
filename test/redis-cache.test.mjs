@@ -20,7 +20,7 @@ async function fixture(t,env={}){
  return {app,get,put,reads:()=>recordReads};
 }
 async function insert(app,id,title='Fictional task'){
- await app.db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?)').bind('task',id,JSON.stringify({title,status:'todo'}),1,'2026-01-01','2026-01-01').run();
+ await app.db.prepare('INSERT INTO records(kind,id,data,version,created_at,updated_at)VALUES(?,?,?,?,?,?)').bind('task',id,JSON.stringify({title,status:'todo'}),1,'2026-01-01','2026-01-01').run();
 }
 // Real TCP fixture can drop or stall Redis without touching anybody else's server.
 async function proxy(t,url){
