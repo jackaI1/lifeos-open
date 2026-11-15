@@ -59,3 +59,24 @@ PID, start time, port and cleanup command, and stops both on completion or failu
 It also records the test browser process and verifies its exit. Its temporary
 SQLite run history is removed. It uses a fresh browser context for
 each test. The pgvector browser check runs when `CONSOLE_DATABASE_URL` is set.
+
+## Planner over GraphQL
+
+I added a read-only GraphQL endpoint for the same schedule, because I wanted a
+second front end for my own planner that asks only for the fields it needs.
+`POST /api/schedule-graphql` takes a query and returns today's events and open
+deadlines. The [planner page](http://localhost:3000/planner) shows the same data,
+renders on the server, and refreshes through the endpoint.
+
+```sh
+curl -s -X POST http://localhost:3000/api/schedule-graphql \
+  -H 'content-type: application/json' \
+  -d '{"query":"{ today(deadlineDays: 7) { day events { title start } deadlines { title day overdue } } }"}'
+```
+
+The endpoint refuses mutations, fragments, queries over 2,000 bytes, queries nested
+more than three levels, and deadline windows outside 1 to 60 days. With no
+configuration it reads the public demo feed. Setting `LIFEOS_SCHEDULE_DB` to a
+SQLite file makes it read the same records the local app writes; rows it cannot
+read are skipped. Tests are in `test/schedule-graphql.test.ts` and
+`test/planner-page.test.tsx`.

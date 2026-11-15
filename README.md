@@ -66,6 +66,26 @@ adds and completes a fictional task, and checks basic page landmarks. If a chang
 breaks the journey, the automated check saves a screenshot and a trace, a recording
 of the browser steps, to help me investigate.
 
+## More ways to reach my planner
+
+I can ask a model on my own computer what is due this week. A small read-only
+server lets it read today's schedule, search my notes and list open deadlines, and
+every tool call is written to a log. The [planner guide](docs/planner-mcp.md)
+covers the setup. The model cannot change anything.
+
+I also want reminders when LifeOS is closed. The [reminder workflow](integrations/n8n/README.md)
+runs in n8n, a self-hosted automation tool. It accepts only signed deadline events,
+refuses repeats and forged messages, and retries a failed reminder with longer
+waits each time.
+
+My rows are separated in the database too. [Row-level security](docs/postgresql.md#keeping-each-workspaces-rows-apart)
+means PostgreSQL itself hides one workspace's calendar, school and finance rows from
+another, so a bug in the app alone cannot expose them.
+
+The Today app has a [read-only GraphQL endpoint](apps/today/README.md#planner-over-graphql)
+and a planner page, and there is a [Vue week view](apps/schedule-vue/README.md) of
+the same fictional week with loading, offline and error states.
+
 ## Run it locally
 
 Install Node.js 24 or newer, then run:
