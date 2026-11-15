@@ -82,6 +82,8 @@ My rows are separated in the database too. [Row-level security](docs/postgresql.
 means PostgreSQL itself hides one workspace's calendar, school and finance rows from
 another, so a bug in the app alone cannot expose them.
 
+I also built a bot check for the public demo, because I want the usage numbers to count people, not scripts. It scores a few browser signals only after the visitor agrees, stores nothing, and can say "not sure" instead of guessing. The [bot check notes](docs/bot-detection.md) list which signals catch which kind of browser.
+
 The Today app has a [read-only GraphQL endpoint](apps/today/README.md#planner-over-graphql)
 and a planner page, and there is a [Vue week view](apps/schedule-vue/README.md) of
 the same fictional week with loading, offline and error states.
