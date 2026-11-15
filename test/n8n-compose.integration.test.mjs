@@ -15,8 +15,21 @@ async function post(body, {secret: key = secret, timestamp = String(Math.floor(D
   return response.status;
 }
 
+// n8n answers /healthz before published webhooks are registered, so wait for the route.
+// A forged signature is refused before anything is recorded, so the probe leaves no trace.
+async function waitForWebhook() {
+  const deadline = Date.now() + 120_000;
+  while (Date.now() < deadline) {
+    const status = await post('{"probe":true}', {secret: 'probe-secret-that-is-not-the-real-one-0'}).catch(() => 0);
+    if (status !== 404 && status !== 0) return;
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+  throw new Error('The n8n webhook was never registered');
+}
+
 test('n8n accepts a signed reminder, refuses its replay and a forged one, and delivers to the sink',
   {skip: !webhook || !secret, timeout: 120_000}, async () => {
+    await waitForWebhook();
     const id = `deadline-ci-${Date.now()}`;
     const body = JSON.stringify({type: 'deadline.due-soon', id, title: 'CI check reminder', dueAt: new Date(Date.now() + 3600e3).toISOString()});
     assert.equal(await post(body), 202);
