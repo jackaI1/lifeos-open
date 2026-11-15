@@ -18,8 +18,10 @@ async function setUp() {
   await bootstrap.exec(`CREATE SCHEMA ${schema}`);
   const owner = new PostgresDatabase({connectionString: admin, options: `-c search_path=${schema}`, max: 2});
   await owner.migrate();
-  await owner.exec(`DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='${ROLE}') THEN
-    CREATE ROLE ${ROLE} LOGIN PASSWORD '${PASSWORD}' NOSUPERUSER NOBYPASSRLS; END IF; END $$`);
+  // Checked in JavaScript: PostgresDatabase.exec rewrites placeholders, which would mangle a DO block.
+  if (!await owner.prepare('SELECT 1 AS found FROM pg_roles WHERE rolname=?').bind(ROLE).first()) {
+    await owner.exec(`CREATE ROLE ${ROLE} LOGIN PASSWORD '${PASSWORD}' NOSUPERUSER NOBYPASSRLS`);
+  }
   await owner.exec(`GRANT USAGE ON SCHEMA ${schema} TO ${ROLE}`);
   await owner.exec(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ${schema} TO ${ROLE}`);
   const appUrl = new URL(admin);

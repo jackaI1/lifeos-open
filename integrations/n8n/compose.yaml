@@ -22,12 +22,34 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
       - ./workflows:/workflows:ro
-    command: >-
-      sh -c "n8n import:workflow --input=/workflows/deadline-reminders.json &&
-      n8n update:workflow --id=lifeos-deadline-reminders --active=true &&
-      n8n start"
     depends_on:
-      - sink
+      n8n-activate:
+        condition: service_completed_successfully
+      sink:
+        condition: service_started
+  # The n8n image has no shell, so import and activation run as one-shot commands in order.
+  n8n-import:
+    image: docker.n8n.io/n8nio/n8n:2.47.7
+    command: ["import:workflow", "--input=/workflows/deadline-reminders.json"]
+    environment:
+      GENERIC_TIMEZONE: America/Toronto
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/workflows:ro
+  n8n-activate:
+    image: docker.n8n.io/n8nio/n8n:2.47.7
+    command: ["update:workflow", "--id=lifeos-deadline-reminders", "--active=true"]
+    environment:
+      GENERIC_TIMEZONE: America/Toronto
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      n8n-import:
+        condition: service_completed_successfully
   sink:
     image: node:24-alpine
     working_dir: /app

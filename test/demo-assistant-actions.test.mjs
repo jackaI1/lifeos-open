@@ -7,7 +7,7 @@ const DEMO_WEEKDAY='2026-11-11T15:00:00Z';
 test('one-click demo change applies only its own validated proposal and does not repeat it',async(t)=>{
  t.mock.timers.enable({apis:['Date'],now:Date.parse(DEMO_WEEKDAY)});
  const module=await import('../public/demo-assistant-actions.js').catch(()=>({}));assert.equal(typeof module.applyDemoExampleChanges,'function');
- const app=await createService({database:':memory:',origin:'http://127.0.0.1:18753'});
+ const app=await createService({database:':memory:',origin:'http://127.0.0.1:18753',env:{DEMO_CLOCK:'2026-10-06T14:00:00Z'}});
  try{const session=await(await app.fetch(new Request(app.origin+'/api/session'))).json();const request=async(path,options={})=>{const r=await app.fetch(new Request(app.origin+path,{method:options.method??'GET',headers:{origin:app.origin,'x-lifeos-csrf':session.csrf,'content-type':'application/json'},...(options.body?{body:JSON.stringify(options.body)}:{})}));assert.equal(r.status,200,await r.clone().text());return r.json();};const threadId=crypto.randomUUID();await request('/api/assistant/threads',{method:'POST',body:{id:threadId,scope:'today',mutationId:crypto.randomUUID()}});
  const send=example=>request('/api/assistant/threads/'+threadId+'/messages',{method:'POST',body:{message:example.message,sentAt:new Date().toISOString(),mutationId:crypto.randomUUID()}});
  const [move,add]=demoAssistantOptions('today');await send(move);const result=await send(add);const call={session,example:add,threadId,jobId:result.job.id,request};
