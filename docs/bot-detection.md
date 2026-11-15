@@ -50,13 +50,13 @@ virtual display for headed mode. Each row is one browser mode and one input patt
 | Mode | Input pattern | Verdict | Score | Rules that fired |
 | --- | --- | --- | --- | --- |
 | headed | human-like | uncertain | 2 | webdriver, software-renderer, plugins-present, trusted-varied-input |
-| headed | scripted events | automated | 12 | webdriver, software-renderer, synthetic-events, metronomic-input |
+| headed | scripted events | automated | 12 | webdriver, software-renderer, synthetic-events, metronomic-input, plugins-present |
 | headed | no input | uncertain | 5 | webdriver, software-renderer, plugins-present |
-| headless | human-like | automated | 11 | webdriver, headless-user-agent, no-chrome-object, no-plugins-on-chromium, software-renderer |
+| headless | human-like | automated | 11 | webdriver, headless-user-agent, no-chrome-object, no-plugins-on-chromium, software-renderer, trusted-varied-input |
 | headless | scripted events | automated | 21 | all headless rules plus synthetic-events and metronomic-input |
 | headless | no input | automated | 14 | the static headless rules |
 | stealth-patched | human-like | uncertain | -2 | software-renderer, plugins-present, trusted-varied-input |
-| stealth-patched | scripted events | automated | 8 | software-renderer, synthetic-events, metronomic-input |
+| stealth-patched | scripted events | automated | 8 | software-renderer, synthetic-events, metronomic-input, plugins-present |
 | stealth-patched | no input | uncertain | 1 | software-renderer, plugins-present |
 
 ## What the table says
