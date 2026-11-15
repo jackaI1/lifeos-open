@@ -40,7 +40,7 @@ services:
       - ./workflows:/workflows:ro
   n8n-activate:
     image: docker.n8n.io/n8nio/n8n:2.47.7
-    command: ["update:workflow", "--id=lifeos-deadline-reminders", "--active=true"]
+    command: ["publish:workflow", "--id=lifeos-deadline-reminders"]
     environment:
       GENERIC_TIMEZONE: America/Toronto
       N8N_DIAGNOSTICS_ENABLED: "false"

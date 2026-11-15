@@ -126,7 +126,8 @@ test('row-level security is enabled and forced on records and audit', options, a
   try {
     const rows = (await env.owner.prepare(`SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class
       WHERE relname IN ('records','audit') AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname=?) ORDER BY relname`).bind(env.schema).all()).results;
-    assert.deepEqual(rows.map(row => [row.relname, row.relrowsecurity, row.relforcerowsecurity]), [['audit', true, true], ['records', true, true]]);
+    // The adapter returns booleans as 1 or 0, so compare against those.
+    assert.deepEqual(rows.map(row => [row.relname, Number(row.relrowsecurity), Number(row.relforcerowsecurity)]), [['audit', 1, 1], ['records', 1, 1]]);
   } finally { await env.alpha.close(); await env.beta.close(); await env.done(); }
 });
 
