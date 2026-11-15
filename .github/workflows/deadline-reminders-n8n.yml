@@ -41,12 +41,21 @@ jobs:
           $COMPOSE up -d
           for i in $(seq 1 90); do curl -sf http://127.0.0.1:5678/healthz >/dev/null && break; sleep 2; done
           curl -sf http://127.0.0.1:5678/healthz
-      - name: Import the exported workflow and activate it
+      - name: Import and publish the exported workflow while n8n is stopped
         run: |
-          $COMPOSE exec -T n8n n8n import:workflow --input=/workflows/deadline-reminders.json
-          $COMPOSE exec -T n8n n8n publish:workflow --id=lifeosDeadlineReminders
-          $COMPOSE restart n8n
+          $COMPOSE stop n8n
+          $COMPOSE run --rm -T n8n import:workflow --input=/workflows/deadline-reminders.json
+          $COMPOSE run --rm -T n8n publish:workflow --id=lifeosDeadlineReminders
+          $COMPOSE up -d n8n
           for i in $(seq 1 90); do curl -sf http://127.0.0.1:5678/healthz >/dev/null && break; sleep 2; done
+      - name: Wait until the webhook is registered
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' -d '{}' http://127.0.0.1:5678/webhook/deadline-events)
+            [ "$code" != 404 ] && { echo "webhook answered $code"; exit 0; }
+            sleep 2
+          done
+          echo "webhook still 404 after waiting"; exit 1
       - name: Live checks against the running n8n container
         run: node --test integrations/deadline-reminders/test/live.integration.mjs
         env:
